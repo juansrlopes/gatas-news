@@ -1,0 +1,7 @@
+[
+  {
+    "key": "cmd+shift+k",
+    "command": "editor.action.deleteLines",
+    "when": "textInputFocus"
+  }
+]

@@ -11,6 +11,16 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    plugins: {
+      prettier: "eslint-plugin-prettier",
+    },
+    rules: {
+      "prettier/prettier": "error",
+    },
+    extends: ["plugin:prettier/recommended"],
+  },
 ];
 
 export default eslintConfig;

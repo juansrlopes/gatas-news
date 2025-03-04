@@ -20,5 +20,10 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+#logo{
+  font-family: 'Great Vibes', 'cursive', sans-serif;
+  color: #FFF;
+  font-size: 48px;
 }
