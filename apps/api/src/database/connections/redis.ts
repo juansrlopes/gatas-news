@@ -1,8 +1,5 @@
 import Redis from 'ioredis';
-import { getEnvConfig } from '../../../../../libs/shared/utils/src/index';
 import logger from '../../utils/logger';
-
-const config = getEnvConfig();
 
 class RedisConnection {
   private static instance: RedisConnection;

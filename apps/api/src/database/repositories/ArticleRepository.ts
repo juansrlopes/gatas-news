@@ -156,7 +156,7 @@ export class ArticleRepository {
       // Build sort object
       const sort: Record<string, 1 | -1> = {};
       if (searchTerm) {
-        sort.score = { $meta: 'textScore' } as any;
+        (sort as Record<string, unknown>).score = { $meta: 'textScore' };
       }
       sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
 

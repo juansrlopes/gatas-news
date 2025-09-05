@@ -14,7 +14,7 @@ export const generalLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  handler: (_req, _res) => {
+  handler: () => {
     throw new RateLimitError('Too many requests from this IP, please try again later.');
   },
 });
@@ -29,7 +29,7 @@ export const newsLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (_req, _res) => {
+  handler: () => {
     throw new RateLimitError('Too many news requests from this IP, please try again later.');
   },
 });
@@ -40,7 +40,7 @@ export const healthLimiter = rateLimit({
   max: 60, // 60 requests per minute
   standardHeaders: false,
   legacyHeaders: false,
-  handler: (_req, _res) => {
+  handler: () => {
     throw new RateLimitError('Too many health check requests.');
   },
 });

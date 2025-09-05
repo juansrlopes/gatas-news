@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { Article, IArticle } from '../database/models/Article';
+import { IArticle } from '../database/models/Article';
 import { FetchLog, IFetchLog } from '../database/models/FetchLog';
 import { articleRepository } from '../database/repositories/ArticleRepository';
 import { enhancedCacheService } from '../services/cacheService';
@@ -251,7 +251,10 @@ export class NewsFetcher {
         rateLimitReset,
       };
     } catch (error: unknown) {
-      const axiosError = error as any;
+      const axiosError = error as {
+        response?: { status?: number; headers?: Record<string, string> };
+        message?: string;
+      };
 
       // Handle rate limiting
       if (axiosError.response?.status === 429) {

@@ -1,0 +1,249 @@
+import mongoose, { Schema, Document, Model } from 'mongoose';
+
+// Interface for the Celebrity document
+export interface ICelebrity extends Document {
+  name: string;
+  slug: string; // URL-friendly version of name
+  aliases: string[]; // Alternative names, nicknames
+  category: 'actress' | 'singer' | 'influencer' | 'model' | 'athlete' | 'presenter' | 'other';
+  priority: number; // 1-10, higher = more important
+  isActive: boolean;
+
+  // Social media handles (for future features)
+  socialMedia?: {
+    instagram?: string;
+    twitter?: string;
+    tiktok?: string;
+  };
+
+  // Search optimization
+  searchTerms: string[]; // Additional search terms
+  description?: string;
+
+  // Analytics
+  totalArticles: number;
+  lastFetchedAt?: Date;
+  avgArticlesPerDay: number;
+
+  // Metadata
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Interface for Celebrity model static methods
+export interface ICelebrityModel extends Model<ICelebrity> {
+  findActive(limit?: number): Promise<ICelebrity[]>;
+  findByPriority(minPriority?: number): Promise<ICelebrity[]>;
+  findByCategory(category: string): Promise<ICelebrity[]>;
+  searchByName(query: string): Promise<ICelebrity[]>;
+  getTopPerformers(limit?: number): Promise<ICelebrity[]>;
+  updateArticleStats(celebrityId: string, articleCount: number): Promise<ICelebrity | null>;
+}
+
+// Celebrity Schema
+const CelebritySchema = new Schema<ICelebrity>(
+  {
+    name: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      index: true,
+    },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      index: true,
+    },
+    aliases: [
+      {
+        type: String,
+        trim: true,
+        index: true,
+      },
+    ],
+    category: {
+      type: String,
+      enum: ['actress', 'singer', 'influencer', 'model', 'athlete', 'presenter', 'other'],
+      required: true,
+      index: true,
+    },
+    priority: {
+      type: Number,
+      min: 1,
+      max: 10,
+      default: 5,
+      index: -1, // Descending index for priority queries
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    socialMedia: {
+      instagram: {
+        type: String,
+        trim: true,
+      },
+      twitter: {
+        type: String,
+        trim: true,
+      },
+      tiktok: {
+        type: String,
+        trim: true,
+      },
+    },
+    searchTerms: [
+      {
+        type: String,
+        trim: true,
+        index: true,
+      },
+    ],
+    description: {
+      type: String,
+      trim: true,
+    },
+    totalArticles: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastFetchedAt: {
+      type: Date,
+      index: -1,
+    },
+    avgArticlesPerDay: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+  },
+  {
+    timestamps: true,
+    collection: 'celebrities',
+  }
+);
+
+// Compound indexes for better query performance
+CelebritySchema.index({ isActive: 1, priority: -1 });
+CelebritySchema.index({ category: 1, priority: -1 });
+CelebritySchema.index({ totalArticles: -1, priority: -1 });
+
+// Text index for search
+CelebritySchema.index({
+  name: 'text',
+  aliases: 'text',
+  searchTerms: 'text',
+  description: 'text',
+});
+
+// Pre-save middleware to generate slug
+CelebritySchema.pre('save', function (next) {
+  if (this.isModified('name')) {
+    this.slug = this.name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens
+      .trim();
+  }
+  next();
+});
+
+// Static methods
+CelebritySchema.statics.findActive = function (limit: number = 100): Promise<ICelebrity[]> {
+  return this.find({ isActive: true })
+    .sort({ priority: -1, totalArticles: -1 })
+    .limit(limit)
+    .exec();
+};
+
+CelebritySchema.statics.findByPriority = function (minPriority: number = 7): Promise<ICelebrity[]> {
+  return this.find({
+    isActive: true,
+    priority: { $gte: minPriority },
+  })
+    .sort({ priority: -1 })
+    .exec();
+};
+
+CelebritySchema.statics.findByCategory = function (category: string): Promise<ICelebrity[]> {
+  return this.find({
+    isActive: true,
+    category,
+  })
+    .sort({ priority: -1, totalArticles: -1 })
+    .exec();
+};
+
+CelebritySchema.statics.searchByName = function (query: string): Promise<ICelebrity[]> {
+  const searchRegex = new RegExp(query, 'i');
+  return this.find({
+    isActive: true,
+    $or: [
+      { name: searchRegex },
+      { aliases: { $in: [searchRegex] } },
+      { searchTerms: { $in: [searchRegex] } },
+    ],
+  })
+    .sort({ priority: -1, totalArticles: -1 })
+    .exec();
+};
+
+CelebritySchema.statics.getTopPerformers = function (limit: number = 10): Promise<ICelebrity[]> {
+  return this.find({ isActive: true })
+    .sort({
+      avgArticlesPerDay: -1,
+      totalArticles: -1,
+      priority: -1,
+    })
+    .limit(limit)
+    .exec();
+};
+
+CelebritySchema.statics.updateArticleStats = function (
+  celebrityId: string,
+  articleCount: number
+): Promise<ICelebrity | null> {
+  const now = new Date();
+  return this.findByIdAndUpdate(
+    celebrityId,
+    {
+      $inc: { totalArticles: articleCount },
+      lastFetchedAt: now,
+      // Calculate average (simplified - in production you'd want more sophisticated calculation)
+      $set: {
+        avgArticlesPerDay: articleCount, // This would be calculated based on historical data
+      },
+    },
+    { new: true }
+  ).exec();
+};
+
+// Instance methods
+CelebritySchema.methods.getAllSearchTerms = function (): string[] {
+  return [this.name, ...this.aliases, ...this.searchTerms].filter(Boolean);
+};
+
+CelebritySchema.methods.updatePerformanceMetrics = function (newArticleCount: number) {
+  this.totalArticles += newArticleCount;
+  this.lastFetchedAt = new Date();
+
+  // Simple average calculation (in production, you'd want rolling averages)
+  const daysSinceCreation = Math.max(
+    1,
+    Math.floor((Date.now() - this.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+  );
+  this.avgArticlesPerDay = this.totalArticles / daysSinceCreation;
+
+  return this.save();
+};
+
+// Create and export the model
+export const Celebrity = mongoose.model<ICelebrity, ICelebrityModel>('Celebrity', CelebritySchema);

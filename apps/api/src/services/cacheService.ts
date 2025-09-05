@@ -1,3 +1,4 @@
+import Redis from 'ioredis';
 import { redisConnection } from '../database/connections/redis';
 import { cacheService as nodeCacheService } from '../utils/cache';
 import logger from '../utils/logger';
@@ -11,7 +12,7 @@ export interface CacheOptions {
 
 export class EnhancedCacheService {
   private static instance: EnhancedCacheService;
-  private redisClient: any = null;
+  private redisClient: Redis | null = null;
   private isRedisAvailable = false;
 
   private constructor() {
@@ -170,16 +171,16 @@ export class EnhancedCacheService {
     redis: {
       available: boolean;
       connected: boolean;
-      info?: any;
+      info?: Record<string, unknown>;
     };
-    memory: any;
+    memory: Record<string, unknown>;
   }> {
     try {
       const stats = {
         redis: {
           available: this.isRedisAvailable,
           connected: redisConnection.getConnectionStatus(),
-          info: null as any,
+          info: null as Record<string, unknown> | null,
         },
         memory: nodeCacheService.getStats(),
       };

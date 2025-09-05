@@ -1,4 +1,8 @@
-import { articleRepository, ArticleFilters, PaginationOptions } from '../database/repositories/ArticleRepository';
+import {
+  articleRepository,
+  ArticleFilters,
+  PaginationOptions,
+} from '../database/repositories/ArticleRepository';
 import { enhancedCacheService } from './cacheService';
 import { celebrityService } from './celebrityService';
 import { newsFetcher } from '../jobs/newsFetcher';
@@ -205,7 +209,7 @@ export class NewsService {
       const stats = await articleRepository.getStatistics();
       const trending = stats.articlesByCelebrity
         .slice(0, 10) // Top 10
-        .map((item) => item.celebrity);
+        .map(item => item.celebrity);
 
       // Cache for 1 hour
       await enhancedCacheService.set(cacheKey, trending, { ttl: 3600 });
@@ -300,7 +304,16 @@ export class NewsService {
   /**
    * Get news statistics
    */
-  public async getNewsStatistics(): Promise<any> {
+  public async getNewsStatistics(): Promise<{
+    totalArticles: number;
+    totalActiveCelebrities: number;
+    totalSources: number;
+    averageArticlesPerDay: number;
+    topCelebrities: Array<{ celebrity: string; count: number }>;
+    topSources: Array<{ source: string; count: number }>;
+    sentimentBreakdown: Array<{ sentiment: string; count: number }>;
+    recentActivity: Array<{ date: string; count: number }>;
+  }> {
     const cacheKey = enhancedCacheService.generateKeys.stats();
 
     try {
@@ -326,7 +339,14 @@ export class NewsService {
   /**
    * Trigger manual news fetch
    */
-  public async triggerNewsFetch(): Promise<any> {
+  public async triggerNewsFetch(): Promise<{
+    success: boolean;
+    articlesProcessed: number;
+    newArticlesAdded: number;
+    duplicatesFound: number;
+    errors: string[];
+    duration: number;
+  }> {
     try {
       logger.info('Manual news fetch triggered via API');
       const result = await newsFetcher.fetchAndStoreNews();
@@ -359,7 +379,19 @@ export class NewsService {
   /**
    * Convert database article to API format
    */
-  private convertToApiFormat(article: any): any {
+  private convertToApiFormat(article: IArticle): {
+    id: string;
+    title: string;
+    description: string;
+    url: string;
+    urlToImage: string;
+    publishedAt: string;
+    source: { id: string | null; name: string };
+    celebrity: string;
+    sentiment?: string;
+    category?: string;
+    isActive: boolean;
+  } {
     return {
       url: article.url,
       title: article.title,
@@ -380,7 +412,7 @@ export class NewsService {
   /**
    * Generate cache key based on parameters
    */
-  private generateCacheKey(params: any): string {
+  private generateCacheKey(params: Record<string, unknown>): string {
     const {
       page = 1,
       celebrity,

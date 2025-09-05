@@ -77,13 +77,7 @@ export interface UseSearchReturn {
   handleClear: () => void;
 }
 
-// Celebrity types
-export interface Celebrity {
-  name: string;
-  slug?: string;
-  category?: string;
-}
-
+// Legacy celebrity types (kept for backward compatibility)
 export interface CelebrityList {
   celebrities: string[];
 }
@@ -143,4 +137,101 @@ export interface DetailedHealthResponse extends HealthResponse {
     cache: string;
     logging: string;
   };
+}
+
+// Celebrity Management Types
+export interface CelebrityBase {
+  name: string;
+  slug: string;
+  aliases: string[];
+  category: 'actress' | 'singer' | 'influencer' | 'model' | 'athlete' | 'presenter' | 'other';
+  priority: number; // 1-10
+  isActive: boolean;
+  socialMedia?: {
+    instagram?: string;
+    twitter?: string;
+    tiktok?: string;
+  };
+  searchTerms: string[];
+  description?: string;
+  totalArticles: number;
+  lastFetchedAt?: Date;
+  avgArticlesPerDay: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Celebrity {
+  _id: string;
+  name: string;
+  slug: string;
+  aliases: string[];
+  category: 'actress' | 'singer' | 'influencer' | 'model' | 'athlete' | 'presenter' | 'other';
+  priority: number; // 1-10
+  isActive: boolean;
+  socialMedia?: {
+    instagram?: string;
+    twitter?: string;
+    tiktok?: string;
+  };
+  searchTerms: string[];
+  description?: string;
+  totalArticles: number;
+  lastFetchedAt?: Date;
+  avgArticlesPerDay: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CelebrityCreateRequest {
+  name: string;
+  category: CelebrityBase['category'];
+  priority?: number;
+  aliases?: string[];
+  searchTerms?: string[];
+  socialMedia?: CelebrityBase['socialMedia'];
+  description?: string;
+}
+
+export interface CelebrityUpdateRequest extends Partial<CelebrityCreateRequest> {
+  isActive?: boolean;
+}
+
+export interface CelebrityFilters {
+  category?: string;
+  minPriority?: number;
+  maxPriority?: number;
+  isActive?: boolean;
+  hasArticles?: boolean;
+}
+
+export interface CelebritySearchOptions {
+  page: number;
+  limit: number;
+  sortBy?: 'name' | 'priority' | 'totalArticles' | 'avgArticlesPerDay' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface CelebrityListResponse {
+  celebrities: Celebrity[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  hasMore: boolean;
+}
+
+export interface CelebrityStatsResponse {
+  totalCelebrities: number;
+  activeCelebrities: number;
+  inactiveCelebrities: number;
+  categoriesBreakdown: Array<{ category: string; count: number }>;
+  priorityBreakdown: Array<{ priority: number; count: number }>;
+  topPerformers: Celebrity[];
+  recentlyAdded: Celebrity[];
+}
+
+export interface MigrationResult {
+  created: number;
+  skipped: number;
+  errors: string[];
 }

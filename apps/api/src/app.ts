@@ -7,7 +7,6 @@ import { errorHandler } from './middleware/errorHandler';
 import routes from './routes';
 import healthRoutes from './routes/health';
 import logger from './utils/logger';
-import { getEnvConfig } from '../../../libs/shared/utils/src/index';
 
 // const config = getEnvConfig(); // Uncomment if needed for environment-specific configuration
 

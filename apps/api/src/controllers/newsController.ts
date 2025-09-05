@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { newsService } from '../services/newsService';
 import { asyncHandler } from '../middleware/errorHandler';
 import logger from '../utils/logger';
@@ -8,7 +8,7 @@ export class NewsController {
    * GET /api/v1/news
    * Fetch news articles with optional filtering
    */
-  public static getNews = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  public static getNews = asyncHandler(async (req: Request, res: Response) => {
     const {
       page = 1,
       celebrity,
@@ -52,38 +52,34 @@ export class NewsController {
    * GET /api/v1/news/trending
    * Get trending topics/celebrities
    */
-  public static getTrending = asyncHandler(
-    async (req: Request, res: Response, _next: NextFunction) => {
-      logger.info('Trending topics request received', { ip: req.ip });
+  public static getTrending = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Trending topics request received', { ip: req.ip });
 
-      const trending = await newsService.getTrendingTopics();
+    const trending = await newsService.getTrendingTopics();
 
-      res.json({
-        success: true,
-        data: {
-          trending,
-          count: trending.length,
-        },
-        timestamp: new Date().toISOString(),
-      });
-    }
-  );
+    res.json({
+      success: true,
+      data: {
+        trending,
+        count: trending.length,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
 
   /**
    * POST /api/v1/news/cache/clear
    * Clear news cache (admin endpoint)
    */
-  public static clearCache = asyncHandler(
-    async (req: Request, res: Response, _next: NextFunction) => {
-      logger.info('Cache clear request received', { ip: req.ip });
+  public static clearCache = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Cache clear request received', { ip: req.ip });
 
-      newsService.clearCache();
+    newsService.clearCache();
 
-      res.json({
-        success: true,
-        message: 'News cache cleared successfully',
-        timestamp: new Date().toISOString(),
-      });
-    }
-  );
+    res.json({
+      success: true,
+      message: 'News cache cleared successfully',
+      timestamp: new Date().toISOString(),
+    });
+  });
 }

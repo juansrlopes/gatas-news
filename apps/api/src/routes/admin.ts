@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { AdminController } from '../controllers/adminController';
 import { generalLimiter } from '../middleware/rateLimiter';
+import celebrityRoutes from './celebrities';
 
 const router = Router();
 
@@ -118,5 +119,10 @@ router.delete('/articles/:id', generalLimiter, AdminController.deleteArticle);
  * @access  Admin
  */
 router.post('/scheduler/jobs/:jobName/stop', generalLimiter, AdminController.stopScheduledJob);
+
+/**
+ * Celebrity Management Routes
+ */
+router.use('/celebrities', celebrityRoutes);
 
 export default router;

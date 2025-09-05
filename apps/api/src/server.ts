@@ -67,7 +67,7 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
 
     // Close server
     await new Promise<void>((resolve, reject) => {
-      server.close((error: any) => {
+      server.close((error?: Error) => {
         if (error) {
           reject(error);
         } else {
@@ -88,7 +88,7 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
 };
 
 // Declare server variable
-let server: any;
+let server: import('http').Server;
 
 // Start server with service initialization
 const startServer = async (): Promise<void> => {

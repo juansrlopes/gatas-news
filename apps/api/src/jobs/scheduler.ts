@@ -188,15 +188,22 @@ export class JobScheduler {
       } else {
         logger.info('ℹ️ Recent news data found, skipping initial fetch');
       }
-    } catch (error) {
-      logger.error('Error checking if initial fetch is needed:', error);
+    } catch {
+      logger.error('Error checking if initial fetch is needed');
     }
   }
 
   /**
    * Manually trigger news fetch
    */
-  public async triggerNewsFetch(): Promise<any> {
+  public async triggerNewsFetch(): Promise<{
+    success: boolean;
+    articlesProcessed: number;
+    newArticlesAdded: number;
+    duplicatesFound: number;
+    errors: string[];
+    duration: number;
+  }> {
     logger.info('🔄 Manual news fetch triggered...');
     return await newsFetcher.fetchAndStoreNews();
   }
@@ -328,7 +335,7 @@ export class JobScheduler {
         return tomorrow.toISOString();
       }
       return 'Unknown';
-    } catch (error) {
+    } catch {
       return 'Error calculating next run';
     }
   }

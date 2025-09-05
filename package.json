@@ -20,7 +20,8 @@
     "test:api": "nx test api",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "graph": "nx graph",
-    "reset": "nx reset"
+    "reset": "nx reset",
+    "migrate:celebrities": "cd apps/api && npx ts-node src/scripts/migrateCelebrities.ts"
   },
   "dependencies": {
     "@types/ioredis": "^4.28.10",

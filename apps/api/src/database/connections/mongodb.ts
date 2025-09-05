@@ -1,8 +1,5 @@
 import mongoose from 'mongoose';
-import { getEnvConfig } from '../../../../../libs/shared/utils/src/index';
 import logger from '../../utils/logger';
-
-const config = getEnvConfig();
 
 class MongoDBConnection {
   private static instance: MongoDBConnection;
