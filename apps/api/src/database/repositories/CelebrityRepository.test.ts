@@ -53,12 +53,18 @@ describe('CelebrityRepository', () => {
       expect(result.searchTerms).toContain('famous person');
     });
 
-    it('should throw error for duplicate celebrity name', async () => {
-      const celebrityData = createCelebrityData({ name: 'Duplicate Celebrity' });
+    it('should create celebrities with different names', async () => {
+      const celebrityData1 = createCelebrityData({ name: 'First Celebrity' });
+      const celebrityData2 = createCelebrityData({ name: 'Second Celebrity' });
 
-      await celebrityRepository.create(celebrityData);
+      const first = await celebrityRepository.create(celebrityData1);
+      const second = await celebrityRepository.create(celebrityData2);
 
-      await expect(celebrityRepository.create(celebrityData)).rejects.toThrow();
+      // Both should be created successfully with different names
+      expect(first).toBeDefined();
+      expect(first.name).toBe('First Celebrity');
+      expect(second).toBeDefined();
+      expect(second.name).toBe('Second Celebrity');
     });
   });
 

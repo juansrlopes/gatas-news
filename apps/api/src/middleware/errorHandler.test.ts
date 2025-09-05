@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { errorHandler } from './errorHandler';
+import { ValidationError } from '../types/errors';
 
 describe('Error Handler Middleware', () => {
   let mockRequest: Partial<Request>;
@@ -28,6 +29,20 @@ describe('Error Handler Middleware', () => {
     expect(mockResponse.status).toHaveBeenCalledWith(500);
     expect(mockResponse.json).toHaveBeenCalledWith({
       error: 'Something went wrong',
+      timestamp: expect.any(String),
+      path: '/test',
+      method: 'GET',
+    });
+  });
+
+  it('should handle validation errors with 400 status', () => {
+    const validationError = new ValidationError('Invalid input data');
+
+    errorHandler(validationError, mockRequest as Request, mockResponse as Response);
+
+    expect(mockResponse.status).toHaveBeenCalledWith(400);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      error: 'Invalid input data',
       timestamp: expect.any(String),
       path: '/test',
       method: 'GET',
