@@ -1,0 +1,27 @@
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Gatas News API Server started successfully!\u001b[39m","timestamp":"2025-09-05 11:06:52:652"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-05 11:06:52:652"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: production\u001b[39m","timestamp":"2025-09-05 11:06:52:652"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check: http://localhost:8000/health\u001b[39m","timestamp":"2025-09-05 11:06:52:652"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 API endpoint: http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-05 11:06:52:652"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mReceived SIGTERM. Starting graceful shutdown...\u001b[39m","timestamp":"2025-09-05 11:07:13:713"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Gatas News API Server started successfully!\u001b[39m","timestamp":"2025-09-05 11:07:29:729"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-05 11:07:29:729"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-05 11:07:29:729"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check: http://localhost:8000/health\u001b[39m","timestamp":"2025-09-05 11:07:29:729"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 API endpoint: http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-05 11:07:29:729"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Development mode: Enhanced logging and relaxed rate limits\u001b[39m","timestamp":"2025-09-05 11:07:29:729"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mReceived SIGINT. Starting graceful shutdown...\u001b[39m","timestamp":"2025-09-05 11:17:35:1735"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Gatas News API Server started successfully!\u001b[39m","timestamp":"2025-09-05 11:17:56:1756"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-05 11:17:56:1756"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-05 11:17:56:1756"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check: http://localhost:8000/health\u001b[39m","timestamp":"2025-09-05 11:17:56:1756"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 API endpoint: http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-05 11:17:56:1756"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Development mode: Enhanced logging and relaxed rate limits\u001b[39m","timestamp":"2025-09-05 11:17:56:1756"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /health 200 144 - 6.878 ms\u001b[39m","timestamp":"2025-09-05 11:18:03:183"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":2,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-05 11:18:09:189"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss for key: news-all-page-1, fetching from API\u001b[39m","timestamp":"2025-09-05 11:18:09:189"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mLoaded 110 celebrities from file\u001b[39m","timestamp":"2025-09-05 11:18:09:189"}
+{"error":"External API Error: News API key is not configured","ip":"::1","level":"\u001b[31merror\u001b[39m","message":"\u001b[31mExternal API Error: News API key is not configured - GET /api/v1/news - ::1\u001b[39m","method":"GET","path":"/api/v1/news","stack":"Error: External API Error: News API key is not configured\n    at new ExternalAPIError (/Users/juansilvalopes/Documents/GitHub/gatas-news/apps/api/src/types/errors.ts:37:5)\n    at NewsService.fetchArticlesForCelebrities (/Users/juansilvalopes/Documents/GitHub/gatas-news/apps/api/src/services/newsService.ts:111:13)\n    at NewsService.getNews (/Users/juansilvalopes/Documents/GitHub/gatas-news/apps/api/src/services/newsService.ts:74:35)\n    at async /Users/juansilvalopes/Documents/GitHub/gatas-news/apps/api/src/controllers/newsController.ts:22:20","timestamp":"2025-09-05 11:18:09:189","userAgent":"curl/8.7.1"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?limit=2 502 701 - 6.676 ms\u001b[39m","timestamp":"2025-09-05 11:18:09:189"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET / 200 306 - 0.652 ms\u001b[39m","timestamp":"2025-09-05 11:18:17:1817"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mReceived SIGTERM. Starting graceful shutdown...\u001b[39m","timestamp":"2025-09-05 11:18:24:1824"}
