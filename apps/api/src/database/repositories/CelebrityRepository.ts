@@ -402,10 +402,15 @@ export class CelebrityRepository {
 
         await this.create({
           name: name.trim(),
+          slug: name
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-*|-*$/g, ''),
           category,
           priority: 5, // Default priority
-          aliases: [],
-          searchTerms: [name.trim()],
+          aliases: [name.trim().toLowerCase()],
+          searchTerms: [name.trim().toLowerCase()],
           isActive: true,
         });
 

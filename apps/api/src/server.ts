@@ -66,15 +66,17 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
     jobScheduler.stopAllJobs();
 
     // Close server
-    await new Promise<void>((resolve, reject) => {
-      server.close((error?: Error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve();
-        }
+    if (server) {
+      await new Promise<void>((resolve, reject) => {
+        server!.close((error?: Error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        });
       });
-    });
+    }
 
     // Disconnect from databases
     await Promise.all([mongoConnection.disconnect(), redisConnection.disconnect()]);
@@ -88,7 +90,7 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
 };
 
 // Declare server variable
-let server: import('http').Server;
+let server: import('http').Server | undefined;
 
 // Start server with service initialization
 const startServer = async (): Promise<void> => {

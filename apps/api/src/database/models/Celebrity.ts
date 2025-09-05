@@ -141,7 +141,7 @@ CelebritySchema.index({
   description: 'text',
 });
 
-// Pre-save middleware to generate slug
+// Pre-save middleware to generate slug and search terms
 CelebritySchema.pre('save', function (next) {
   if (this.isModified('name')) {
     this.slug = this.name
@@ -153,6 +153,28 @@ CelebritySchema.pre('save', function (next) {
       .replace(/-+/g, '-') // Replace multiple hyphens
       .trim();
   }
+
+  // Generate search terms from name and aliases
+  if (this.isModified('name') || this.isModified('aliases')) {
+    const terms = new Set<string>();
+
+    // Add name
+    if (this.name) {
+      terms.add(this.name.toLowerCase());
+    }
+
+    // Add aliases
+    if (this.aliases && Array.isArray(this.aliases)) {
+      this.aliases.forEach(alias => {
+        if (alias) {
+          terms.add(alias.toLowerCase());
+        }
+      });
+    }
+
+    this.searchTerms = Array.from(terms);
+  }
+
   next();
 });
 

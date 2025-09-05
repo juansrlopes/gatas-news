@@ -202,7 +202,7 @@ export class AdminController {
         },
         scheduler: {
           status: 'operational',
-          jobs: [] as Array<{ name: string; running: boolean; nextRun?: Date }>,
+          jobs: [] as Array<{ name: string; running: boolean; nextRun?: string }>,
         },
       },
       performance: {
@@ -245,7 +245,9 @@ export class AdminController {
       health.services.scheduler.jobs = jobScheduler.getJobsStatus();
     } catch (error) {
       health.services.scheduler.status = 'error';
-      health.services.scheduler.jobs = [{ error: (error as Error).message }];
+      health.services.scheduler.jobs = [
+        { name: 'error', running: false, error: (error as Error).message } as any,
+      ];
     }
 
     // Determine overall health

@@ -258,11 +258,13 @@ export class NewsFetcher {
 
       // Handle rate limiting
       if (axiosError.response?.status === 429) {
-        const retryAfter = axiosError.response.headers['retry-after'] || 60;
-        logger.warn(`Rate limited for ${celebrity}, retrying after ${retryAfter}s`);
+        const retryAfter = axiosError.response.headers?.['retry-after'] || 60;
+        const retryAfterNum =
+          typeof retryAfter === 'string' ? parseInt(retryAfter, 10) : retryAfter;
+        logger.warn(`Rate limited for ${celebrity}, retrying after ${retryAfterNum}s`);
 
         if (retryCount < this.MAX_RETRIES) {
-          await this.delay(retryAfter * 1000);
+          await this.delay(retryAfterNum * 1000);
           return this.fetchArticlesForCelebrity(celebrity, retryCount + 1);
         }
       }

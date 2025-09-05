@@ -180,9 +180,9 @@ export class EnhancedCacheService {
         redis: {
           available: this.isRedisAvailable,
           connected: redisConnection.getConnectionStatus(),
-          info: null as Record<string, unknown> | null,
+          info: undefined as Record<string, unknown> | undefined,
         },
-        memory: nodeCacheService.getStats(),
+        memory: nodeCacheService.getStats() as unknown as Record<string, unknown>,
       };
 
       // Get Redis info if available
@@ -200,7 +200,7 @@ export class EnhancedCacheService {
       logger.error('Error getting cache stats:', error);
       return {
         redis: { available: false, connected: false },
-        memory: nodeCacheService.getStats(),
+        memory: nodeCacheService.getStats() as unknown as Record<string, unknown>,
       };
     }
   }

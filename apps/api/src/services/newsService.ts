@@ -3,6 +3,7 @@ import {
   ArticleFilters,
   PaginationOptions,
 } from '../database/repositories/ArticleRepository';
+import { IArticle } from '../database/models/Article';
 import { enhancedCacheService } from './cacheService';
 import { celebrityService } from './celebrityService';
 import { newsFetcher } from '../jobs/newsFetcher';
@@ -318,13 +319,34 @@ export class NewsService {
 
     try {
       // Try cache first
-      const cached = await enhancedCacheService.get(cacheKey);
+      const cached = await enhancedCacheService.get<{
+        totalArticles: number;
+        totalActiveCelebrities: number;
+        totalSources: number;
+        averageArticlesPerDay: number;
+        topCelebrities: Array<{ celebrity: string; count: number }>;
+        topSources: Array<{ source: string; count: number }>;
+        sentimentBreakdown: Array<{ sentiment: string; count: number }>;
+        recentActivity: Array<{ date: string; count: number }>;
+      }>(cacheKey);
       if (cached) {
         return cached;
       }
 
-      // Get from database
-      const stats = await articleRepository.getStatistics();
+      // Get from database - transform to match expected interface
+      const dbStats = await articleRepository.getStatistics();
+
+      // Transform database stats to match the expected interface
+      const stats = {
+        totalArticles: dbStats.totalArticles,
+        totalActiveCelebrities: 0, // Will be populated from celebrity service
+        totalSources: 0, // Will be calculated from articles
+        averageArticlesPerDay: 0, // Will be calculated
+        topCelebrities: dbStats.articlesByCelebrity || [],
+        topSources: [], // Will be populated from articles
+        sentimentBreakdown: dbStats.articlesBySentiment || [],
+        recentActivity: [], // Will be calculated from recent articles
+      };
 
       // Cache for 1 hour
       await enhancedCacheService.set(cacheKey, stats, { ttl: 3600 });
@@ -393,19 +415,17 @@ export class NewsService {
     isActive: boolean;
   } {
     return {
+      id: article._id?.toString() || '',
       url: article.url,
       title: article.title,
       description: article.description,
-      content: article.content,
-      urlToImage: article.urlToImage,
+      urlToImage: article.urlToImage || '',
       publishedAt: article.publishedAt?.toISOString(),
       source: article.source,
-      author: article.author,
       // Additional fields from our database
       celebrity: article.celebrity,
       sentiment: article.sentiment,
-      tags: article.tags,
-      readingTime: article.readingTime,
+      isActive: article.isActive,
     };
   }
 
@@ -426,7 +446,7 @@ export class NewsService {
 
     let key = `news:`;
 
-    if (searchTerm) {
+    if (searchTerm && typeof searchTerm === 'string') {
       key += `search:${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')}:`;
     }
 
@@ -439,9 +459,9 @@ export class NewsService {
     }
 
     if (dateFrom || dateTo) {
-      key += `date:${dateFrom?.toISOString().split('T')[0] || 'any'}-${
-        dateTo?.toISOString().split('T')[0] || 'any'
-      }:`;
+      const fromStr = dateFrom instanceof Date ? dateFrom.toISOString().split('T')[0] : 'any';
+      const toStr = dateTo instanceof Date ? dateTo.toISOString().split('T')[0] : 'any';
+      key += `date:${fromStr}-${toStr}:`;
     }
 
     key += `page:${page}:limit:${limit}:sort:${sortBy}`;
