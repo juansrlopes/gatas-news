@@ -2,6 +2,7 @@ import * as cron from 'node-cron';
 import { newsFetcher } from './newsFetcher';
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 import logger from '../utils/logger';
+import { Article } from '../database/models/Article';
 
 export class JobScheduler {
   private static instance: JobScheduler;
@@ -168,10 +169,18 @@ export class JobScheduler {
    */
   private async runInitialFetchIfNeeded(): Promise<void> {
     try {
-      const isFetchDue = await newsFetcher.isFetchDue();
+      // CRITICAL FIX: Always check article count, not just fetch logs
+      const articleCount = await Article.countDocuments({ isActive: true });
 
-      if (isFetchDue) {
-        logger.info('🚀 Running initial news fetch (no recent data found)...');
+      const isFetchDue = await newsFetcher.isFetchDue();
+      const shouldFetch = isFetchDue || articleCount === 0;
+
+      if (shouldFetch) {
+        if (articleCount === 0) {
+          logger.info('🚀 Running initial news fetch (no articles in database)...');
+        } else {
+          logger.info('🚀 Running initial news fetch (fetch is due)...');
+        }
 
         // Run in background to not block server startup
         setImmediate(async () => {

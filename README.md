@@ -119,9 +119,10 @@ gatas-news/
 Create `apps/api/.env` with the following variables:
 
 ```bash
-# News API Configuration
+# News API Configuration (CRITICAL - Server will crash if all keys are rate limited)
 NEWS_API_KEY=your_newsapi_key_here
 NEWS_API_KEY_BACKUP=backup_key_here
+NEWS_API_KEY_BACKUP_2=third_backup_key_here
 
 # Database Configuration
 MONGODB_URI=mongodb://localhost:27017/gatas-news
@@ -307,9 +308,17 @@ redis-cli ping
 
 **No articles appearing**
 
-- Check if NewsAPI key is valid
+- Check if NewsAPI key is valid and not rate limited
+- API will crash on startup if all keys are rate limited with clear error message
 - Trigger manual fetch: `curl -X POST http://localhost:8000/api/v1/admin/fetch/trigger`
 - Check API logs for errors
+
+**API crashes on startup with "FATAL ERROR: ALL API KEYS ARE RATE LIMITED!"**
+
+- NewsAPI free accounts are limited to 100 requests per 24 hours
+- Wait ~24 hours for rate limits to reset
+- Get additional API keys from [NewsAPI.org](https://newsapi.org/register)
+- Consider upgrading to a paid NewsAPI plan for higher limits
 
 **Images not loading**
 

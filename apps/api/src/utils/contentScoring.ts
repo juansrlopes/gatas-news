@@ -379,7 +379,8 @@ export const CONTENT_TYPES = {
 export function analyzePortugueseContent(
   title: string,
   description?: string,
-  sourceUrl?: string
+  sourceUrl?: string,
+  celebrityName?: string
 ): ContentScore {
   // Normalize text for consistent analysis
   const titleLower = (title || '').toLowerCase();
@@ -391,6 +392,32 @@ export function analyzePortugueseContent(
   let relevance = 0;
   let contentType = 'unknown';
   const reasons: string[] = [];
+
+  // PHASE 1 ENHANCEMENT: Celebrity name prominence scoring
+  if (celebrityName) {
+    const celebrityLower = celebrityName.toLowerCase();
+
+    // Major boost if celebrity name is in title
+    if (titleLower.includes(celebrityLower)) {
+      relevance += 30;
+      reasons.push(`Celebrity name in title: ${celebrityName}`);
+    }
+
+    // Medium boost if celebrity name is in first part of description
+    const firstSentence = descLower.split('.')[0] || '';
+    if (firstSentence.includes(celebrityLower)) {
+      relevance += 20;
+      reasons.push(`Celebrity name in first sentence`);
+    }
+
+    // Penalty if celebrity name only appears at the end (likely just mentioned)
+    const lastPart = fullText.slice(-100); // Last 100 characters
+    const firstPart = fullText.slice(0, 200); // First 200 characters
+    if (lastPart.includes(celebrityLower) && !firstPart.includes(celebrityLower)) {
+      relevance -= 15;
+      reasons.push(`Celebrity only mentioned at end - likely not main subject`);
+    }
+  }
 
   // Check for high-value keywords
   const highValueMatches = PORTUGUESE_KEYWORDS.highValue.filter(keyword =>

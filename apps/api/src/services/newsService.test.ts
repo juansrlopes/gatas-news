@@ -19,7 +19,7 @@ describe('NewsService', () => {
         sortBy: 'publishedAt' as const,
       };
 
-      const result = (newsService as any).generateCacheKey(filters);
+      const result = newsService.generateCacheKey(filters);
 
       expect(result).toBe('news:page:1:limit:20:sort:publishedAt');
     });
@@ -32,7 +32,7 @@ describe('NewsService', () => {
         searchTerm: 'music',
       };
 
-      const result = (newsService as any).generateCacheKey(filters);
+      const result = newsService.generateCacheKey(filters);
 
       expect(result).toBe('news:search:music:page:1:limit:20:sort:publishedAt');
     });
@@ -45,7 +45,7 @@ describe('NewsService', () => {
         celebrity: 'Taylor Swift',
       };
 
-      const result = (newsService as any).generateCacheKey(filters);
+      const result = newsService.generateCacheKey(filters);
 
       expect(result).toBe('news:celebrity:Taylor Swift:page:1:limit:20:sort:publishedAt');
     });

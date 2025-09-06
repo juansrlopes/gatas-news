@@ -1,17 +1,10 @@
-import { CelebrityRepository, celebrityRepository } from './CelebrityRepository';
-import { Celebrity, ICelebrity } from '../models/Celebrity';
-import {
-  createCelebrityData,
-  createMultipleCelebrities,
-  createInactiveCelebrity,
-  createHighPriorityCelebrity,
-} from '../../test/factories';
+import { celebrityRepository } from './CelebrityRepository';
+import { createCelebrityData, createInactiveCelebrity } from '../../test/factories';
 import {
   createTestCelebrity,
   createMultipleTestCelebrities,
   clearDatabase,
   countCelebrities,
-  expectCelebrityToMatch,
   expectValidCelebrityStructure,
 } from '../../test/helpers';
 

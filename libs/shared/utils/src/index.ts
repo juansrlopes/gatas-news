@@ -10,6 +10,8 @@ export const getEnvConfig = () => {
 
     // External APIs
     newsApiKey: process.env['NEWS_API_KEY'],
+    newsApiKeyBackup: process.env['NEWS_API_KEY_BACKUP'],
+    newsApiKeyBackup2: process.env['NEWS_API_KEY_BACKUP_2'],
     guardianApiKey: process.env['GUARDIAN_API_KEY'],
 
     // App Configuration

@@ -11,6 +11,11 @@ import {
   sortByDate,
 } from '../../../../libs/shared/utils/src/index';
 import { Article as ArticleType, NewsApiResponse } from '../../../../libs/shared/types/src/index';
+
+// Extended article type with celebrity information for processing
+interface ArticleWithCelebrity extends ArticleType {
+  celebrity: string;
+}
 import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
 import logger from '../utils/logger';
 
@@ -174,13 +179,13 @@ export class NewsFetcher {
     celebrities: string[],
     config: ReturnType<typeof getEnvConfig>
   ): Promise<{
-    articles: ArticleType[];
+    articles: ArticleWithCelebrity[];
     totalArticles: number;
     apiCallsUsed: number;
     rateLimitRemaining?: number;
     rateLimitReset?: Date;
   }> {
-    const allArticles: ArticleType[] = [];
+    const allArticles: ArticleWithCelebrity[] = [];
     let apiCallsUsed = 0;
     let rateLimitRemaining: number | undefined;
     let rateLimitReset: Date | undefined;
@@ -241,7 +246,7 @@ export class NewsFetcher {
     config: ReturnType<typeof getEnvConfig>,
     retryCount: number = 0
   ): Promise<{
-    articles: ArticleType[];
+    articles: ArticleWithCelebrity[];
     rateLimitRemaining?: number;
     rateLimitReset?: Date;
   }> {
@@ -271,13 +276,19 @@ export class NewsFetcher {
 
       const articles = response.data.articles || [];
 
+      // Add celebrity name to each article for later processing
+      const articlesWithCelebrity = articles.map(article => ({
+        ...article,
+        celebrity: celebrity, // Assign the celebrity name to each article
+      }));
+
       logger.debug(`Fetched ${articles.length} articles for ${celebrity}`, {
         rateLimitRemaining,
         rateLimitReset,
       });
 
       return {
-        articles,
+        articles: articlesWithCelebrity,
         rateLimitRemaining,
         rateLimitReset,
       };
@@ -322,7 +333,7 @@ export class NewsFetcher {
    * Process and store articles in database
    */
   private async processAndStoreArticles(
-    articles: ArticleType[],
+    articles: ArticleWithCelebrity[],
     celebrities: string[]
   ): Promise<{
     newArticlesAdded: number;
@@ -336,20 +347,17 @@ export class NewsFetcher {
 
     // Filter articles that are actually about the celebrities AND have good visual content
     const relevantArticles = articles.filter(article => {
-      // First check if it's about a celebrity
-      const isAboutCelebrity = celebrities.some(celebrity =>
-        isArticleAboutCelebrity(article, celebrity)
-      );
+      // Article already has celebrity name assigned from fetch
+      if (!article.celebrity) return false;
 
-      if (!isAboutCelebrity) return false;
-
-      // Then check content quality using Portuguese scoring (Phase 1 enhanced)
+      // Check content quality using Portuguese scoring (Phase 1 enhanced)
       const contentScore = analyzePortugueseContent(
         article.title,
         article.description,
-        article.url
+        article.url,
+        article.celebrity // Pass celebrity name for enhanced relevance scoring
       );
-      const keepArticle = shouldKeepArticle(contentScore, 25); // Balanced threshold for quality content
+      const keepArticle = shouldKeepArticle(contentScore, 10); // Lowered threshold for testing
 
       // Only log filtered articles in development mode
       if (!keepArticle && process.env.NODE_ENV === 'development') {
@@ -395,12 +403,7 @@ export class NewsFetcher {
           // Find which celebrity this article is about
           const celebrity = celebrities.find(c => isArticleAboutCelebrity(article, c)) || 'unknown';
 
-          // Calculate content score for metadata (Phase 1 enhanced)
-          const contentScore = analyzePortugueseContent(
-            article.title,
-            article.description,
-            article.url
-          );
+          // Content scoring is done during filtering phase
 
           articlesToInsert.push({
             url: article.url,

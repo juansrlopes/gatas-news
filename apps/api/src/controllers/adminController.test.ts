@@ -125,33 +125,9 @@ describe('Admin Controller', () => {
 
   describe('GET /api/v1/admin/fetch/logs', () => {
     it('should return fetch logs with pagination', async () => {
-      const mockLogs = {
-        logs: [
-          {
-            _id: '1',
-            celebrity: 'Taylor Swift',
-            status: 'success',
-            articlesFound: 10,
-            articlesAdded: 8,
-            errors: [],
-            startTime: new Date(),
-            endTime: new Date(),
-            duration: 5000,
-          },
-        ],
-        totalCount: 1,
-        totalPages: 1,
-        currentPage: 1,
-        hasMore: false,
-      };
+      // Mock logs structure (not used in this test)
 
       // Mock the query method to return the logs
-      const mockQuery = {
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue(mockLogs.logs),
-      };
 
       // We need to mock the FetchLog model's find method
       // Since we can't easily mock Mongoose models in this context,
@@ -191,7 +167,6 @@ describe('Admin Controller', () => {
   describe('DELETE /api/v1/admin/fetch/logs', () => {
     it('should clear old logs', async () => {
       // Mock successful log deletion
-      const mockDeleteResult = { deletedCount: 50 };
 
       const response = await request(app).delete('/api/v1/admin/fetch/logs').query({ days: 30 });
 

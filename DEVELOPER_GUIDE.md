@@ -26,6 +26,36 @@ npm run logs:api                # View API logs
 npm run services:status         # Check service status
 ```
 
+## 🔑 NEW: API Key Validation Feature
+
+**IMPORTANT**: The API now validates all NewsAPI keys on startup and crashes with a clear error if all keys are rate limited.
+
+### What This Means for Developers
+
+```bash
+# When you start the API, it will:
+# 1. Test all configured API keys (NEWS_API_KEY, NEWS_API_KEY_BACKUP, NEWS_API_KEY_BACKUP_2)
+# 2. Use the first working key
+# 3. CRASH with detailed error if all keys are rate limited
+
+# Example error message:
+# 🚨 FATAL ERROR: ALL API KEYS ARE RATE LIMITED!
+# NewsAPI Developer Account Limits:
+# - 100 requests per 24 hours
+# - 50 requests available every 12 hours
+# Solutions:
+# 1. ⏰ WAIT: Keys will reset in ~24 hours
+# 2. 🔑 NEW KEYS: Get additional keys from https://newsapi.org/register
+# 3. 💰 UPGRADE: Purchase paid NewsAPI plan
+```
+
+### Benefits
+
+- **No more guessing**: You'll know immediately if keys are rate limited
+- **Clear solutions**: Tells you exactly what to do
+- **Prevents wasted time**: Server won't start with broken keys
+- **Professional error handling**: Clean, informative messages
+
 ## 📁 Key Files to Know
 
 ### Backend (API)
@@ -33,6 +63,7 @@ npm run services:status         # Check service status
 ```
 apps/api/src/
 ├── server.ts                   # Entry point and startup
+├── utils/apiKeyValidator.ts    # NEW: API key validation on startup
 ├── jobs/newsFetcher.ts         # News fetching logic
 ├── utils/contentScoring.ts     # Portuguese content filtering
 ├── services/newsService.ts     # Business logic for news
@@ -129,13 +160,24 @@ npm run services:start
 
 # Check environment file exists
 ls -la apps/api/.env
+
+# NEW: Check for API key rate limit errors
+# If you see "FATAL ERROR: ALL API KEYS ARE RATE LIMITED!"
+# - Wait ~24 hours for rate limits to reset
+# - Get additional API keys from https://newsapi.org/register
+# - Check current key status manually:
+curl -s "https://newsapi.org/v2/everything?q=test&apiKey=YOUR_KEY&pageSize=1" | jq '.status'
 ```
 
 ### No Articles Fetched
 
 ```bash
+# NEW: API now validates keys on startup, so if server starts, keys should work
 # Check API key is set
 grep NEWS_API_KEY apps/api/.env
+
+# Test API key manually (if server won't start)
+curl -s "https://newsapi.org/v2/everything?q=test&apiKey=YOUR_KEY&pageSize=1" | jq '.status'
 
 # Check database connection
 npm run db:status

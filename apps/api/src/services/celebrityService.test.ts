@@ -1,12 +1,8 @@
-import { CelebrityService, celebrityService } from './celebrityService';
+import { celebrityService } from './celebrityService';
 import { celebrityRepository } from '../database/repositories/CelebrityRepository';
 import { enhancedCacheService } from './cacheService';
 import { ICelebrity } from '../database/models/Celebrity';
-import {
-  createCelebrityData,
-  createMultipleCelebrities,
-  createHighPriorityCelebrity,
-} from '../test/factories';
+import { createCelebrityData, createHighPriorityCelebrity } from '../test/factories';
 
 // Mock dependencies
 jest.mock('../database/repositories/CelebrityRepository');

@@ -108,9 +108,10 @@ apps/api/
 ### Environment Variables
 
 ```bash
-# News API Configuration
+# News API Configuration (CRITICAL - Server validates on startup)
 NEWS_API_KEY=your_newsapi_key_here           # Primary API key
 NEWS_API_KEY_BACKUP=backup_key_here          # Backup API key
+NEWS_API_KEY_BACKUP_2=third_backup_key_here  # Third backup API key
 
 # Database Configuration
 MONGODB_URI=mongodb://localhost:27017/gatas-news
@@ -124,6 +125,32 @@ NODE_ENV=development                         # development | production
 ```
 
 ## 📊 Key Components
+
+### 🔑 API Key Validation (`utils/apiKeyValidator.ts`)
+
+**NEW FEATURE**: Automatic API key validation on server startup prevents issues with rate-limited keys.
+
+**How it works:**
+
+- Tests all configured API keys on server startup
+- Crashes server with clear error message if all keys are rate limited
+- Provides detailed solutions (wait, get new keys, upgrade plan)
+- Prevents wasted development time with non-working keys
+
+**Configuration:**
+
+```bash
+# Server tests keys in this order and uses first working one
+NEWS_API_KEY=primary_key
+NEWS_API_KEY_BACKUP=backup_key
+NEWS_API_KEY_BACKUP_2=third_key
+```
+
+**Error handling:**
+
+- Rate limited keys: Clear message with reset time and solutions
+- Invalid keys: Validation error with instructions
+- Network errors: Graceful handling with retry suggestions
 
 ### 🤖 News Fetcher (`jobs/newsFetcher.ts`)
 
@@ -365,9 +392,16 @@ lsof -ti:8000
 lsof -ti:8000 | xargs kill -9
 ```
 
+**API crashes on startup with rate limit error:**
+
+1. All configured API keys are rate limited (100 requests/24 hours exceeded)
+2. Wait ~24 hours for rate limits to reset
+3. Get additional API keys from [NewsAPI.org](https://newsapi.org/register)
+4. Consider upgrading to paid NewsAPI plan
+
 **No articles fetched:**
 
-1. Check NewsAPI key validity
+1. Check NewsAPI key validity (server validates on startup)
 2. Verify MongoDB connection
 3. Check content scoring threshold (may be too high)
 4. Review fetch logs in database

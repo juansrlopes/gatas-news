@@ -53,17 +53,16 @@ class RedisConnection {
         const timeout = setTimeout(() => {
           reject(new Error('Redis connection timeout after 5 seconds'));
         }, 5000);
-        
+
         if (this.client) {
           this.client.once('connect', () => {
             clearTimeout(timeout);
             resolve(true);
           });
-          this.client.once('error', (error) => {
+          this.client.once('error', error => {
             clearTimeout(timeout);
             reject(error);
           });
-          
           // Trigger connection if using lazy connect
           this.client.connect().catch(reject);
         }

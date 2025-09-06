@@ -20,7 +20,7 @@ describe('Celebrity Controller', () => {
       ];
 
       mockCelebrityRepository.findWithFilters.mockResolvedValue({
-        celebrities: mockCelebrities as any,
+        celebrities: mockCelebrities,
         totalCount: 2,
         totalPages: 1,
         currentPage: 1,
@@ -109,7 +109,7 @@ describe('Celebrity Controller', () => {
       const mockResults = [createCelebrityData({ name: 'Taylor Swift' })];
 
       mockCelebrityRepository.search.mockResolvedValue({
-        celebrities: mockResults as any,
+        celebrities: mockResults,
         totalCount: 1,
         totalPages: 1,
         currentPage: 1,
@@ -153,7 +153,7 @@ describe('Celebrity Controller', () => {
   describe('GET /api/v1/celebrities/:id', () => {
     it('should return celebrity by ID', async () => {
       const mockCelebrity = createCelebrityData({ name: 'Test Celebrity' });
-      mockCelebrityRepository.findById.mockResolvedValue(mockCelebrity as any);
+      mockCelebrityRepository.findById.mockResolvedValue(mockCelebrity);
 
       const response = await request(app).get('/api/v1/celebrities/507f1f77bcf86cd799439011');
 
@@ -189,7 +189,7 @@ describe('Celebrity Controller', () => {
       };
 
       const mockCreated = createCelebrityData(newCelebrityData);
-      mockCelebrityRepository.create.mockResolvedValue(mockCreated as any);
+      mockCelebrityRepository.create.mockResolvedValue(mockCreated);
 
       const response = await request(app).post('/api/v1/celebrities').send(newCelebrityData);
 
@@ -228,7 +228,7 @@ describe('Celebrity Controller', () => {
       const updateData = { priority: 9, description: 'Updated description' };
       const mockUpdated = createCelebrityData({ ...updateData, name: 'Test Celebrity' });
 
-      mockCelebrityRepository.update.mockResolvedValue(mockUpdated as any);
+      mockCelebrityRepository.update.mockResolvedValue(mockUpdated);
 
       const response = await request(app)
         .put('/api/v1/celebrities/507f1f77bcf86cd799439011')
@@ -255,7 +255,7 @@ describe('Celebrity Controller', () => {
   describe('DELETE /api/v1/celebrities/:id', () => {
     it('should soft delete celebrity', async () => {
       const mockDeleted = createCelebrityData({ name: 'Test Celebrity', isActive: false });
-      mockCelebrityRepository.softDelete.mockResolvedValue(mockDeleted as any);
+      mockCelebrityRepository.softDelete.mockResolvedValue(mockDeleted);
 
       const response = await request(app).delete('/api/v1/celebrities/507f1f77bcf86cd799439011');
 

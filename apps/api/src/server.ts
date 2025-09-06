@@ -7,6 +7,7 @@ import { getEnvConfig } from '../../../libs/shared/utils/src/index';
 import { mongoConnection } from './database/connections/mongodb';
 import { redisConnection } from './database/connections/redis';
 import { jobScheduler } from './jobs/scheduler';
+import { validateApiKeysOnStartup } from './utils/apiKeyValidator';
 
 // Load environment variables from .env file
 // Primary location: apps/api/.env
@@ -50,6 +51,10 @@ const initializeServices = async (): Promise<void> => {
     logger.info('🔧 Initializing services...');
     console.log('');
 
+    // CRITICAL: Validate API keys first - server will crash if rate limited
+    logger.info('🔑 Validating NewsAPI keys...');
+    await validateApiKeysOnStartup(config);
+
     // Connect to MongoDB
     logger.info('📊 Connecting to MongoDB...');
     await mongoConnection.connect();
@@ -58,7 +63,7 @@ const initializeServices = async (): Promise<void> => {
     logger.info('🚀 Connecting to Redis...');
     try {
       await redisConnection.connect();
-    } catch (error) {
+    } catch {
       logger.warn('⚠️  Redis connection failed, using memory cache only');
     }
 

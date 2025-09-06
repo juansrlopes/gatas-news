@@ -243,11 +243,9 @@ export class AdminController {
     try {
       // Check Scheduler
       health.services.scheduler.jobs = jobScheduler.getJobsStatus();
-    } catch (error) {
+    } catch {
       health.services.scheduler.status = 'error';
-      health.services.scheduler.jobs = [
-        { name: 'error', running: false, error: (error as Error).message } as any,
-      ];
+      health.services.scheduler.jobs = [{ name: 'scheduler-error', running: false }];
     }
 
     // Determine overall health

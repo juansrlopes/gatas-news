@@ -1,5 +1,4 @@
 import { ArticleRepository } from './ArticleRepository';
-import { IArticle } from '../models/Article';
 
 describe('ArticleRepository', () => {
   let articleRepository: ArticleRepository;

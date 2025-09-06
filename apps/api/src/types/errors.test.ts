@@ -1,10 +1,4 @@
-import {
-  APIError,
-  ValidationError,
-  NotFoundError,
-  RateLimitError,
-  ExternalAPIError,
-} from './errors';
+import { APIError, ValidationError, NotFoundError } from './errors';
 
 describe('API Error Classes', () => {
   describe('APIError', () => {
