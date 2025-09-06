@@ -19,15 +19,32 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    domains: ['images.unsplash.com', 'example.com'],
+    domains: [
+      'images.unsplash.com',
+      'cdn.cnn.com',
+      'media.cnn.com',
+      'static01.nyt.com',
+      'www.bbc.com',
+      'ichef.bbci.co.uk',
+      'cdn.vox-cdn.com',
+      'www.reuters.com',
+      'img.estadao.com.br',
+      'conteudo.imguol.com.br',
+      'uploads.metropoles.com',
+      'www.cnnbrasil.com.br',
+      'cdn-images-1.medium.com',
+      'miro.medium.com',
+    ],
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
+        hostname: '**',
         port: '',
         pathname: '/**',
       },
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 };
 

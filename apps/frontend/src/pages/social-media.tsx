@@ -1,8 +1,10 @@
 import Head from 'next/head';
 import Header from '../components/Header';
 import SocialMedia from '../components/SocialMedia';
-import config from '../config/env';
+import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 const SocialMediaPage = () => {
+  const config = getEnvConfig();
+
   return (
     <div>
       <Head>

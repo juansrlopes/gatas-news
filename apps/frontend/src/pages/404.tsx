@@ -1,9 +1,11 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import Header from '../components/Header';
-import config from '../config/env';
+import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 
 const Custom404 = () => {
+  const config = getEnvConfig();
+
   return (
     <div>
       <Head>

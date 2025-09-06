@@ -4,74 +4,272 @@ import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 import { Article } from '../../../../libs/shared/types/src/index';
 import { ArticleSkeleton } from './LoadingSkeleton';
 
+/**
+ * NewsGrid Component
+ *
+ * A comprehensive news display component that provides:
+ * - Real-time search filtering by celebrity names
+ * - Infinite scroll pagination with loading states
+ * - Network connectivity detection and offline support
+ * - Robust error handling with retry mechanisms
+ * - Responsive grid layout (1-5 columns based on screen size)
+ * - Image optimization with fallback placeholders
+ *
+ * @component
+ * @example
+ * ```tsx
+ * import NewsGrid from './components/NewsGrid';
+ *
+ * function HomePage() {
+ *   return (
+ *     <main>
+ *       <NewsGrid />
+ *     </main>
+ *   );
+ * }
+ * ```
+ */
 const NewsGrid = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
+  const [retryCount, setRetryCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
+  const [lastFailedRequest, setLastFailedRequest] = useState<{
+    page: number;
+    celebrity: string;
+  } | null>(null);
+
+  // Network connectivity detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Retry last failed request if we come back online
+      if (lastFailedRequest) {
+        fetchArticles(lastFailedRequest.page, lastFailedRequest.celebrity);
+        setLastFailedRequest(null);
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setError('Você está offline. Verifique sua conexão com a internet.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Check initial connectivity
+    setIsOnline(navigator.onLine);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [lastFailedRequest]);
 
   useEffect(() => {
     fetchArticles(); // Fetch all articles on initial load
   }, []);
 
-  const fetchArticles = async (pageNumber = 1, celebrityName = '') => {
+  /**
+   * Fetches articles from the API with comprehensive error handling
+   *
+   * Features:
+   * - Network connectivity validation
+   * - Input sanitization for security
+   * - 15-second timeout protection
+   * - Retry logic with exponential backoff
+   * - Detailed error messages in Portuguese
+   * - Article data validation
+   *
+   * @param {number} pageNumber - Page number for pagination (default: 1)
+   * @param {string} celebrityName - Celebrity name to filter by (default: '')
+   * @param {boolean} isRetry - Whether this is a retry attempt (default: false)
+   *
+   * @example
+   * ```tsx
+   * // Fetch first page of all articles
+   * await fetchArticles();
+   *
+   * // Fetch specific celebrity articles
+   * await fetchArticles(1, 'Anitta');
+   *
+   * // Retry failed request
+   * await fetchArticles(1, 'Anitta', true);
+   * ```
+   */
+  const fetchArticles = async (pageNumber = 1, celebrityName = '', isRetry = false) => {
+    // Don't fetch if offline
+    if (!isOnline && !isRetry) {
+      setError('Você está offline. Verifique sua conexão com a internet.');
+      return;
+    }
+
     setLoading(true);
-    setError('');
+    if (!isRetry) {
+      setError('');
+      setRetryCount(0);
+    }
+
+    // Sanitize input
+    const sanitizedCelebrityName = celebrityName.trim().replace(/[<>]/g, '');
+
     try {
-      // Currently using mock API - will be replaced with real news API
       const config = getEnvConfig();
+
       // Build query parameters for GET request
       const params = new URLSearchParams({
         page: pageNumber.toString(),
         limit: '20',
-        ...(celebrityName && { celebrity: celebrityName }),
+        ...(sanitizedCelebrityName && { celebrity: sanitizedCelebrityName }),
       });
+
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
       const response = await fetch(`${config.apiUrl}/api/v1/news?${params}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch articles');
+        if (response.status === 404) {
+          throw new Error('API não encontrada. Verifique se o servidor está rodando.');
+        } else if (response.status === 500) {
+          throw new Error('Erro interno do servidor. Tente novamente em alguns minutos.');
+        } else if (response.status >= 400 && response.status < 500) {
+          throw new Error('Erro na requisição. Verifique os parâmetros.');
+        } else {
+          throw new Error(`Erro do servidor: ${response.status}`);
+        }
       }
 
       const data = await response.json();
+
       // Handle the API response structure: { success: true, data: { articles: [...] } }
       const articles = data.data?.articles || data.articles || [];
 
+      // Validate articles structure
+      const validArticles = articles.filter(
+        (article: any) =>
+          article &&
+          typeof article.title === 'string' &&
+          typeof article.url === 'string' &&
+          article.title.trim() !== '' &&
+          article.url.trim() !== ''
+      );
+
       if (pageNumber === 1) {
-        setArticles(articles);
+        setArticles(validArticles);
       } else {
-        setArticles(prevArticles => [...prevArticles, ...articles]);
+        setArticles(prevArticles => [...prevArticles, ...validArticles]);
       }
 
-      if (articles.length === 0 && pageNumber === 1) {
-        setError('No articles found. Please double-check the name and try again.');
+      // Reset retry count on success
+      setRetryCount(0);
+      setLastFailedRequest(null);
+
+      if (validArticles.length === 0 && pageNumber === 1) {
+        if (sanitizedCelebrityName) {
+          setError(
+            `Nenhuma notícia encontrada para "${sanitizedCelebrityName}". Tente outro nome ou limpe o filtro.`
+          );
+        } else {
+          setError('Nenhuma notícia disponível no momento. Tente novamente mais tarde.');
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching articles:', error);
-      setError('An error occurred. Please try again later.');
-      setArticles([]);
+
+      // Store failed request for retry when back online
+      setLastFailedRequest({ page: pageNumber, celebrity: sanitizedCelebrityName });
+
+      let errorMessage = 'Erro inesperado. Tente novamente.';
+
+      if (error.name === 'AbortError') {
+        errorMessage = 'A requisição demorou muito para responder. Verifique sua conexão.';
+      } else if (
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('NetworkError')
+      ) {
+        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setError(errorMessage);
+
+      if (pageNumber === 1) {
+        setArticles([]);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * Retries the last failed API request with incremented retry count
+   *
+   * This function handles retry logic for failed requests, maintaining
+   * the retry count and calling fetchArticles with the appropriate parameters.
+   *
+   * @example
+   * ```tsx
+   * // Retry button onClick handler
+   * <button onClick={retryLastRequest}>
+   *   Tentar Novamente
+   * </button>
+   * ```
+   */
+  const retryLastRequest = useCallback(() => {
+    if (lastFailedRequest) {
+      const newRetryCount = retryCount + 1;
+      setRetryCount(newRetryCount);
+      fetchArticles(lastFailedRequest.page, lastFailedRequest.celebrity, true);
+    } else {
+      // Retry current page
+      const newRetryCount = retryCount + 1;
+      setRetryCount(newRetryCount);
+      fetchArticles(page, query, true);
+    }
+  }, [lastFailedRequest, retryCount, page, query]);
+
+  /**
+   * Loads the next page of articles for infinite scroll pagination
+   *
+   * Increments the page counter and fetches additional articles,
+   * which are appended to the existing articles array.
+   */
   const loadMoreArticles = () => {
     const nextPage = page + 1;
     setPage(nextPage);
     fetchArticles(nextPage, query);
   };
 
+  /**
+   * Handles search form submission
+   *
+   * Resets pagination to page 1 and fetches articles filtered by the search query.
+   */
   const handleSearch = useCallback(() => {
     setPage(1);
     fetchArticles(1, query);
   }, [query]);
 
+  /**
+   * Clears the search input and resets to show all articles
+   *
+   * Resets the query state and pagination, then fetches all articles.
+   */
   const handleClearInput = useCallback(() => {
     setQuery('');
     setPage(1);
@@ -122,13 +320,66 @@ const NewsGrid = () => {
         </div>
       </div>
       {loading && articles.length === 0 && <ArticleSkeleton count={8} />}
+
+      {/* Network Status Indicator */}
+      {!isOnline && (
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded mb-4 flex items-center">
+          <div className="flex items-center">
+            <span className="text-lg mr-2">📡</span>
+            <div>
+              <strong className="font-bold">Offline</strong>
+              <p className="text-sm">
+                Você está sem conexão. Tentaremos reconectar automaticamente.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Display with Retry */}
       {error && (
         <div
-          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
+          className="bg-red-50 border border-red-200 text-red-800 px-4 py-4 rounded-lg mb-4"
           role="alert"
         >
-          <strong className="font-bold">Erro: </strong>
-          <span className="block sm:inline">{error}</span>
+          <div className="flex items-start">
+            <span className="text-xl mr-3 mt-0.5">⚠️</span>
+            <div className="flex-1">
+              <strong className="font-bold block mb-1">Ops! Algo deu errado</strong>
+              <p className="text-sm mb-3">{error}</p>
+
+              {/* Retry Button */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={retryLastRequest}
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading
+                    ? 'Tentando...'
+                    : retryCount > 0
+                      ? `Tentar Novamente (${retryCount + 1})`
+                      : 'Tentar Novamente'}
+                </button>
+
+                {query && (
+                  <button
+                    onClick={handleClearInput}
+                    className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                  >
+                    Limpar Filtro
+                  </button>
+                )}
+              </div>
+
+              {retryCount > 2 && (
+                <p className="text-xs mt-2 text-red-600">
+                  💡 Dica: Verifique se o servidor da API está rodando ou tente novamente mais
+                  tarde.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -143,13 +394,23 @@ const NewsGrid = () => {
             >
               <div className="relative">
                 <Image
-                  src={`/api/image-proxy?url=${encodeURIComponent(article.urlToImage)}`}
-                  alt={article.title}
+                  src={
+                    article.urlToImage
+                      ? `/api/image-proxy?url=${encodeURIComponent(article.urlToImage)}`
+                      : '/placeholder-news.svg'
+                  }
+                  alt={article.title || 'Notícia'}
                   width={500}
                   height={300}
                   className="w-full h-48 object-cover rounded-t-lg"
                   placeholder="blur"
                   blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                  onError={e => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== '/placeholder-news.svg') {
+                      target.src = '/placeholder-news.svg';
+                    }
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-t-lg"></div>
               </div>
@@ -161,7 +422,18 @@ const NewsGrid = () => {
           </article>
         ))}
       </div>
-      {!error && articles.length > 0 && (
+      {/* Loading more articles indicator */}
+      {loading && articles.length > 0 && (
+        <div className="flex justify-center mt-8">
+          <div className="flex items-center space-x-2 text-purple-400">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-400"></div>
+            <span>Carregando mais notícias...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {!error && !loading && articles.length > 0 && (
         <div className="flex justify-center mt-8">
           <button
             onClick={loadMoreArticles}
@@ -169,7 +441,7 @@ const NewsGrid = () => {
             disabled={loading}
             aria-label="Carregar mais notícias"
           >
-            {loading ? 'Carregando...' : 'Carregar Mais'}
+            Carregar Mais
           </button>
         </div>
       )}

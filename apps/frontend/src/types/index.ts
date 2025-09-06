@@ -61,15 +61,6 @@ export interface PaginationState {
 }
 
 // Hook return types
-export interface UseArticlesReturn {
-  articles: Article[];
-  loading: boolean;
-  error: string;
-  fetchArticles: (page?: number, query?: string) => Promise<void>;
-  loadMore: () => void;
-  hasMore: boolean;
-}
-
 export interface UseSearchReturn {
   query: string;
   setQuery: (query: string) => void;

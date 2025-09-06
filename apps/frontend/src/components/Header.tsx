@@ -2,6 +2,33 @@
 
 import Link from 'next/link';
 
+/**
+ * Header Component
+ *
+ * Main navigation header for the Gatas News application.
+ * Contains the logo, site title, and navigation links.
+ *
+ * Features:
+ * - Responsive navigation layout
+ * - Hover effects on navigation links
+ * - Beta indicator for development phase
+ * - Semantic HTML structure for accessibility
+ *
+ * @component
+ * @example
+ * ```tsx
+ * import Header from './components/Header';
+ *
+ * function Layout({ children }) {
+ *   return (
+ *     <div>
+ *       <Header />
+ *       <main>{children}</main>
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
 const Header = () => {
   return (
     <header className="text-white p-4">

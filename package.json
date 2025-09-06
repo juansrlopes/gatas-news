@@ -34,7 +34,22 @@
     "logs:api": "tail -f apps/api/logs/combined.log",
     "logs:error": "tail -f apps/api/logs/error.log",
     "clean": "nx reset && rm -rf node_modules && npm install",
-    "kill:port": "lsof -ti:8000 | xargs kill -9 || echo 'No processes on port 8000'"
+    "kill:port": "lsof -ti:8000 | xargs kill -9 || echo 'No processes on port 8000'",
+    "frontend:dev": "cd apps/frontend && npm run dev",
+    "frontend:build": "cd apps/frontend && npm run build",
+    "frontend:start": "cd apps/frontend && npm run start",
+    "frontend:lint": "cd apps/frontend && npm run lint",
+    "frontend:type-check": "cd apps/frontend && npx tsc --noEmit",
+    "frontend:test": "cd apps/frontend && npm run test",
+    "frontend:test:watch": "cd apps/frontend && npm run test:watch",
+    "frontend:test:coverage": "cd apps/frontend && npm run test:coverage",
+    "frontend:analyze": "cd apps/frontend && ANALYZE=true npm run build",
+    "frontend:lighthouse": "lighthouse http://localhost:3000 --output=json --output-path=./lighthouse-report.json",
+    "frontend:clean": "cd apps/frontend && rm -rf .next node_modules/.cache",
+    "frontend:deps": "cd apps/frontend && npm audit && npm outdated",
+    "frontend:preview": "cd apps/frontend && npm run build && npm run start",
+    "kill:frontend": "lsof -ti:3000 | xargs kill -9 || echo 'No processes on port 3000'",
+    "dev:full": "npm run services:start && npm run dev"
   },
   "dependencies": {
     "@types/ioredis": "^4.28.10",

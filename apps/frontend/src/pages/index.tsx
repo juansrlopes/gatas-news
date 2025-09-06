@@ -2,9 +2,11 @@ import Head from 'next/head';
 import Header from '../components/Header';
 import NewsGrid from '../components/NewsGrid';
 import BackToTopButton from '../components/BackToTopButton';
-import config from '../config/env';
+import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 
 const Home = () => {
+  const config = getEnvConfig();
+
   return (
     <div>
       <Head>
