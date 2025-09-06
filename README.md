@@ -175,6 +175,13 @@ Articles are scored on multiple factors:
 - **Pagination**: Efficient handling of large datasets
 - **Background processing**: Non-blocking news fetching
 
+### 🛡️ Dynamic Image Security
+
+- **Smart domain validation**: Auto-validates news domains (.com.br, .globo.com, etc.)
+- **Security monitoring**: Blocks suspicious domains (.tk, .ml, localhost)
+- **Learning system**: Logs new domains for future whitelisting
+- **Graceful fallbacks**: Smart image placeholders when sources fail
+
 ## 🛠️ Development
 
 ### Available Scripts
@@ -303,6 +310,12 @@ redis-cli ping
 - Check if NewsAPI key is valid
 - Trigger manual fetch: `curl -X POST http://localhost:8000/api/v1/admin/fetch/trigger`
 - Check API logs for errors
+
+**Images not loading**
+
+- Check browser console for domain validation errors
+- Verify image proxy: `curl "http://localhost:3000/api/image-proxy?url=https://test-domain.com/image.jpg"`
+- Review blocked domains in console logs
 
 ### Debug Mode
 

@@ -82,12 +82,15 @@ apps/frontend/
 - **Timeout Protection**: 15-second request timeout with graceful fallback
 - **Error Boundaries**: Comprehensive error catching with recovery options
 
-#### **🖼️ Secure Image Proxy**
+#### **🖼️ Dynamic Image Proxy**
 
-- **SSRF Protection**: Whitelist of allowed news domains
+- **Smart Domain Validation**: Auto-validates news domains (.com.br, .globo.com, etc.)
+- **Security Monitoring**: Blocks suspicious domains (.tk, .ml, localhost)
+- **Learning System**: Logs new domains for future whitelisting
+- **SSRF Protection**: Multi-layer security with pattern matching
 - **Content Validation**: Image type and size validation
 - **Caching**: 24-hour cache with proper headers
-- **Fallback**: Custom SVG placeholder for failed images
+- **Graceful Fallbacks**: Smart SVG placeholder for failed images
 
 #### **📱 Responsive Design**
 
@@ -215,21 +218,30 @@ import { ArticleSkeleton } from './LoadingSkeleton';
 
 #### **Image Proxy** (`src/pages/api/image-proxy.ts`)
 
-Secure image proxy with SSRF protection.
+Dynamic image proxy with intelligent domain validation.
 
 **Features:**
 
-- Domain whitelist for security
-- HTTPS-only enforcement
-- Content-Type validation
-- 5MB size limit with 10s timeout
-- Proper caching headers
+- **Dynamic validation**: Auto-validates news domains with pattern matching
+- **Security monitoring**: Blocks suspicious domains and logs attempts
+- **Learning system**: Logs new domains for future whitelisting
+- **HTTPS-only enforcement**: Secure connections required
+- **Content-Type validation**: Image format verification
+- **5MB size limit**: With 10s timeout protection
+- **Proper caching**: 24-hour cache headers
 
 **Usage:**
 
 ```
 GET /api/image-proxy?url=https://example.com/image.jpg
 ```
+
+**Monitoring:**
+
+Check browser console for domain validation logs:
+- `[IMAGE-PROXY] New domain auto-validated`
+- `[IMAGE-PROXY] Domain blocked`
+- `[IMAGE-FAILURE] Domain may need whitelisting`
 
 ## 🔧 Development
 

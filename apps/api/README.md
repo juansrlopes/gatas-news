@@ -386,6 +386,13 @@ lsof -ti:8000 | xargs kill -9
 - **Admin**: 10 requests per 15 minutes per IP
 - **News fetch**: 1 request per minute per IP
 
+### Image Proxy Security
+
+- **Dynamic domain validation**: Auto-validates news domains with pattern matching
+- **Suspicious domain blocking**: Prevents access to .tk, .ml, localhost, private IPs
+- **Security monitoring**: Logs blocked domains for security analysis
+- **HTTPS enforcement**: Only allows secure image sources
+
 ### Security Headers
 
 - Helmet.js for security headers

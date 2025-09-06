@@ -162,6 +162,23 @@ npm run api:news
 # Check browser network tab for errors
 ```
 
+### Images Not Loading
+
+```bash
+# Check image proxy is working
+curl "http://localhost:3000/api/image-proxy?url=https://veja.abril.com.br/test.jpg"
+
+# Check browser console for domain validation logs
+# Look for: [IMAGE-PROXY] or [IMAGE-FAILURE] messages
+
+# Test specific domain validation
+curl "http://localhost:3000/api/image-proxy?url=https://suspicious.tk/test.jpg"
+# Should return: {"error":"Invalid or unauthorized URL"}
+
+# Monitor domain failures in real-time
+# Open browser console while browsing articles
+```
+
 ### Database Issues
 
 ```bash
