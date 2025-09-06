@@ -21,12 +21,18 @@ const NewsGrid = () => {
     try {
       // Currently using mock API - will be replaced with real news API
       const config = getEnvConfig();
-      const response = await fetch(`${config.apiUrl}${config.newsApiEndpoint}`, {
-        method: 'POST',
+      // Build query parameters for GET request
+      const params = new URLSearchParams({
+        page: pageNumber.toString(),
+        limit: '20',
+        ...(celebrityName && { celebrity: celebrityName }),
+      });
+
+      const response = await fetch(`${config.apiUrl}/api/v1/news?${params}`, {
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ page: pageNumber, celebrityName }), // Include page number and celebrity name
       });
 
       if (!response.ok) {
@@ -34,7 +40,8 @@ const NewsGrid = () => {
       }
 
       const data = await response.json();
-      const articles = data.articles || data; // Handle both new format and legacy format
+      // Handle the API response structure: { success: true, data: { articles: [...] } }
+      const articles = data.data?.articles || data.articles || [];
 
       if (pageNumber === 1) {
         setArticles(articles);
