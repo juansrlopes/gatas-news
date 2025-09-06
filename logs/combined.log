@@ -4301,3 +4301,460 @@
 {"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mReceived SIGTERM. Starting graceful shutdown...\u001b[39m","timestamp":"2025-09-06 20:44:41:4441"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 20:59:42:5942","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 20:59:42:5942"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mHEAD /api/v1/health 200 144 - 2.906 ms\u001b[39m","timestamp":"2025-09-06 20:59:54:5954"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":1,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 20:59:59:5959"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:1:limit:1:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 20:59:59:5959"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:1:limit:1:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 20:59:59:5959"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:1:limit:1:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 20:59:59:5959"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 1 articles from database\u001b[39m","page":1,"timestamp":"2025-09-06 20:59:59:5959","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?limit=1 200 808 - 17.542 ms\u001b[39m","timestamp":"2025-09-06 20:59:59:5959"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Scheduled news fetch job starting...\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Starting news fetch job...\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37m🏥 Running hourly health check...\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mSystem health check completed\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: celebrities:active:names\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): celebrities:active:names, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): celebrities:active:names, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mLoaded 100 celebrities from database\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"celebrities":["Taylor Swift","Bella Thorne","Andrea de Andrade","Juli Figueiró","Larissa Sumpani"],"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mProcessing celebrity batch 1/20\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Taylor Swift\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Bella Thorne\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Andrea de Andrade\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Juli Figueiró\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Larissa Sumpani\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Bella Thorne, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Larissa Sumpani, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Taylor Swift, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Juli Figueiró, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Andrea de Andrade, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:00:00:00"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:00:20:020"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:00:20:020"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 - - 2.465 ms\u001b[39m","timestamp":"2025-09-06 21:00:20:020"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Bella Thorne\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Larissa Sumpani\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Taylor Swift\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Bella Thorne, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Juli Figueiró\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Andrea de Andrade\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Juli Figueiró, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Larissa Sumpani, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Andrea de Andrade, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Taylor Swift, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:01:00:10"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Bella Thorne\u001b[39m","timestamp":"2025-09-06 21:02:00:20"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Juli Figueiró\u001b[39m","timestamp":"2025-09-06 21:02:00:20"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Bella Thorne, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:02:00:20"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Larissa Sumpani\u001b[39m","timestamp":"2025-09-06 21:02:00:20"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Andrea de Andrade\u001b[39m","timestamp":"2025-09-06 21:02:00:20"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Taylor Swift\u001b[39m","timestamp":"2025-09-06 21:02:00:20"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Larissa Sumpani, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:02:01:21"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Juli Figueiró, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:02:01:21"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Andrea de Andrade, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:02:01:21"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Taylor Swift, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:02:01:21"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":3,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:02:21:221"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:1:limit:3:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:02:21:221"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:1:limit:3:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:02:21:221"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:1:limit:3:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:02:21:221"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 3 articles from database\u001b[39m","page":1,"timestamp":"2025-09-06 21:02:21:221","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?limit=3 200 2072 - 5.003 ms\u001b[39m","timestamp":"2025-09-06 21:02:21:221"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":10,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:02:50:250"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:1:limit:10:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:02:50:250"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:1:limit:10:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:02:50:250"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:1:limit:10:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:02:50:250"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 10 articles from database\u001b[39m","page":1,"timestamp":"2025-09-06 21:02:50:250","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?limit=10 200 6844 - 8.584 ms\u001b[39m","timestamp":"2025-09-06 21:02:50:250"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":10,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:02:55:255"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:10:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:02:55:255"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?limit=10 200 6844 - 6.719 ms\u001b[39m","timestamp":"2025-09-06 21:02:55:255"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Bella Thorne\u001b[39m","timestamp":"2025-09-06 21:03:00:30"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Larissa Sumpani\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Juli Figueiró\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Andrea de Andrade\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Taylor Swift\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Larissa Sumpani, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[31merror\u001b[39m","message":"\u001b[31mFailed to fetch articles for Larissa Sumpani after 3 retries:\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Bella Thorne, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[31merror\u001b[39m","message":"\u001b[31mFailed to fetch articles for Bella Thorne after 3 retries:\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Juli Figueiró, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[31merror\u001b[39m","message":"\u001b[31mFailed to fetch articles for Juli Figueiró after 3 retries:\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Andrea de Andrade, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[31merror\u001b[39m","message":"\u001b[31mFailed to fetch articles for Andrea de Andrade after 3 retries:\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Taylor Swift, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"level":"\u001b[31merror\u001b[39m","message":"\u001b[31mFailed to fetch articles for Taylor Swift after 3 retries:\u001b[39m","timestamp":"2025-09-06 21:03:01:31"}
+{"celebrities":["Virginia Fonseca","Faby Vargas","Bruna Marquezine","Ketlin Groisman","Larissa Santos"],"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mProcessing celebrity batch 2/20\u001b[39m","timestamp":"2025-09-06 21:03:02:32"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Virginia Fonseca\u001b[39m","timestamp":"2025-09-06 21:03:02:32"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Faby Vargas\u001b[39m","timestamp":"2025-09-06 21:03:02:32"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Bruna Marquezine\u001b[39m","timestamp":"2025-09-06 21:03:02:32"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Ketlin Groisman\u001b[39m","timestamp":"2025-09-06 21:03:02:32"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mFetching articles for: Larissa Santos\u001b[39m","timestamp":"2025-09-06 21:03:02:32"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Bruna Marquezine, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:03:33"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Faby Vargas, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:03:33"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Larissa Santos, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:03:33"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Ketlin Groisman, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:03:33"}
+{"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mRate limited for Virginia Fonseca, retrying after 60s\u001b[39m","timestamp":"2025-09-06 21:03:03:33"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 21:03:09:39","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 21:03:09:39"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 21:03:18:318","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 21:03:18:318"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:03:59:359"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:03:59:359"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 - - 14.675 ms\u001b[39m","timestamp":"2025-09-06 21:03:59:359"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":2,"sortBy":"publishedAt","timestamp":"2025-09-06 21:04:17:417"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:2:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:04:17:417"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:2:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:04:17:417"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:2:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:04:17:417"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 20 articles from database\u001b[39m","page":2,"timestamp":"2025-09-06 21:04:17:417","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=2&limit=20 200 - - 23.926 ms\u001b[39m","timestamp":"2025-09-06 21:04:17:417"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":3,"sortBy":"publishedAt","timestamp":"2025-09-06 21:04:25:425"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:3:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:04:25:425"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:3:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:04:25:425"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:3:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:04:25:425"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 20 articles from database\u001b[39m","page":3,"timestamp":"2025-09-06 21:04:25:425","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=3&limit=20 200 - - 9.738 ms\u001b[39m","timestamp":"2025-09-06 21:04:25:425"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":50,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:06:26:626"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:1:limit:50:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:06:26:626"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:1:limit:50:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:06:26:626"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:1:limit:50:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:06:26:626"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 50 articles from database\u001b[39m","page":1,"timestamp":"2025-09-06 21:06:26:626","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?limit=50 200 33573 - 9.811 ms\u001b[39m","timestamp":"2025-09-06 21:06:26:626"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?limit=109 400 975 - 4.225 ms\u001b[39m","timestamp":"2025-09-06 21:06:34:634"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 13699 - 1.563 ms\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":2,"sortBy":"publishedAt","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:2:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=2&limit=20 200 13205 - 1.728 ms\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":3,"sortBy":"publishedAt","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:3:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=3&limit=20 200 13965 - 1.760 ms\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":4,"sortBy":"publishedAt","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:4:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:4:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:4:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 20 articles from database\u001b[39m","page":4,"timestamp":"2025-09-06 21:06:42:642","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=4&limit=20 200 13847 - 5.593 ms\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":5,"sortBy":"publishedAt","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:5:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:5:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:5:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 20 articles from database\u001b[39m","page":5,"timestamp":"2025-09-06 21:06:42:642","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=5&limit=20 200 13965 - 5.577 ms\u001b[39m","timestamp":"2025-09-06 21:06:42:642"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 21:06:58:658","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 21:06:58:658"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:09:79"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:09:79"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 13699 - 7.172 ms\u001b[39m","timestamp":"2025-09-06 21:07:09:79"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 13699 - 2.143 ms\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":2,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:2:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=2&limit=20 200 13205 - 1.249 ms\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":3,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:3:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=3&limit=20 200 13965 - 1.646 ms\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":4,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:4:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=4&limit=20 200 13847 - 1.913 ms\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":5,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:5:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=5&limit=20 200 13965 - 1.612 ms\u001b[39m","timestamp":"2025-09-06 21:07:16:716"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 13699 - 1.194 ms\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":2,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:2:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=2&limit=20 200 13205 - 1.526 ms\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":3,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:3:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=3&limit=20 200 13965 - 1.804 ms\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":4,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:4:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=4&limit=20 200 13847 - 1.772 ms\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":5,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:5:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=5&limit=20 200 13965 - 1.435 ms\u001b[39m","timestamp":"2025-09-06 21:07:27:727"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:39:739"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:39:739"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 - - 3.975 ms\u001b[39m","timestamp":"2025-09-06 21:07:39:739"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":2,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:42:742"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:2:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:42:742"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=2&limit=20 200 - - 1.926 ms\u001b[39m","timestamp":"2025-09-06 21:07:42:742"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":3,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:46:746"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:3:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:46:746"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=3&limit=20 200 - - 2.518 ms\u001b[39m","timestamp":"2025-09-06 21:07:46:746"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":4,"sortBy":"publishedAt","timestamp":"2025-09-06 21:07:55:755"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:4:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:07:55:755"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=4&limit=20 200 - - 1.567 ms\u001b[39m","timestamp":"2025-09-06 21:07:55:755"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":5,"sortBy":"publishedAt","timestamp":"2025-09-06 21:08:01:81"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:5:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:08:01:81"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=5&limit=20 200 - - 1.311 ms\u001b[39m","timestamp":"2025-09-06 21:08:01:81"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 21:09:00:90","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 21:09:00:90"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 21:12:55:1255","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 21:12:55:1255"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 21:13:05:135","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 21:13:05:135"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:13:40:1340"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:13:40:1340"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 - - 27.255 ms\u001b[39m","timestamp":"2025-09-06 21:13:40:1340"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 21:14:39:1439"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:14:39:1439"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 - - 3.321 ms\u001b[39m","timestamp":"2025-09-06 21:14:39:1439"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":2,"sortBy":"publishedAt","timestamp":"2025-09-06 21:14:59:1459"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:2:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:14:59:1459"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=2&limit=20 200 - - 1.545 ms\u001b[39m","timestamp":"2025-09-06 21:14:59:1459"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":3,"sortBy":"publishedAt","timestamp":"2025-09-06 21:15:03:153"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:3:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:15:03:153"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=3&limit=20 200 - - 2.127 ms\u001b[39m","timestamp":"2025-09-06 21:15:03:153"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":4,"sortBy":"publishedAt","timestamp":"2025-09-06 21:15:10:1510"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:4:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:15:10:1510"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=4&limit=20 200 - - 1.742 ms\u001b[39m","timestamp":"2025-09-06 21:15:10:1510"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":5,"sortBy":"publishedAt","timestamp":"2025-09-06 21:15:18:1518"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:5:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:15:18:1518"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=5&limit=20 200 - - 1.326 ms\u001b[39m","timestamp":"2025-09-06 21:15:18:1518"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":6,"sortBy":"publishedAt","timestamp":"2025-09-06 21:15:30:1530"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:6:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:15:30:1530"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:6:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:15:30:1530"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:6:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:15:30:1530"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 9 articles from database\u001b[39m","page":6,"timestamp":"2025-09-06 21:15:30:1530","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=6&limit=20 200 - - 17.288 ms\u001b[39m","timestamp":"2025-09-06 21:15:30:1530"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":7,"sortBy":"publishedAt","timestamp":"2025-09-06 21:15:39:1539"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:7:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:15:39:1539"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:7:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:15:39:1539"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:7:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:15:39:1539"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 0 articles from database\u001b[39m","page":7,"timestamp":"2025-09-06 21:15:39:1539","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=7&limit=20 200 137 - 6.233 ms\u001b[39m","timestamp":"2025-09-06 21:15:39:1539"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":8,"sortBy":"publishedAt","timestamp":"2025-09-06 21:15:42:1542"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:8:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 21:15:42:1542"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:8:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:15:42:1542"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:8:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 21:15:42:1542"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 0 articles from database\u001b[39m","page":8,"timestamp":"2025-09-06 21:15:42:1542","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=8&limit=20 200 137 - 4.017 ms\u001b[39m","timestamp":"2025-09-06 21:15:42:1542"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 21:16:04:164","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 21:16:04:164"}

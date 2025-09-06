@@ -43,6 +43,60 @@ const NewsGrid = () => {
   } | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
+  /**
+   * Smart image source selection with fallback strategy
+   *
+   * @param imageUrl - The original image URL from the article
+   * @returns The best available image source
+   */
+  const getImageSrc = useCallback(
+    (imageUrl: string | null | undefined): string => {
+      // No image URL provided
+      if (!imageUrl) {
+        return '/placeholder-news.svg';
+      }
+
+      // Image previously failed to load
+      if (failedImages.has(imageUrl)) {
+        return '/placeholder-news.svg';
+      }
+
+      // Use image proxy for external images
+      return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+    },
+    [failedImages]
+  );
+
+  /**
+   * Enhanced image error handling with domain monitoring
+   *
+   * @param imageUrl - The image URL that failed to load
+   */
+  const handleImageError = useCallback((imageUrl: string | null | undefined) => {
+    if (!imageUrl) return;
+
+    // Add to failed images set
+    setFailedImages(prev => new Set([...prev, imageUrl]));
+
+    // Extract domain for monitoring
+    try {
+      const url = new URL(imageUrl);
+      const domain = url.hostname;
+
+      // Log domain failure for future whitelisting
+      console.warn(`[IMAGE-FAILURE] Domain may need whitelisting:`, {
+        domain,
+        imageUrl,
+        timestamp: new Date().toISOString(),
+      });
+
+      // TODO: Future enhancement - send to monitoring service
+      // await reportImageFailure({ domain, imageUrl });
+    } catch (error) {
+      console.error('Error parsing failed image URL:', error);
+    }
+  }, []);
+
   // Network connectivity detection
   useEffect(() => {
     const handleOnline = () => {
@@ -206,7 +260,7 @@ const NewsGrid = () => {
         stack: error?.stack,
         code: error?.code,
         type: typeof error,
-        error: error
+        error: error,
       });
 
       // Store failed request for retry when back online
@@ -417,22 +471,14 @@ const NewsGrid = () => {
             >
               <div className="relative">
                 <Image
-                  src={
-                    !article.urlToImage || failedImages.has(article.urlToImage)
-                      ? '/placeholder-news.svg'
-                      : `/api/image-proxy?url=${encodeURIComponent(article.urlToImage)}`
-                  }
+                  src={getImageSrc(article.urlToImage)}
                   alt={article.title || 'Notícia'}
                   width={500}
                   height={300}
                   className="w-full h-48 object-cover rounded-t-lg"
                   placeholder="blur"
                   blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                  onError={() => {
-                    if (article.urlToImage) {
-                      setFailedImages(prev => new Set([...prev, article.urlToImage!]));
-                    }
-                  }}
+                  onError={() => handleImageError(article.urlToImage)}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-t-lg"></div>
               </div>

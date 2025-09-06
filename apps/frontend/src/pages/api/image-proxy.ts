@@ -90,16 +90,124 @@ function isValidUrl(urlString: string): boolean {
       return false;
     }
 
-    // Check if domain is allowed
     const hostname = url.hostname.toLowerCase();
-    const isAllowed = ALLOWED_DOMAINS.some(
+
+    // Check against whitelist first (fastest path)
+    const isWhitelisted = ALLOWED_DOMAINS.some(
       domain => hostname === domain || hostname.endsWith('.' + domain)
     );
 
-    return isAllowed;
+    if (isWhitelisted) {
+      return true;
+    }
+
+    // Dynamic validation for new domains
+    return isDomainSafeForNews(hostname);
   } catch {
     return false;
   }
+}
+
+/**
+ * Dynamic domain validation for news-related domains
+ *
+ * @param hostname - The domain to validate
+ * @returns {boolean} True if domain appears safe for news images
+ */
+function isDomainSafeForNews(hostname: string): boolean {
+  // News domain patterns (Brazilian and international)
+  const newsPatterns = [
+    /\.com\.br$/, // Brazilian domains
+    /\.abril\.com\.br$/, // Abril group
+    /\.globo\.com$/, // Globo group
+    /\.uol\.com\.br$/, // UOL group
+    /\.estadao\.com\.br$/, // Estadão group
+    /\.folha\.uol\.com\.br$/, // Folha group
+    /\.g1\.globo\.com$/, // G1 news
+    /\.cnn\.com$/, // CNN
+    /\.bbc\.com$/, // BBC
+    /\.reuters\.com$/, // Reuters
+    /\.ap\.org$/, // Associated Press
+    /googleusercontent\.com$/, // Google hosted content
+    /\.medium\.com$/, // Medium articles
+    /\.wordpress\.com$/, // WordPress blogs
+  ];
+
+  // Check if domain matches news patterns
+  const matchesNewsPattern = newsPatterns.some(pattern => pattern.test(hostname));
+
+  if (matchesNewsPattern) {
+    // Log new domain for future whitelisting
+    logNewDomain(hostname, 'auto-validated');
+    return true;
+  }
+
+  // Additional safety checks for unknown domains
+  const suspiciousPatterns = [
+    /localhost/,
+    /127\.0\.0\.1/,
+    /192\.168\./,
+    /10\./,
+    /\.onion$/,
+    /\.tk$/,
+    /\.ml$/,
+    /\.ga$/,
+    /\.cf$/,
+  ];
+
+  const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(hostname));
+
+  if (isSuspicious) {
+    logBlockedDomain(hostname, 'suspicious-pattern');
+    return false;
+  }
+
+  // Log unknown domain for manual review
+  logNewDomain(hostname, 'needs-review');
+  return false; // Conservative approach - block unknown domains
+}
+
+/**
+ * Logs new domains for future whitelisting consideration
+ *
+ * @param hostname - The domain that was encountered
+ * @param status - The validation status
+ */
+function logNewDomain(hostname: string, status: 'auto-validated' | 'needs-review'): void {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    hostname,
+    status,
+    action: status === 'auto-validated' ? 'ALLOWED' : 'BLOCKED',
+  };
+
+  // Log to console for now (future: database/file logging)
+  console.log(`[IMAGE-PROXY] New domain ${status}:`, logEntry);
+
+  // TODO: Future enhancement - store in database for admin dashboard
+  // await storeDomainLog(logEntry);
+}
+
+/**
+ * Logs blocked domains for security monitoring
+ *
+ * @param hostname - The domain that was blocked
+ * @param reason - Why it was blocked
+ */
+function logBlockedDomain(hostname: string, reason: string): void {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    hostname,
+    reason,
+    action: 'BLOCKED',
+  };
+
+  console.warn(`[IMAGE-PROXY] Domain blocked:`, logEntry);
+
+  // TODO: Future enhancement - security alerts for suspicious domains
+  // await alertSecurityTeam(logEntry);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
