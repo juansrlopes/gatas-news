@@ -81,7 +81,7 @@ const NewsGrid = () => {
         // Error is already handled in fetchArticles, this is just a safety net
       }
     };
-    
+
     initializeArticles();
   }, []);
 
@@ -200,7 +200,14 @@ const NewsGrid = () => {
         }
       }
     } catch (error: any) {
-      console.error('Error fetching articles:', error);
+      console.error('Error fetching articles:', {
+        message: error?.message,
+        name: error?.name,
+        stack: error?.stack,
+        code: error?.code,
+        type: typeof error,
+        error: error
+      });
 
       // Store failed request for retry when back online
       setLastFailedRequest({ page: pageNumber, celebrity: sanitizedCelebrityName });
@@ -221,7 +228,8 @@ const NewsGrid = () => {
         errorMessage = error.message;
       }
 
-      setError(errorMessage);
+      // Ensure error state is always set
+      setError(errorMessage || 'Erro de conexão. Verifique se a API está rodando.');
 
       if (pageNumber === 1) {
         setArticles([]);

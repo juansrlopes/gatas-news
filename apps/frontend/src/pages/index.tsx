@@ -10,7 +10,7 @@ const Home = () => {
   return (
     <div>
       <Head>
-        <title>{config.appName} - Portal de Notícias sobre Celebridades</title>
+        <title>{`${config.appName} - Portal de Notícias sobre Celebridades`}</title>
         <meta name="description" content={config.appDescription} />
         <meta
           name="keywords"

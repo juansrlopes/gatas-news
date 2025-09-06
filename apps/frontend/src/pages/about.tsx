@@ -8,7 +8,7 @@ const About = () => {
   return (
     <div>
       <Head>
-        <title>Sobre - {config.appName}</title>
+        <title>{`Sobre - ${config.appName}`}</title>
         <meta
           name="description"
           content="Conheça mais sobre o Gatas News, o portal de notícias sobre as mulheres mais admiradas do mundo. Saiba nossa missão e como funcionamos."

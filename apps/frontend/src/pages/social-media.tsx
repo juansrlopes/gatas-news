@@ -8,7 +8,7 @@ const SocialMediaPage = () => {
   return (
     <div>
       <Head>
-        <title>Instagram das Gatas - {config.appName}</title>
+        <title>{`Instagram das Gatas - ${config.appName}`}</title>
         <meta
           name="description"
           content="Descubra os perfis do Instagram das celebridades e influenciadoras mais famosas do Brasil. Acompanhe as gatas mais seguidas nas redes sociais."

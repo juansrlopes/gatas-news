@@ -9,7 +9,7 @@ const Custom404 = () => {
   return (
     <div>
       <Head>
-        <title>Página não encontrada - {config.appName}</title>
+        <title>{`Página não encontrada - ${config.appName}`}</title>
         <meta
           name="description"
           content="A página que você está procurando não foi encontrada. Volte para a página inicial do Gatas News."

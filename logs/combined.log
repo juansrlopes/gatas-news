@@ -4199,3 +4199,105 @@
 {"database":"test","host":"mongodb://127.0.0.1:53967/","level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-05 14:26:25:2625"}
 {"level":"\u001b[33mwarn\u001b[39m","message":"\u001b[33mMongoDB disconnected\u001b[39m","timestamp":"2025-09-05 14:26:25:2625"}
 {"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mMongoDB disconnected gracefully\u001b[39m","timestamp":"2025-09-05 14:26:25:2625"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 20:39:21:3921","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 20:39:21:3921"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /health 200 144 - 2.572 ms\u001b[39m","timestamp":"2025-09-06 20:39:33:3933"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 20:39:51:3951"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache miss: news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 20:39:51:3951"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Redis): news:page:1:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 20:39:51:3951"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache set (Memory): news:page:1:limit:20:sort:publishedAt, TTL: 3600s\u001b[39m","timestamp":"2025-09-06 20:39:51:3951"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mFetched 20 articles from database\u001b[39m","page":1,"timestamp":"2025-09-06 20:39:51:3951","totalResults":109}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 - - 48.026 ms\u001b[39m","timestamp":"2025-09-06 20:39:51:3951"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 20:39:58:3958","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 20:39:58:3958"}
+{"ip":"::1","level":"\u001b[32minfo\u001b[39m","limit":20,"message":"\u001b[32mNews request received\u001b[39m","page":1,"sortBy":"publishedAt","timestamp":"2025-09-06 20:40:09:409"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mCache hit (Redis): news:page:1:limit:20:sort:publishedAt\u001b[39m","timestamp":"2025-09-06 20:40:09:409"}
+{"level":"\u001b[35mhttp\u001b[39m","message":"\u001b[35mGET /api/v1/news?page=1&limit=20 200 - - 21.042 ms\u001b[39m","timestamp":"2025-09-06 20:40:09:409"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mReceived SIGTERM. Starting graceful shutdown...\u001b[39m","timestamp":"2025-09-06 20:41:16:4116"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Initializing services...\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Connecting to MongoDB...\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Redis connected successfully\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Host: localhost:6379\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📊 Database: 0\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mEnhanced cache service initialized with Redis\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ MongoDB connected successfully\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📍 Database: gatas-news\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   🔗 Host: mongodb://localhost:27017/gatas-news\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚀 Connecting to Redis...\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[37mdebug\u001b[39m","message":"\u001b[37mRedis already connected\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m⏰ Initializing job scheduler...\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Daily news fetch scheduled: */30 * * * *\u001b[39m","nextRun":"Unknown","timestamp":"2025-09-06 20:44:22:4422","timezone":"America/Sao_Paulo"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Weekly cleanup scheduled: Sundays at 2 AM\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📅 Hourly health checks scheduled\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ Job scheduler initialized successfully\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m   📋 3 scheduled jobs configured:\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      📰 daily-news-fetch\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🧹 weekly-cleanup\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m      🎆 hourly-health-check\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mℹ️ Recent news data found, skipping initial fetch\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m✅ All services initialized successfully\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📍 Server running on port 8000\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🌍 Environment: development\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📊 Health check:  http://localhost:8000/health\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m📰 News API:      http://localhost:8000/api/v1/news\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Admin panel:   http://localhost:8000/api/v1/admin\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔧 Enhanced logging enabled\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🚦 Relaxed rate limits\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32m🔄 Auto-reload on file changes\u001b[39m","timestamp":"2025-09-06 20:44:22:4422"}
+{"level":"\u001b[32minfo\u001b[39m","message":"\u001b[32mReceived SIGTERM. Starting graceful shutdown...\u001b[39m","timestamp":"2025-09-06 20:44:41:4441"}

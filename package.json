@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "nx run-many --target=serve --projects=frontend,api --parallel",
+    "dev": "nx run frontend:serve & nx run api:dev",
     "dev:frontend": "nx serve frontend",
     "dev:api": "nx dev api",
     "build": "nx run-many --target=build --all",
