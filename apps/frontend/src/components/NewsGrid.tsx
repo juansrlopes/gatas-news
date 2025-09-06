@@ -41,6 +41,7 @@ const NewsGrid = () => {
     page: number;
     celebrity: string;
   } | null>(null);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   // Network connectivity detection
   useEffect(() => {
@@ -170,6 +171,7 @@ const NewsGrid = () => {
 
       if (pageNumber === 1) {
         setArticles(validArticles);
+        setFailedImages(new Set()); // Clear failed images on new search
       } else {
         setArticles(prevArticles => [...prevArticles, ...validArticles]);
       }
@@ -395,20 +397,19 @@ const NewsGrid = () => {
               <div className="relative">
                 <Image
                   src={
-                    article.urlToImage
-                      ? `/api/image-proxy?url=${encodeURIComponent(article.urlToImage)}`
-                      : '/placeholder-news.svg'
+                    !article.urlToImage || failedImages.has(article.urlToImage)
+                      ? '/placeholder-news.svg'
+                      : `/api/image-proxy?url=${encodeURIComponent(article.urlToImage)}`
                   }
                   alt={article.title || 'Notícia'}
                   width={500}
                   height={300}
                   className="w-full h-48 object-cover rounded-t-lg"
                   placeholder="blur"
-                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                  onError={e => {
-                    const target = e.target as HTMLImageElement;
-                    if (target.src !== '/placeholder-news.svg') {
-                      target.src = '/placeholder-news.svg';
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                  onError={() => {
+                    if (article.urlToImage) {
+                      setFailedImages(prev => new Set([...prev, article.urlToImage!]));
                     }
                   }}
                 />
