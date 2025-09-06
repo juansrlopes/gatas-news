@@ -72,7 +72,17 @@ const NewsGrid = () => {
   }, [lastFailedRequest]);
 
   useEffect(() => {
-    fetchArticles(); // Fetch all articles on initial load
+    // Safely fetch articles on initial load with error boundary protection
+    const initializeArticles = async () => {
+      try {
+        await fetchArticles(); // Fetch all articles on initial load
+      } catch (error) {
+        console.error('Failed to initialize articles:', error);
+        // Error is already handled in fetchArticles, this is just a safety net
+      }
+    };
+    
+    initializeArticles();
   }, []);
 
   /**
@@ -201,9 +211,12 @@ const NewsGrid = () => {
         errorMessage = 'A requisição demorou muito para responder. Verifique sua conexão.';
       } else if (
         error.message.includes('Failed to fetch') ||
-        error.message.includes('NetworkError')
+        error.message.includes('NetworkError') ||
+        error.message.includes('fetch') ||
+        error.code === 'NETWORK_ERROR' ||
+        !navigator.onLine
       ) {
-        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+        errorMessage = 'Servidor indisponível. Verifique se a API está rodando e tente novamente.';
       } else if (error.message) {
         errorMessage = error.message;
       }
