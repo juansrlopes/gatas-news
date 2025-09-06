@@ -24,7 +24,26 @@ export class NewsService {
   }
 
   /**
-   * Get news articles from database with caching
+   * Get news articles from database with intelligent caching
+   *
+   * This method handles the main news retrieval logic with multiple features:
+   * - Multi-layer caching (Redis + Memory fallback)
+   * - Advanced filtering (celebrity, sentiment, date range, search)
+   * - Pagination with configurable limits
+   * - Celebrity name validation and normalization
+   *
+   * @param params - Query parameters for filtering and pagination
+   * @param params.page - Page number (default: 1)
+   * @param params.celebrity - Filter by celebrity name (fuzzy match)
+   * @param params.limit - Articles per page (default: 20, max: 100)
+   * @param params.sortBy - Sort order: 'publishedAt' | 'relevancy' | 'popularity'
+   * @param params.searchTerm - Full-text search in title/description
+   * @param params.sentiment - Filter by sentiment: 'positive' | 'negative' | 'neutral'
+   * @param params.dateFrom - Start date for date range filter
+   * @param params.dateTo - End date for date range filter
+   * @returns Promise<NewsResponse> with articles, pagination info, and metadata
+   * @throws ValidationError if celebrity name is not found
+   * @throws Error for database or caching issues
    */
   public async getNews(params: {
     page?: number;
@@ -54,11 +73,8 @@ export class NewsService {
       // Try to get from cache first
       const cachedResult = await enhancedCacheService.getCachedNewsResponse(cacheKey);
       if (cachedResult) {
-        logger.debug(`Cache hit for key: ${cacheKey}`);
         return cachedResult;
       }
-
-      logger.debug(`Cache miss for key: ${cacheKey}, fetching from database`);
 
       // Build filters for database query
       const filters: ArticleFilters = {

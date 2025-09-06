@@ -21,7 +21,20 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "graph": "nx graph",
     "reset": "nx reset",
-    "migrate:celebrities": "cd apps/api && npx ts-node src/scripts/migrateCelebrities.ts"
+    "migrate:celebrities": "cd apps/api && npx ts-node src/scripts/migrateCelebrities.ts",
+    "setup": "./scripts/setup.sh",
+    "db:status": "mongosh gatas-news --eval \"print('📊 Articles:', db.articles.countDocuments()); print('👥 Celebrities:', db.celebrities.countDocuments()); print('📋 Fetch Logs:', db.fetchlogs.countDocuments());\"",
+    "db:clear": "mongosh gatas-news --eval \"db.articles.deleteMany({}); db.fetchlogs.deleteMany({}); print('🗑️ Database cleared');\"",
+    "api:health": "curl -s http://localhost:8000/health | jq .",
+    "api:fetch": "curl -X POST http://localhost:8000/api/v1/admin/fetch/trigger -H 'Content-Type: application/json'",
+    "api:news": "curl -s 'http://localhost:8000/api/v1/news?limit=5' | jq '.data.totalResults'",
+    "services:start": "brew services start mongodb-community && brew services start redis",
+    "services:stop": "brew services stop mongodb-community && brew services stop redis",
+    "services:status": "brew services list | grep -E '(mongodb|redis)'",
+    "logs:api": "tail -f apps/api/logs/combined.log",
+    "logs:error": "tail -f apps/api/logs/error.log",
+    "clean": "nx reset && rm -rf node_modules && npm install",
+    "kill:port": "lsof -ti:8000 | xargs kill -9 || echo 'No processes on port 8000'"
   },
   "dependencies": {
     "@types/ioredis": "^4.28.10",

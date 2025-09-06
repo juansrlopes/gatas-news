@@ -29,11 +29,9 @@ class RedisConnection {
       // Handle connection events
       this.client.on('connect', () => {
         this.isConnected = true;
-        logger.info('✅ Redis connected successfully', {
-          host: redisConfig.host,
-          port: redisConfig.port,
-          db: redisConfig.db,
-        });
+        logger.info(`✅ Redis connected successfully`);
+        logger.info(`   📍 Host: ${redisConfig.host}:${redisConfig.port}`);
+        logger.info(`   📊 Database: ${redisConfig.db}`);
       });
 
       this.client.on('error', error => {
@@ -50,11 +48,24 @@ class RedisConnection {
         logger.info('Redis reconnecting...');
       });
 
-      // Wait for connection to be established
+      // Wait for connection to be established with timeout
       await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Redis connection timeout after 5 seconds'));
+        }, 5000);
+        
         if (this.client) {
-          this.client.once('connect', resolve);
-          this.client.once('error', reject);
+          this.client.once('connect', () => {
+            clearTimeout(timeout);
+            resolve(true);
+          });
+          this.client.once('error', (error) => {
+            clearTimeout(timeout);
+            reject(error);
+          });
+          
+          // Trigger connection if using lazy connect
+          this.client.connect().catch(reject);
         }
       });
 

@@ -32,10 +32,9 @@ class MongoDBConnection {
       });
 
       this.isConnected = true;
-      logger.info('✅ MongoDB connected successfully', {
-        host: this.maskConnectionString(mongoUri),
-        database: mongoose.connection.db?.databaseName,
-      });
+      logger.info(`✅ MongoDB connected successfully`);
+      logger.info(`   📍 Database: ${mongoose.connection.db?.databaseName}`);
+      logger.info(`   🔗 Host: ${this.maskConnectionString(mongoUri)}`);
 
       // Handle connection events
       mongoose.connection.on('error', error => {

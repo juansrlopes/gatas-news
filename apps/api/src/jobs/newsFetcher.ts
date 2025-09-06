@@ -11,9 +11,8 @@ import {
   sortByDate,
 } from '../../../../libs/shared/utils/src/index';
 import { Article as ArticleType, NewsApiResponse } from '../../../../libs/shared/types/src/index';
+import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
 import logger from '../utils/logger';
-
-const config = getEnvConfig();
 
 export interface FetchResult {
   success: boolean;
@@ -42,6 +41,21 @@ export class NewsFetcher {
 
   /**
    * Main method to fetch and store news articles
+   *
+   * This is the core method that orchestrates the entire news fetching process:
+   * 1. Validates API key configuration
+   * 2. Fetches celebrity list from database
+   * 3. Creates a fetch log for tracking
+   * 4. Fetches articles from NewsAPI for all celebrities
+   * 5. Applies Portuguese content filtering
+   * 6. Stores filtered articles in MongoDB
+   * 7. Updates fetch log with results
+   * 8. Invalidates cache to ensure fresh data
+   *
+   * The process is designed to be fault-tolerant and will continue even if
+   * some celebrities fail to fetch, logging errors for debugging.
+   *
+   * @returns FetchResult with success status, counts, and any errors
    */
   public async fetchAndStoreNews(): Promise<FetchResult> {
     const startTime = Date.now();
@@ -50,9 +64,20 @@ export class NewsFetcher {
     try {
       logger.info('🔄 Starting news fetch job...');
 
+      // Get fresh config (not cached at module level)
+      const config = getEnvConfig();
+
       // Check if API key is configured
       if (!config.newsApiKey) {
-        throw new Error('News API key is not configured');
+        logger.warn('⚠️ News API key is not configured - skipping news fetch');
+        return {
+          success: false,
+          articlesProcessed: 0,
+          newArticlesAdded: 0,
+          duplicatesFound: 0,
+          errors: ['News API key not configured'],
+          duration: 0,
+        };
       }
 
       // Get celebrities to fetch news for
@@ -75,7 +100,7 @@ export class NewsFetcher {
       });
 
       // Fetch articles for all celebrities
-      const fetchResult = await this.fetchArticlesForAllCelebrities(celebrities);
+      const fetchResult = await this.fetchArticlesForAllCelebrities(celebrities, config);
 
       // Process and store articles
       const processResult = await this.processAndStoreArticles(fetchResult.articles, celebrities);
@@ -145,7 +170,10 @@ export class NewsFetcher {
   /**
    * Fetch articles for all celebrities
    */
-  private async fetchArticlesForAllCelebrities(celebrities: string[]): Promise<{
+  private async fetchArticlesForAllCelebrities(
+    celebrities: string[],
+    config: ReturnType<typeof getEnvConfig>
+  ): Promise<{
     articles: ArticleType[];
     totalArticles: number;
     apiCallsUsed: number;
@@ -167,7 +195,9 @@ export class NewsFetcher {
         celebrities: batch,
       });
 
-      const batchPromises = batch.map(celebrity => this.fetchArticlesForCelebrity(celebrity));
+      const batchPromises = batch.map(celebrity =>
+        this.fetchArticlesForCelebrity(celebrity, config)
+      );
 
       const batchResults = await Promise.allSettled(batchPromises);
 
@@ -190,7 +220,7 @@ export class NewsFetcher {
 
       // Add delay between batches to respect rate limits
       if (i < batches.length - 1) {
-        await this.delay(2000); // 2 second delay between batches
+        await this.delay(1000); // 1 second delay between batches
       }
     }
 
@@ -208,6 +238,7 @@ export class NewsFetcher {
    */
   private async fetchArticlesForCelebrity(
     celebrity: string,
+    config: ReturnType<typeof getEnvConfig>,
     retryCount: number = 0
   ): Promise<{
     articles: ArticleType[];
@@ -265,7 +296,7 @@ export class NewsFetcher {
 
         if (retryCount < this.MAX_RETRIES) {
           await this.delay(retryAfterNum * 1000);
-          return this.fetchArticlesForCelebrity(celebrity, retryCount + 1);
+          return this.fetchArticlesForCelebrity(celebrity, config, retryCount + 1);
         }
       }
 
@@ -276,7 +307,7 @@ export class NewsFetcher {
           axiosError.message
         );
         await this.delay(5000); // 5 second delay before retry
-        return this.fetchArticlesForCelebrity(celebrity, retryCount + 1);
+        return this.fetchArticlesForCelebrity(celebrity, config, retryCount + 1);
       }
 
       logger.error(
@@ -303,12 +334,34 @@ export class NewsFetcher {
 
     logger.info(`Processing ${articles.length} articles...`);
 
-    // Filter articles that are actually about the celebrities
-    const relevantArticles = articles.filter(article =>
-      celebrities.some(celebrity => isArticleAboutCelebrity(article, celebrity))
-    );
+    // Filter articles that are actually about the celebrities AND have good visual content
+    const relevantArticles = articles.filter(article => {
+      // First check if it's about a celebrity
+      const isAboutCelebrity = celebrities.some(celebrity =>
+        isArticleAboutCelebrity(article, celebrity)
+      );
 
-    logger.info(`Found ${relevantArticles.length} relevant articles after filtering`);
+      if (!isAboutCelebrity) return false;
+
+      // Then check content quality using Portuguese scoring (Phase 1 enhanced)
+      const contentScore = analyzePortugueseContent(
+        article.title,
+        article.description,
+        article.url
+      );
+      const keepArticle = shouldKeepArticle(contentScore, 25); // Balanced threshold for quality content
+
+      // Only log filtered articles in development mode
+      if (!keepArticle && process.env.NODE_ENV === 'development') {
+        logger.debug(`❌ Filtered: ${article.title} (score: ${contentScore.overallScore})`);
+      }
+
+      return keepArticle;
+    });
+
+    logger.info(
+      `Found ${relevantArticles.length} high-quality relevant articles after Portuguese content filtering`
+    );
 
     // Remove duplicates based on URL
     const uniqueArticles = filterDuplicates(
@@ -328,9 +381,10 @@ export class NewsFetcher {
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
-      logger.debug(
-        `Processing article batch ${i + 1}/${batches.length} (${batch.length} articles)`
-      );
+      // Only log batch progress for large batches
+      if (batches.length > 5) {
+        logger.debug(`Processing batch ${i + 1}/${batches.length}`);
+      }
 
       const articlesToInsert: Partial<IArticle>[] = [];
 
@@ -340,6 +394,13 @@ export class NewsFetcher {
         if (!exists) {
           // Find which celebrity this article is about
           const celebrity = celebrities.find(c => isArticleAboutCelebrity(article, c)) || 'unknown';
+
+          // Calculate content score for metadata (Phase 1 enhanced)
+          const contentScore = analyzePortugueseContent(
+            article.title,
+            article.description,
+            article.url
+          );
 
           articlesToInsert.push({
             url: article.url,
@@ -353,6 +414,8 @@ export class NewsFetcher {
             celebrity,
             sentiment: 'neutral', // TODO: Add sentiment analysis
             isActive: true,
+            // Note: Content scoring metadata stored in logs for now
+            // TODO: Add metadata field to Article model if needed
           });
         }
       }

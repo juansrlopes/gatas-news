@@ -1,0 +1,329 @@
+# 🛠️ Developer Quick Reference Guide
+
+A quick reference for developers working on Gatas News.
+
+## 🚀 Quick Start Commands
+
+```bash
+# First time setup
+npm run setup                    # Run setup script
+npm run migrate:celebrities      # Populate database
+
+# Daily development
+npm run dev                      # Start both frontend and API
+npm run services:start           # Start MongoDB and Redis
+npm run kill:port               # Kill processes on port 8000
+
+# Database operations
+npm run db:status               # Check database contents
+npm run db:clear                # Clear articles and logs
+npm run api:fetch               # Trigger news fetch
+
+# Monitoring
+npm run api:health              # Check API health
+npm run api:news                # Check article count
+npm run logs:api                # View API logs
+npm run services:status         # Check service status
+```
+
+## 📁 Key Files to Know
+
+### Backend (API)
+
+```
+apps/api/src/
+├── server.ts                   # Entry point and startup
+├── jobs/newsFetcher.ts         # News fetching logic
+├── utils/contentScoring.ts     # Portuguese content filtering
+├── services/newsService.ts     # Business logic for news
+├── controllers/newsController.ts # HTTP endpoints
+└── database/models/Article.ts  # Article schema
+```
+
+### Frontend
+
+```
+apps/frontend/src/
+├── components/NewsGrid.tsx     # Main news display
+├── pages/index.tsx            # Homepage
+└── config/env.ts              # Environment config
+```
+
+### Shared
+
+```
+libs/shared/
+├── types/src/index.ts         # Shared TypeScript types
+└── utils/src/index.ts         # Shared utilities
+```
+
+## 🔧 Common Development Tasks
+
+### Adding a New Celebrity
+
+```bash
+# Method 1: Via API
+curl -X POST http://localhost:8000/api/v1/admin/celebrities \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Celebrity Name", "category": "actress"}'
+
+# Method 2: Add to celebrities.json and run migration
+npm run migrate:celebrities
+```
+
+### Testing News Fetch
+
+```bash
+# Check current articles
+npm run api:news
+
+# Trigger manual fetch
+npm run api:fetch
+
+# Check articles again
+npm run api:news
+
+# View detailed results
+curl -s "http://localhost:8000/api/v1/news?limit=3" | jq
+```
+
+### Debugging Content Filtering
+
+```bash
+# Lower the content threshold for testing
+# Edit apps/api/src/jobs/newsFetcher.ts
+# Change: shouldKeepArticle(contentScore, 25)
+# To: shouldKeepArticle(contentScore, 10)
+
+# Clear database and re-fetch
+npm run db:clear
+npm run api:fetch
+```
+
+### Monitoring Performance
+
+```bash
+# Check response times
+curl -w "@curl-format.txt" -s "http://localhost:8000/api/v1/news" > /dev/null
+
+# Monitor logs in real-time
+npm run logs:api
+
+# Check cache hit rates (look for "Cache hit" vs "Cache miss")
+grep -E "(Cache hit|Cache miss)" apps/api/logs/combined.log | tail -20
+```
+
+## 🐛 Troubleshooting Guide
+
+### API Won't Start
+
+```bash
+# Check if port is in use
+npm run kill:port
+
+# Check services are running
+npm run services:status
+
+# Start services if needed
+npm run services:start
+
+# Check environment file exists
+ls -la apps/api/.env
+```
+
+### No Articles Fetched
+
+```bash
+# Check API key is set
+grep NEWS_API_KEY apps/api/.env
+
+# Check database connection
+npm run db:status
+
+# Check content filtering threshold
+grep "shouldKeepArticle" apps/api/src/jobs/newsFetcher.ts
+
+# Manual fetch with detailed logs
+npm run api:fetch
+npm run logs:api
+```
+
+### Frontend Not Loading Articles
+
+```bash
+# Check API is responding
+npm run api:health
+npm run api:news
+
+# Check frontend is calling correct endpoint
+# Look in apps/frontend/src/components/NewsGrid.tsx
+# Should be: GET /api/v1/news
+
+# Check browser network tab for errors
+```
+
+### Database Issues
+
+```bash
+# Check MongoDB is running
+brew services list | grep mongodb
+
+# Test connection
+mongosh gatas-news --eval "db.runCommand('ping')"
+
+# Check collections
+npm run db:status
+
+# Reset database if needed
+npm run db:clear
+npm run migrate:celebrities
+```
+
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+npm run test                    # All tests
+npm run test:api               # API tests only
+npm run test:frontend          # Frontend tests only
+
+# Specific test file
+cd apps/api && npx jest src/services/newsService.test.ts
+
+# Watch mode
+cd apps/api && npx jest --watch
+```
+
+### Manual API Testing
+
+```bash
+# Health check
+curl http://localhost:8000/health
+
+# Get news
+curl "http://localhost:8000/api/v1/news?limit=5"
+
+# Search news
+curl "http://localhost:8000/api/v1/news?searchTerm=fashion&limit=5"
+
+# Filter by celebrity
+curl "http://localhost:8000/api/v1/news?celebrity=Anitta&limit=5"
+
+# Get trending
+curl http://localhost:8000/api/v1/news/trending
+
+# Admin endpoints
+curl -X POST http://localhost:8000/api/v1/admin/fetch/trigger
+curl http://localhost:8000/api/v1/admin/celebrities
+```
+
+## 📊 Understanding the Content Scoring
+
+The Portuguese content scoring system filters articles based on:
+
+### High Score (Keep) - 60+ points
+
+- Articles with photos/videos (`foto`, `selfie`, `vídeo`)
+- Fashion/lifestyle content (`look`, `vestido`, `praia`)
+- Celebrity as main subject (action verbs like `posou`, `exibiu`)
+- Entertainment sources (`quem.com.br`, `caras.com.br`)
+
+### Low Score (Filter Out) - Below 25 points
+
+- Interview-only content (`entrevista`, `declaração`)
+- Political content (`política`, `eleição`)
+- Articles without visual indicators
+- News sources (`g1.globo.com`, `folha.uol.com.br`)
+
+### Adjusting the Filter
+
+```typescript
+// In apps/api/src/jobs/newsFetcher.ts
+const keepArticle = shouldKeepArticle(contentScore, 25); // Adjust this number
+
+// Lower = more articles (less strict)
+// Higher = fewer articles (more strict)
+```
+
+## 🔄 Background Jobs
+
+### Job Schedule
+
+- **Daily News Fetch**: 6:00 AM Brazil time (production) / Every 30 min (development)
+- **Weekly Cleanup**: Sundays at 2:00 AM
+- **Health Checks**: Every hour
+
+### Manual Job Control
+
+```bash
+# Trigger news fetch
+npm run api:fetch
+
+# Check job status via API
+curl http://localhost:8000/api/v1/admin/jobs/status
+
+# View job logs
+npm run logs:api | grep "job"
+```
+
+## 🚀 Performance Tips
+
+### Database Optimization
+
+- Articles are indexed on `celebrity`, `publishedAt`, `isActive`
+- Use pagination for large datasets
+- Cache frequently accessed data
+
+### API Performance
+
+- Responses are cached for 1 hour
+- Use `limit` parameter to control response size
+- Monitor response times in logs
+
+### Content Filtering
+
+- Adjust threshold based on article volume needs
+- Monitor filter effectiveness with logs
+- Consider A/B testing different thresholds
+
+## 📝 Code Style Guide
+
+### TypeScript
+
+- Use interfaces for data structures
+- Prefer `const` over `let`
+- Use meaningful variable names
+- Add JSDoc comments for public methods
+
+### Error Handling
+
+- Use `asyncHandler` for route handlers
+- Log errors with context
+- Return meaningful error messages
+- Don't expose internal errors to clients
+
+### Database
+
+- Use repositories for data access
+- Validate input data
+- Handle connection errors gracefully
+- Use transactions for multi-step operations
+
+## 🔗 Useful Resources
+
+- [NewsAPI Documentation](https://newsapi.org/docs)
+- [MongoDB Query Guide](https://docs.mongodb.com/manual/tutorial/query-documents/)
+- [Redis Commands](https://redis.io/commands)
+- [Express.js Guide](https://expressjs.com/en/guide/routing.html)
+- [Next.js Documentation](https://nextjs.org/docs)
+
+## 🆘 Getting Help
+
+1. Check this guide first
+2. Look at existing code patterns
+3. Check the logs: `npm run logs:api`
+4. Test with curl commands
+5. Ask team members or create an issue
+
+Remember: When in doubt, check the logs! 📋

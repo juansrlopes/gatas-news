@@ -1,4 +1,6 @@
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import app from './app';
 import logger from './utils/logger';
 import { getEnvConfig } from '../../../libs/shared/utils/src/index';
@@ -6,15 +8,21 @@ import { mongoConnection } from './database/connections/mongodb';
 import { redisConnection } from './database/connections/redis';
 import { jobScheduler } from './jobs/scheduler';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from .env file
+// Primary location: apps/api/.env
+const envPath = path.join(__dirname, '../.env');
+
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+  console.log(`✅ Environment loaded from: ${envPath}`);
+} else {
+  console.log(`⚠️ No .env file found at: ${envPath}`);
+  console.log('Please create apps/api/.env with required environment variables');
+}
 
 const config = getEnvConfig();
 
 // Create logs directory if it doesn't exist
-import fs from 'fs';
-import path from 'path';
-
 const logsDir = path.join(__dirname, '../logs');
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
@@ -35,21 +43,30 @@ process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) =>
 // Initialize database connections and services
 const initializeServices = async (): Promise<void> => {
   try {
+    // Print startup banner
+    console.log('\n' + '='.repeat(60));
+    console.log('🐱 GATAS NEWS API SERVER');
+    console.log('='.repeat(60));
     logger.info('🔧 Initializing services...');
+    console.log('');
 
     // Connect to MongoDB
+    logger.info('📊 Connecting to MongoDB...');
     await mongoConnection.connect();
 
     // Connect to Redis (optional, will fallback to memory cache if fails)
+    logger.info('🚀 Connecting to Redis...');
     try {
       await redisConnection.connect();
     } catch (error) {
-      logger.warn('Redis connection failed, using memory cache only:', error);
+      logger.warn('⚠️  Redis connection failed, using memory cache only');
     }
 
     // Initialize job scheduler
+    logger.info('⏰ Initializing job scheduler...');
     await jobScheduler.initialize();
 
+    console.log('');
     logger.info('✅ All services initialized successfully');
   } catch (error) {
     logger.error('❌ Failed to initialize services:', error);
@@ -100,16 +117,35 @@ const startServer = async (): Promise<void> => {
 
     // Start the HTTP server
     server = app.listen(config.port, () => {
-      logger.info(`🚀 Gatas News API Server started successfully!`);
+      console.log('\n' + '='.repeat(60));
+      console.log('🚀 SERVER STARTED SUCCESSFULLY!');
+      console.log('='.repeat(60));
+
       logger.info(`📍 Server running on port ${config.port}`);
       logger.info(`🌍 Environment: ${config.isDevelopment ? 'development' : 'production'}`);
-      logger.info(`📊 Health check: http://localhost:${config.port}/health`);
-      logger.info(`📰 API endpoint: http://localhost:${config.port}/api/v1/news`);
-      logger.info(`🔧 Admin panel: http://localhost:${config.port}/api/v1/admin`);
+
+      console.log('\n📋 Available Endpoints:');
+      console.log('─'.repeat(40));
+      logger.info(`📊 Health check:  http://localhost:${config.port}/health`);
+      logger.info(`📰 News API:      http://localhost:${config.port}/api/v1/news`);
+      logger.info(`🔧 Admin panel:   http://localhost:${config.port}/api/v1/admin`);
 
       if (config.isDevelopment) {
-        logger.info(`🔧 Development mode: Enhanced logging and relaxed rate limits`);
+        console.log('\n🛠️  Development Features:');
+        console.log('─'.repeat(40));
+        logger.info(`🔧 Enhanced logging enabled`);
+        logger.info(`🚦 Relaxed rate limits`);
+        logger.info(`🔄 Auto-reload on file changes`);
       }
+
+      console.log('\n💡 Quick Start:');
+      console.log('─'.repeat(40));
+      console.log(`   curl http://localhost:${config.port}/health`);
+      console.log(`   curl http://localhost:${config.port}/api/v1/news`);
+
+      console.log('\n' + '='.repeat(60));
+      console.log('🎉 Ready to serve requests!');
+      console.log('='.repeat(60) + '\n');
     });
 
     // Handle graceful shutdown

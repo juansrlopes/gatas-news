@@ -234,8 +234,17 @@ export class CelebrityService {
     description?: string;
   }): Promise<ICelebrity> {
     try {
+      // Generate slug from name
+      const slug = celebrityData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single
+        .trim();
+
       const celebrity = await celebrityRepository.create({
         ...celebrityData,
+        slug,
         priority: celebrityData.priority || 5,
         aliases: celebrityData.aliases || [],
         searchTerms: celebrityData.searchTerms || [celebrityData.name],

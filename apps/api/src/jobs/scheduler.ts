@@ -3,8 +3,6 @@ import { newsFetcher } from './newsFetcher';
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 import logger from '../utils/logger';
 
-const config = getEnvConfig();
-
 export class JobScheduler {
   private static instance: JobScheduler;
   private jobs: Map<string, cron.ScheduledTask> = new Map();
@@ -29,8 +27,6 @@ export class JobScheduler {
     }
 
     try {
-      logger.info('🕐 Initializing job scheduler...');
-
       // Schedule daily news fetch
       this.scheduleDailyNewsFetch();
 
@@ -42,6 +38,14 @@ export class JobScheduler {
 
       this.isInitialized = true;
       logger.info('✅ Job scheduler initialized successfully');
+      logger.info(`   📋 ${this.jobs.size} scheduled jobs configured:`);
+
+      // List configured jobs
+      const jobNames = Array.from(this.jobs.keys());
+      jobNames.forEach(name => {
+        const emoji = name.includes('news') ? '📰' : name.includes('cleanup') ? '🧹' : '🎆';
+        logger.info(`      ${emoji} ${name}`);
+      });
 
       // Run initial fetch if needed
       await this.runInitialFetchIfNeeded();
@@ -55,6 +59,9 @@ export class JobScheduler {
    * Schedule daily news fetch job
    */
   private scheduleDailyNewsFetch(): void {
+    // Get config when method is called, not at module level
+    const config = getEnvConfig();
+
     // Run daily at 6:00 AM
     const cronExpression = config.isDevelopment
       ? '*/30 * * * *' // Every 30 minutes in development

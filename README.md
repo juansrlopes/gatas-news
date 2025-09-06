@@ -1,361 +1,340 @@
-# Gatas News 📰
+# 🐱 Gatas News
 
-> O portal de notícias sobre as mulheres mais admiradas do mundo
+A modern news aggregation platform focused on Brazilian celebrities, built with Next.js and Node.js in an Nx monorepo.
 
-**Gatas News** é um monorepo moderno que combina um portal de notícias focado em celebridades e mulheres famosas com uma API robusta para agregação de notícias. Construído com Nx, Next.js, Express.js, TypeScript e Tailwind CSS, oferece uma experiência de usuário moderna e acessível com arquitetura escalável.
+## 📋 Overview
 
-## 🌟 Sobre o Projeto
+Gatas News automatically fetches, filters, and curates news articles about Brazilian celebrities using advanced Portuguese content scoring. The platform emphasizes visual appeal and relevance, filtering out low-quality content to provide users with engaging celebrity news.
 
-O Gatas News é um **monorepo Nx** com **arquitetura database-first** que combina:
-
-- **Frontend (Next.js)**: Portal de notícias com interface moderna e responsiva
-- **API (Express.js)**: Servidor robusto com MongoDB, Redis e jobs automatizados
-- **Database Layer**: MongoDB para persistência e Redis para cache de alta performance
-- **Background Jobs**: Sistema automatizado de coleta de notícias com node-cron
-- **Bibliotecas Compartilhadas**: Types e utilitários reutilizáveis entre projetos
-- **Arquitetura Escalável**: Estrutura organizada para crescimento e manutenção
-
-## ✨ Funcionalidades
-
-### 🏠 **Página Principal**
-
-- 📰 **Feed de Notícias**: Exibição de artigos sobre celebridades brasileiras
-- 🔍 **Busca Avançada**: Filtro por nome de celebridade com suporte ao teclado (Enter)
-- 📱 **Design Responsivo**: Layout adaptativo para mobile, tablet e desktop
-- ⚡ **Carregamento Infinito**: Sistema de paginação com botão "Carregar Mais"
-
-### 📸 **Instagram das Gatas**
-
-- 🎯 **Perfis Embarcados**: Visualização direta dos perfis do Instagram
-- 🔀 **Ordem Aleatória**: Perfis embaralhados a cada visita
-- 🔍 **Busca de Perfis**: Filtro por nome de usuário do Instagram
-- 📊 **Paginação**: Carregamento progressivo de perfis
-
-### 🎨 **Experiência do Usuário**
-
-- ♿ **Acessibilidade Completa**: ARIA labels, navegação por teclado, foco visual
-- 🎭 **Estados de Loading**: Skeleton loaders elegantes durante carregamento
-- 🚨 **Tratamento de Erros**: Mensagens de erro amigáveis e página 404 customizada
-- 🌊 **Animações Suaves**: Transições e hover effects responsivos
-
-## 🛠️ Tecnologias Utilizadas
-
-### **Monorepo & Tooling**
-
-- **[Nx](https://nx.dev/)** - Monorepo toolkit com cache inteligente e dependency graph
-- **[TypeScript](https://www.typescriptlang.org/)** - Tipagem estática em todo o projeto
-
-### **Frontend (apps/frontend)**
-
-- **[Next.js 15](https://nextjs.org/)** - Framework React com SSR/SSG
-- **[React 19](https://react.dev/)** - Biblioteca de interface de usuário
-- **[Tailwind CSS 4](https://tailwindcss.com/)** - Framework CSS utilitário
-- **[Lucide React](https://lucide.dev/)** - Ícones modernos
-- **[react-social-media-embed](https://www.npmjs.com/package/react-social-media-embed)** - Embeds do Instagram
-
-### **Backend (apps/api)**
-
-- **[Express.js](https://expressjs.com/)** - Framework web para Node.js
-- **[MongoDB](https://www.mongodb.com/)** - Banco de dados NoSQL para persistência
-- **[Mongoose](https://mongoosejs.com/)** - ODM para MongoDB com TypeScript
-- **[Redis](https://redis.io/)** - Cache em memória de alta performance
-- **[ioredis](https://github.com/luin/ioredis)** - Cliente Redis robusto para Node.js
-- **[node-cron](https://github.com/node-cron/node-cron)** - Agendador de tarefas
-- **[NewsAPI](https://newsapi.org/)** - API externa para coleta de notícias
-- **[Winston](https://github.com/winstonjs/winston)** - Sistema de logging estruturado
-- **[Express Validator](https://express-validator.github.io/)** - Validação de dados
-- **[Express Rate Limit](https://github.com/nfriedly/express-rate-limit)** - Rate limiting
-- **[Helmet](https://helmetjs.github.io/)** - Middleware de segurança
-
-### **Bibliotecas Compartilhadas (libs/)**
-
-- **shared-types**: Interfaces TypeScript compartilhadas
-- **shared-utils**: Utilitários e funções reutilizáveis
-
-### **Desenvolvimento**
-
-- **[ESLint](https://eslint.org/)** + **[Prettier](https://prettier.io/)** - Linting e formatação
-- **[Nodemon](https://nodemon.io/)** - Auto-restart para desenvolvimento
-- **[ts-node](https://www.npmjs.com/package/ts-node)** - Execução direta de TypeScript
-
-## 📁 Estrutura do Projeto
+## 🏗️ Architecture
 
 ```
-gatas-news/                    # Monorepo Nx
-├── apps/                      # Aplicações
-│   ├── frontend/              # Next.js Frontend
-│   │   ├── src/
-│   │   │   ├── components/    # Componentes React
-│   │   │   │   ├── Header.tsx
-│   │   │   │   ├── NewsGrid.tsx
-│   │   │   │   ├── SocialMedia.tsx
-│   │   │   │   ├── BackToTopButton.tsx
-│   │   │   │   ├── LoadingSkeleton.tsx
-│   │   │   │   └── ErrorBoundary.tsx
-│   │   │   ├── pages/         # Páginas Next.js
-│   │   │   │   ├── index.tsx
-│   │   │   │   ├── about.tsx
-│   │   │   │   ├── social-media.tsx
-│   │   │   │   ├── 404.tsx
-│   │   │   │   ├── sitemap.xml.tsx
-│   │   │   │   ├── _app.tsx
-│   │   │   │   ├── _document.tsx
-│   │   │   │   └── api/
-│   │   │   │       └── image-proxy.ts
-│   │   │   ├── styles/
-│   │   │   │   └── globals.css
-│   │   │   └── utils/
-│   │   │       └── insta.json
-│   │   ├── public/            # Arquivos estáticos
-│   │   ├── next.config.ts
-│   │   ├── tailwind.config.js
-│   │   ├── tsconfig.json
-│   │   └── project.json       # Configuração Nx
-│   └── api/                   # Express.js API
-│       ├── index.ts           # Servidor principal
-│       ├── celebrities.json   # Lista de celebridades
-│       ├── tsconfig.json
-│       └── project.json       # Configuração Nx
-├── libs/                      # Bibliotecas compartilhadas
-│   └── shared/
-│       ├── types/             # Interfaces TypeScript
-│       │   ├── src/index.ts
-│       │   └── project.json
-│       └── utils/             # Utilitários compartilhados
-│           ├── src/index.ts
-│           └── project.json
-├── tools/                     # Ferramentas customizadas
-├── .env.example               # Variáveis de ambiente
-├── nx.json                    # Configuração Nx
-├── tsconfig.base.json         # TypeScript base config
-└── package.json               # Dependências do workspace
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend API   │    │   External APIs │
+│   (Next.js)     │◄──►│   (Node.js)     │◄──►│   (NewsAPI)     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │   Database      │
+                       │   (MongoDB)     │
+                       └─────────────────┘
+                              │
+                              ▼
+                       ┌─────────────────┐
+                       │   Cache         │
+                       │   (Redis)       │
+                       └─────────────────┘
 ```
 
-## 🚀 Como Executar
+## 🚀 Quick Start
 
-### **Pré-requisitos**
+### Prerequisites
 
-- Node.js 18+
-- npm, yarn, pnpm ou bun
+- **Node.js** 18+ and npm
+- **MongoDB** 4.4+
+- **Redis** 6.0+
+- **NewsAPI.org** account (free tier available)
 
-### **Instalação**
+### Installation
 
-1. **Clone o repositório**
+1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/seu-usuario/gatas-news.git
+   git clone <repository-url>
    cd gatas-news
    ```
 
-2. **Instale as dependências**
+2. **Install dependencies**
 
    ```bash
    npm install
-   # ou
-   yarn install
-   # ou
-   pnpm install
    ```
 
-3. **Configure as variáveis de ambiente**
+3. **Set up environment variables**
 
    ```bash
-   cp .env.example .env.local
+   # Copy and configure environment file
+   cp apps/api/.env.example apps/api/.env
+   # Edit apps/api/.env with your configuration
    ```
 
-4. **Execute o projeto completo (Frontend + API)**
+4. **Start services**
 
    ```bash
+   # Start MongoDB (if using Homebrew)
+   brew services start mongodb-community
+
+   # Start Redis (if using Homebrew)
+   brew services start redis
+   ```
+
+5. **Run the application**
+
+   ```bash
+   # Start both frontend and API
    npm run dev
+
+   # Or start individually
+   npm run dev:api      # API only
+   npm run dev:frontend # Frontend only
    ```
 
-   Ou execute individualmente:
+6. **Access the application**
+   - **Frontend**: http://localhost:3000
+   - **API**: http://localhost:8000
+   - **Health Check**: http://localhost:8000/health
 
-   ```bash
-   # Frontend (Next.js) - http://localhost:3000
-   npm run dev:frontend
+## 📁 Project Structure
 
-   # API (Express.js) - http://localhost:8000
-   npm run dev:api
-   ```
-
-5. **Abra no navegador**
-   - **Frontend**: [http://localhost:3000](http://localhost:3000)
-   - **API**: [http://localhost:8000](http://localhost:8000)
-
-## ⚙️ Configuração
-
-### **Variáveis de Ambiente**
-
-Crie um arquivo `.env.local` baseado no `.env.example`:
-
-```bash
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:3000
-NEXT_PUBLIC_NEWS_API_ENDPOINT=/api/news
-
-# Mock API (desenvolvimento)
-NEXT_PUBLIC_USE_MOCK_API=true
-
-# App Configuration
-NEXT_PUBLIC_APP_NAME=Gatas News
-NEXT_PUBLIC_APP_DESCRIPTION=O portal de notícias sobre as mulheres mais admiradas do mundo
-
-# Quando a API real estiver pronta
-NEWS_API_KEY=sua_chave_da_news_api
-GUARDIAN_API_KEY=sua_chave_da_guardian_api
+```
+gatas-news/
+├── apps/
+│   ├── api/                 # Backend API (Node.js + Express)
+│   │   ├── src/
+│   │   │   ├── controllers/ # Request handlers
+│   │   │   ├── services/    # Business logic
+│   │   │   ├── database/    # Models & repositories
+│   │   │   ├── jobs/        # Background tasks
+│   │   │   ├── middleware/  # Express middleware
+│   │   │   ├── routes/      # API routes
+│   │   │   └── utils/       # Utilities
+│   │   └── .env             # API environment variables
+│   └── frontend/            # Frontend app (Next.js)
+│       └── src/
+│           ├── components/  # React components
+│           ├── pages/       # Next.js pages
+│           └── styles/      # CSS styles
+├── libs/
+│   └── shared/              # Shared libraries
+│       ├── types/           # TypeScript interfaces
+│       └── utils/           # Shared utilities
+└── README.md               # This file
 ```
 
-### **Scripts Disponíveis**
+## 🔧 Configuration
+
+### Environment Variables
+
+Create `apps/api/.env` with the following variables:
 
 ```bash
-# Desenvolvimento
-npm run dev              # Executar frontend + API em paralelo
-npm run dev:frontend     # Apenas frontend (Next.js)
-npm run dev:api          # Apenas API (Express.js)
+# News API Configuration
+NEWS_API_KEY=your_newsapi_key_here
+NEWS_API_KEY_BACKUP=backup_key_here
 
-# Build
-npm run build            # Build de todos os projetos
-npm run build:frontend   # Build apenas do frontend
-npm run build:api        # Build apenas da API
+# Database Configuration
+MONGODB_URI=mongodb://localhost:27017/gatas-news
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
 
-# Produção
-npm run start            # Executar frontend + API em produção
-npm run start:frontend   # Apenas frontend em produção
-npm run start:api        # Apenas API em produção
-
-# Qualidade de código
-npm run lint             # Lint de todos os projetos
-npm run lint:frontend    # Lint apenas do frontend
-npm run lint:api         # Lint apenas da API
-npm run format           # Formatar código com Prettier
-
-# Testes
-npm run test             # Executar todos os testes
-npm run test:frontend    # Testes do frontend
-npm run test:api         # Testes da API
-
-# Nx específicos
-npm run graph            # Visualizar dependency graph
-npm run reset            # Limpar cache do Nx
+# Server Configuration
+PORT=8000
+NODE_ENV=development
 ```
 
-## 🔄 API Mock vs Real
+### Getting a NewsAPI Key
 
-### **Desenvolvimento (Mock API)**
+1. Visit [NewsAPI.org](https://newsapi.org/)
+2. Sign up for a free account
+3. Copy your API key to the `.env` file
 
-Durante o desenvolvimento, o projeto usa uma API mock (`/api/news`) que:
+## 🎯 Key Features
 
-- ✅ Fornece dados realistas de celebridades brasileiras
-- ✅ Suporta busca e paginação
-- ✅ Simula delay de rede para testes
-- ✅ Permite desenvolvimento sem dependências externas
+### 🤖 Intelligent Content Filtering
 
-### **Produção (API Real)**
+The platform uses a sophisticated Portuguese content scoring system that:
 
-Para usar uma API real, configure:
+- **Analyzes visual appeal**: Prioritizes articles with photos, videos, and visual content
+- **Scores relevance**: Ensures articles are genuinely about the celebrities
+- **Filters quality**: Removes low-quality content like interviews without photos
+- **Source quality**: Weights entertainment sources higher than news sources
+
+### 📊 Content Scoring Algorithm
+
+Articles are scored on multiple factors:
+
+- **High-value keywords**: Beach, fashion, fitness content (80-100 points)
+- **Medium-value keywords**: General celebrity content (40-79 points)
+- **Photo indicators**: Articles with visual content get bonus points
+- **Source quality**: Entertainment sources ranked higher than news sources
+- **Action verbs**: Indicates celebrity is the main subject
+
+### 🔄 Automated News Fetching
+
+- **Scheduled fetching**: Daily at 6 AM (configurable)
+- **Manual triggers**: Admin can trigger fetches via API
+- **Duplicate handling**: Prevents duplicate articles
+- **Rate limiting**: Respects NewsAPI rate limits
+
+### ⚡ Performance Features
+
+- **Redis caching**: Fast response times with intelligent cache invalidation
+- **Database indexing**: Optimized MongoDB queries
+- **Pagination**: Efficient handling of large datasets
+- **Background processing**: Non-blocking news fetching
+
+## 🛠️ Development
+
+### Available Scripts
 
 ```bash
-NEXT_PUBLIC_USE_MOCK_API=false
-NEXT_PUBLIC_API_URL=https://sua-api-real.com
-NEWS_API_KEY=sua_chave_real
+# Setup and Development
+npm run setup              # Run initial setup script
+npm run dev                # Start both frontend and API
+npm run dev:api            # Start API only
+npm run dev:frontend       # Start frontend only
+
+# Building
+npm run build              # Build both applications
+npm run build:api          # Build API only
+npm run build:frontend     # Build frontend only
+
+# Testing
+npm run test               # Run all tests
+npm run test:api           # Run API tests
+npm run test:frontend      # Run frontend tests
+
+# Database Operations
+npm run db:status          # Check database contents
+npm run db:clear           # Clear articles and logs
+npm run migrate:celebrities # Populate database with celebrities
+
+# API Operations
+npm run api:health         # Check API health
+npm run api:fetch          # Trigger news fetch
+npm run api:news           # Check article count
+
+# Services Management
+npm run services:start     # Start MongoDB and Redis
+npm run services:stop      # Stop MongoDB and Redis
+npm run services:status    # Check service status
+
+# Monitoring and Debugging
+npm run logs:api           # View API logs
+npm run logs:error         # View error logs
+npm run kill:port          # Kill processes on port 8000
+
+# Code Quality
+npm run lint               # Lint all code
+npm run format             # Format code with Prettier
+npm run clean              # Clean and reinstall dependencies
 ```
 
-## 🎯 Funcionalidades Detalhadas
+### Database Setup
 
-### **Sistema de Busca**
+The API automatically connects to MongoDB and creates necessary collections. To populate with celebrities:
 
-- 🔍 Busca em tempo real por nome de celebridade
-- ⌨️ Suporte ao Enter para executar busca
-- 🧹 Botão limpar para resetar filtros
-- 📱 Interface responsiva mobile-first
+```bash
+npm run migrate:celebrities
+```
 
-### **Carregamento e Performance**
+### Testing the API
 
-- 💀 Skeleton loaders durante carregamento
-- 🖼️ Otimização de imagens com Next.js Image
-- ⚡ React.memo para prevenir re-renders
-- 🔄 Lazy loading de componentes pesados
+```bash
+# Health check
+curl http://localhost:8000/health
 
-### **Acessibilidade (a11y)**
+# Get news articles
+curl http://localhost:8000/api/v1/news
 
-- ♿ Navegação completa por teclado
-- 🔊 ARIA labels e roles apropriados
-- 👁️ Indicadores de foco visíveis
-- 📱 Suporte a leitores de tela
+# Get articles for specific celebrity
+curl "http://localhost:8000/api/v1/news?celebrity=Anitta"
 
-### **SEO e Meta Tags**
+# Trigger manual news fetch (admin)
+curl -X POST http://localhost:8000/api/v1/admin/fetch/trigger
+```
 
-- 🌐 Meta tags dinâmicas por página
-- 📊 Open Graph para redes sociais
-- 🗺️ Sitemap XML automático
-- 🤖 Robots.txt configurado
+## 📚 API Documentation
 
-## 🚀 Deploy
+### Main Endpoints
 
-### **Vercel (Recomendado)**
+| Method | Endpoint                      | Description         |
+| ------ | ----------------------------- | ------------------- |
+| GET    | `/health`                     | Health check        |
+| GET    | `/api/v1/news`                | Get news articles   |
+| GET    | `/api/v1/news/trending`       | Get trending topics |
+| POST   | `/api/v1/admin/fetch/trigger` | Trigger news fetch  |
+| GET    | `/api/v1/admin/celebrities`   | Manage celebrities  |
 
-1. Conecte seu repositório no [Vercel](https://vercel.com)
-2. Configure as variáveis de ambiente
-3. Deploy automático a cada push
+### Query Parameters
 
-### **Outras Plataformas**
+**GET /api/v1/news**
 
-- **Netlify**: Suporte completo ao Next.js
-- **Railway**: Deploy com banco de dados
-- **DigitalOcean App Platform**: Infraestrutura escalável
+- `page` (number): Page number (default: 1)
+- `limit` (number): Articles per page (default: 20)
+- `celebrity` (string): Filter by celebrity name
+- `sortBy` (string): Sort by 'publishedAt', 'relevancy', or 'popularity'
+- `searchTerm` (string): Search in title/description
+- `sentiment` (string): Filter by 'positive', 'negative', or 'neutral'
 
-## 🤝 Contribuição
+## 🔍 Troubleshooting
 
-1. **Fork** o projeto
-2. **Crie** uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. **Commit** suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. **Push** para a branch (`git push origin feature/AmazingFeature`)
-5. **Abra** um Pull Request
+### Common Issues
 
-## 📝 Roadmap
+**Port 8000 already in use**
 
-### **Próximas Funcionalidades**
+```bash
+# Kill processes on port 8000
+lsof -ti:8000 | xargs kill -9
+```
 
-- [ ] 🔐 Sistema de autenticação de usuários
-- [ ] ❤️ Sistema de favoritos e likes
-- [ ] 💬 Comentários em notícias
-- [ ] 📧 Newsletter e notificações
-- [ ] 🌙 Modo escuro/claro
-- [ ] 🌍 Internacionalização (i18n)
-- [ ] 📊 Dashboard administrativo
-- [ ] 🔔 Notificações push (PWA)
+**MongoDB connection failed**
 
-### **Melhorias Técnicas**
+```bash
+# Start MongoDB
+brew services start mongodb-community
+# Or check if running
+brew services list | grep mongodb
+```
 
-- [ ] 🧪 Testes automatizados (Jest + Testing Library)
-- [ ] 📈 Monitoramento de performance (Web Vitals)
-- [ ] 🔍 Busca avançada com filtros
-- [ ] 📱 Progressive Web App (PWA)
-- [ ] 🗄️ Cache inteligente com SWR/React Query
+**Redis connection failed**
 
-## 📄 Licença
+```bash
+# Start Redis
+brew services start redis
+# Test connection
+redis-cli ping
+```
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+**No articles appearing**
 
-## 👥 Equipe
+- Check if NewsAPI key is valid
+- Trigger manual fetch: `curl -X POST http://localhost:8000/api/v1/admin/fetch/trigger`
+- Check API logs for errors
 
-- **Desenvolvedor Principal**: [Seu Nome](https://github.com/seu-usuario)
-- **Design**: Baseado em tendências modernas de UI/UX
-- **Conteúdo**: Foco em celebridades brasileiras
+### Debug Mode
 
-## 📞 Contato
+Set `NODE_ENV=development` in your `.env` file to enable:
 
-- 📧 Email: seu-email@exemplo.com
-- 🐦 Twitter: [@seu_twitter](https://twitter.com/seu_twitter)
-- 💼 LinkedIn: [Seu Perfil](https://linkedin.com/in/seu-perfil)
+- Enhanced logging
+- Detailed error messages
+- Debug information in console
 
----
+## 🤝 Contributing
 
-<div align="center">
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-**Feito com ❤️ para celebrar as gatas mais incríveis do Brasil**
+### Code Style
 
-[⭐ Dê uma estrela](https://github.com/seu-usuario/gatas-news) • [🐛 Reportar Bug](https://github.com/seu-usuario/gatas-news/issues) • [💡 Sugerir Feature](https://github.com/seu-usuario/gatas-news/issues)
+- Use TypeScript for all new code
+- Follow existing naming conventions
+- Add tests for new features
+- Run `npm run lint` before committing
+- Use `npm run format` to format code
 
-</div>
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- [NewsAPI.org](https://newsapi.org/) for news data
+- [Nx](https://nx.dev/) for monorepo tooling
+- [Next.js](https://nextjs.org/) for the frontend framework
+- [Express.js](https://expressjs.com/) for the API framework
