@@ -49,11 +49,27 @@ const ALLOWED_DOMAINS = [
   'www.reuters.com',
   'cloudfront-us-east-1.images.arcpublishing.com',
   'img.estadao.com.br',
-  'conteudo.imguol.com.br',
+  // Brazilian news domains
+  'veja.abril.com.br',
+  'uploads.metroimg.com',
+  'i0.statig.com.br',
+  'p2.trrsf.com',
+  'www.metropoles.com',
   'uploads.metropoles.com',
+  'static.poder360.com.br',
+  'conteudo.imguol.com.br',
   'www.cnnbrasil.com.br',
   'cdn-images-1.medium.com',
   'miro.medium.com',
+  'www.uol.com.br',
+  'f.i.uol.com.br',
+  'imagens.ebc.com.br',
+  // CRITICAL: Missing domains found in actual articles
+  'assets.papelpop.com',
+  'blogger.googleusercontent.com',
+  'claudia.abril.com.br',
+  'olhardigital.com.br',
+  'www.infomoney.com.br',
 ];
 
 /**
