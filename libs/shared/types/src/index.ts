@@ -29,7 +29,7 @@ export interface ApiError {
 // Component Props types
 export interface SearchInputProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   onSearch: () => void;
   onClear: () => void;
   placeholder?: string;
@@ -65,14 +65,14 @@ export interface UseArticlesReturn {
   articles: Article[];
   loading: boolean;
   error: string;
-  fetchArticles: (page?: number, query?: string) => Promise<void>;
+  fetchArticles: (_page?: number, _query?: string) => Promise<void>;
   loadMore: () => void;
   hasMore: boolean;
 }
 
 export interface UseSearchReturn {
   query: string;
-  setQuery: (query: string) => void;
+  setQuery: (_query: string) => void;
   handleSearch: () => void;
   handleClear: () => void;
 }
@@ -98,7 +98,7 @@ export interface NewsResponse {
 }
 
 // Enhanced API Response types for new endpoints
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data: T;
   message?: string;
@@ -144,16 +144,7 @@ export interface CelebrityBase {
   name: string;
   slug: string;
   aliases: string[];
-  category: 'actress' | 'singer' | 'influencer' | 'model' | 'athlete' | 'presenter' | 'other';
-  priority: number; // 1-10
   isActive: boolean;
-  socialMedia?: {
-    instagram?: string;
-    twitter?: string;
-    tiktok?: string;
-  };
-  searchTerms: string[];
-  description?: string;
   totalArticles: number;
   lastFetchedAt?: Date;
   avgArticlesPerDay: number;
@@ -166,16 +157,7 @@ export interface Celebrity {
   name: string;
   slug: string;
   aliases: string[];
-  category: 'actress' | 'singer' | 'influencer' | 'model' | 'athlete' | 'presenter' | 'other';
-  priority: number; // 1-10
   isActive: boolean;
-  socialMedia?: {
-    instagram?: string;
-    twitter?: string;
-    tiktok?: string;
-  };
-  searchTerms: string[];
-  description?: string;
   totalArticles: number;
   lastFetchedAt?: Date;
   avgArticlesPerDay: number;
@@ -185,12 +167,7 @@ export interface Celebrity {
 
 export interface CelebrityCreateRequest {
   name: string;
-  category: CelebrityBase['category'];
-  priority?: number;
   aliases?: string[];
-  searchTerms?: string[];
-  socialMedia?: CelebrityBase['socialMedia'];
-  description?: string;
 }
 
 export interface CelebrityUpdateRequest extends Partial<CelebrityCreateRequest> {
@@ -198,9 +175,6 @@ export interface CelebrityUpdateRequest extends Partial<CelebrityCreateRequest> 
 }
 
 export interface CelebrityFilters {
-  category?: string;
-  minPriority?: number;
-  maxPriority?: number;
   isActive?: boolean;
   hasArticles?: boolean;
 }
@@ -208,7 +182,7 @@ export interface CelebrityFilters {
 export interface CelebritySearchOptions {
   page: number;
   limit: number;
-  sortBy?: 'name' | 'priority' | 'totalArticles' | 'avgArticlesPerDay' | 'createdAt';
+  sortBy?: 'name' | 'totalArticles' | 'avgArticlesPerDay' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -224,8 +198,6 @@ export interface CelebrityStatsResponse {
   totalCelebrities: number;
   activeCelebrities: number;
   inactiveCelebrities: number;
-  categoriesBreakdown: Array<{ category: string; count: number }>;
-  priorityBreakdown: Array<{ priority: number; count: number }>;
   topPerformers: Celebrity[];
   recentlyAdded: Celebrity[];
 }

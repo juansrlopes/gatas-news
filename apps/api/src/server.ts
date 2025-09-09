@@ -57,9 +57,21 @@ const initializeServices = async (): Promise<void> => {
     logger.info('🔧 Initializing services...');
     console.log('');
 
-    // CRITICAL: Validate API keys first - server will crash if rate limited
+    // Validate API keys - allow server to start even if rate limited
     logger.info('🔑 Validating NewsAPI keys...');
-    await validateApiKeysOnStartup(config);
+    try {
+      await validateApiKeysOnStartup(config);
+      logger.info('✅ NewsAPI keys validated successfully');
+    } catch (error) {
+      if (error instanceof Error && error.message === 'ALL_KEYS_FAILED') {
+        logger.warn('⚠️ All NewsAPI keys are rate limited - starting server in LIMITED MODE');
+        logger.warn('📋 Admin panel will work, but news fetching is disabled');
+        logger.warn('🔄 News fetching will resume when API keys reset');
+      } else {
+        logger.error('❌ Unexpected error during API key validation:', error);
+        throw error; // Re-throw unexpected errors
+      }
+    }
 
     // Connect to MongoDB
     logger.info('📊 Connecting to MongoDB...');

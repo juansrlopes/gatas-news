@@ -24,9 +24,9 @@ export interface IFetchLog extends Document {
 // Interface for FetchLog model static methods
 export interface IFetchLogModel extends Model<IFetchLog> {
   getLastSuccessfulFetch(): Promise<IFetchLog | null>;
-  getRecentLogs(limit?: number): Promise<IFetchLog[]>;
-  getFailedFetches(limit?: number): Promise<IFetchLog[]>;
-  createFetchLog(data: Partial<IFetchLog>): Promise<IFetchLog>;
+  getRecentLogs(_limit?: number): Promise<IFetchLog[]>;
+  getFailedFetches(_limit?: number): Promise<IFetchLog[]>;
+  createFetchLog(_data: Partial<IFetchLog>): Promise<IFetchLog>;
   getStatistics(): Promise<{
     totalFetches: number;
     successfulFetches: number;

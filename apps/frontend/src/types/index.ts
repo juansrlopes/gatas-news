@@ -29,7 +29,7 @@ export interface ApiError {
 // Component Props types
 export interface SearchInputProps {
   value: string;
-  onChange: (value: string) => void;
+  onChange: (_value: string) => void;
   onSearch: () => void;
   onClear: () => void;
   placeholder?: string;
@@ -63,7 +63,7 @@ export interface PaginationState {
 // Hook return types
 export interface UseSearchReturn {
   query: string;
-  setQuery: (query: string) => void;
+  setQuery: (_query: string) => void;
   handleSearch: () => void;
   handleClear: () => void;
 }

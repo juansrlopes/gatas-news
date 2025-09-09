@@ -280,23 +280,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', response.data.length);
     res.send(response.data);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Type guard for error with code
+    const hasCode = (err: unknown): err is { code: string } =>
+      err !== null && typeof err === 'object' && 'code' in err;
+
+    // Type guard for error with response
+    const hasResponse = (err: unknown): err is { response: { status: number } } =>
+      err !== null &&
+      typeof err === 'object' &&
+      'response' in err &&
+      typeof (err as { response: unknown }).response === 'object' &&
+      (err as { response: unknown }).response !== null &&
+      'status' in (err as { response: { status: unknown } }).response;
+
+    const errorCode = hasCode(error) ? error.code : undefined;
+    const errorStatus = hasResponse(error) ? error.response.status : undefined;
+
     console.error('Image proxy error:', {
       url,
-      error: error.message,
-      code: error.code,
-      status: error.response?.status,
+      error: errorMessage,
+      code: errorCode,
+      status: errorStatus,
     });
 
-    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+    if (errorCode === 'ECONNABORTED' || errorCode === 'ETIMEDOUT') {
       return res.status(408).json({ error: 'Request timeout' });
     }
 
-    if (error.response?.status === 404) {
+    if (errorStatus === 404) {
       return res.status(404).json({ error: 'Image not found' });
     }
 
-    if (error.response?.status === 403) {
+    if (errorStatus === 403) {
       return res.status(403).json({ error: 'Access forbidden' });
     }
 

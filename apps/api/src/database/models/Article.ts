@@ -24,11 +24,11 @@ export interface IArticle extends Document {
 
 // Interface for Article model static methods
 export interface IArticleModel extends Model<IArticle> {
-  findByCelebrity(celebrity: string, limit?: number, page?: number): Promise<IArticle[]>;
-  findRecent(limit?: number): Promise<IArticle[]>;
-  findByDateRange(startDate: Date, endDate: Date): Promise<IArticle[]>;
-  markAsInactive(articleId: string): Promise<IArticle | null>;
-  getPopularArticles(limit?: number): Promise<IArticle[]>;
+  findByCelebrity(_celebrity: string, _limit?: number, _page?: number): Promise<IArticle[]>;
+  findRecent(_limit?: number): Promise<IArticle[]>;
+  findByDateRange(_startDate: Date, _endDate: Date): Promise<IArticle[]>;
+  markAsInactive(_articleId: string): Promise<IArticle | null>;
+  getPopularArticles(_limit?: number): Promise<IArticle[]>;
 }
 
 // Article Schema

@@ -6,7 +6,7 @@ import React, { Component, ReactNode } from 'react';
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  onError?: (_error: Error, _errorInfo: React.ErrorInfo) => void;
   resetOnPropsChange?: boolean;
   resetKeys?: Array<string | number>;
 }
@@ -93,8 +93,10 @@ class ErrorBoundary extends Component<Props, State> {
     }
 
     // Report to error tracking service (if available)
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.captureException(error, {
+    if (typeof window !== 'undefined' && 'Sentry' in window) {
+      (
+        window as { Sentry: { captureException: (_error: Error, _context?: unknown) => void } }
+      ).Sentry.captureException(error, {
         contexts: {
           react: {
             componentStack: errorInfo.componentStack,

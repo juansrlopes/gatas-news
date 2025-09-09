@@ -55,7 +55,12 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/api/src/**/*.{js,ts}", "apps/api/*.{js,ts}"]
+        "lintFilePatterns": [
+          "apps/api/src/**/*.{js,ts}",
+          "apps/api/*.{js,ts}",
+          "!apps/api/test-api-keys.js",
+          "!apps/api/dist/**/*"
+        ]
       }
     },
     "test": {

@@ -13,35 +13,22 @@ export class CelebrityController {
    */
   public static getCelebrities = asyncHandler(
     async (req: Request, res: Response): Promise<void> => {
-      const {
-        page = 1,
-        limit = 20,
-        category,
-        minPriority,
-        maxPriority,
-        isActive,
-        sortBy = 'priority',
-        sortOrder = 'desc',
-      } = req.query;
+      const { page = 1, limit = 20, isActive, sortBy = 'name', sortOrder = 'asc' } = req.query;
 
       logger.info('Admin celebrities request received', {
         page: Number(page),
         limit: Number(limit),
-        category: category as string,
         ip: req.ip,
       });
 
       const filters = {
-        category: category as string,
-        minPriority: minPriority ? Number(minPriority) : undefined,
-        maxPriority: maxPriority ? Number(maxPriority) : undefined,
         isActive: isActive !== undefined ? isActive === 'true' : undefined,
       };
 
       const options = {
         page: Number(page),
         limit: Number(limit),
-        sortBy: sortBy as 'name' | 'priority' | 'totalArticles' | 'avgArticlesPerDay' | 'createdAt',
+        sortBy: sortBy as 'name' | 'totalArticles' | 'avgArticlesPerDay' | 'createdAt',
         sortOrder: sortOrder as 'asc' | 'desc',
       };
 
@@ -117,21 +104,13 @@ export class CelebrityController {
    */
   public static createCelebrity = asyncHandler(
     async (req: Request, res: Response): Promise<void> => {
-      const {
-        name,
-        category,
-        priority = 5,
-        aliases = [],
-        searchTerms = [],
-        socialMedia = {},
-        description,
-      } = req.body;
+      const { name, aliases = [] } = req.body;
 
-      if (!name || !category) {
-        throw new ValidationError('Name and category are required');
+      if (!name) {
+        throw new ValidationError('Name is required');
       }
 
-      logger.info('Creating new celebrity', { name, category, ip: req.ip });
+      logger.info('Creating new celebrity', { name, ip: req.ip });
 
       // Check if celebrity already exists
       const exists = await celebrityRepository.existsByName(name);
@@ -141,12 +120,7 @@ export class CelebrityController {
 
       const celebrity = await celebrityService.addCelebrity({
         name,
-        category,
-        priority,
         aliases,
-        searchTerms: searchTerms.length > 0 ? searchTerms : [name],
-        socialMedia,
-        description,
       });
 
       res.status(201).json({
@@ -345,7 +319,7 @@ export class CelebrityController {
             continue;
           }
 
-          await celebrityService.updateCelebrity(id, { priority });
+          // Priority field removed - no longer needed
           results.updated++;
         } catch (error) {
           results.errors.push(`Failed to update ${update.id}: ${(error as Error).message}`);

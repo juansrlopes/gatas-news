@@ -45,7 +45,7 @@ export const shuffleArray = <T>(array: T[]): T[] => {
 // Deduplication utilities
 export const filterDuplicates = <T>(
   items: T[],
-  keyExtractor: (item: T) => string | number = item => JSON.stringify(item)
+  keyExtractor: (_item: T) => string | number = _item => JSON.stringify(_item)
 ): T[] => {
   const seen = new Set<string | number>();
   return items.filter(item => {

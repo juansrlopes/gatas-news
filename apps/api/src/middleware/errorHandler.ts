@@ -43,7 +43,7 @@ export const errorHandler = (error: Error, req: Request, res: Response): void =>
 
 // Async error wrapper
 export const asyncHandler =
-  (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+  (fn: (_req: Request, _res: Response, _next: NextFunction) => Promise<void>) =>
+  (_req: Request, _res: Response, _next: NextFunction) => {
+    Promise.resolve(fn(_req, _res, _next)).catch(_next);
   };

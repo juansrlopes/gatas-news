@@ -3,9 +3,6 @@ import { FilterQuery, UpdateQuery } from 'mongoose';
 import logger from '../../utils/logger';
 
 export interface CelebrityFilters {
-  category?: string;
-  minPriority?: number;
-  maxPriority?: number;
   isActive?: boolean;
   hasArticles?: boolean;
 }
@@ -13,7 +10,7 @@ export interface CelebrityFilters {
 export interface CelebritySearchOptions {
   page: number;
   limit: number;
-  sortBy?: 'name' | 'priority' | 'totalArticles' | 'avgArticlesPerDay' | 'createdAt';
+  sortBy?: 'name' | 'totalArticles' | 'avgArticlesPerDay' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -107,7 +104,7 @@ export class CelebrityRepository {
     hasMore: boolean;
   }> {
     try {
-      const { page, limit, sortBy = 'priority', sortOrder = 'desc' } = options;
+      const { page, limit, sortBy = 'name', sortOrder = 'asc' } = options;
       const skip = (page - 1) * limit;
 
       // Build search query
@@ -162,7 +159,7 @@ export class CelebrityRepository {
   }> {
     try {
       const query = this.buildFilterQuery(filters);
-      const { page, limit, sortBy = 'priority', sortOrder = 'desc' } = options;
+      const { page, limit, sortBy = 'name', sortOrder = 'asc' } = options;
       const skip = (page - 1) * limit;
 
       // Build sort object
@@ -204,35 +201,14 @@ export class CelebrityRepository {
   }
 
   /**
-   * Get high-priority celebrities
-   */
-  public async getHighPriority(minPriority: number = 7): Promise<ICelebrity[]> {
-    try {
-      return await Celebrity.findByPriority(minPriority);
-    } catch (error) {
-      logger.error('Error getting high-priority celebrities:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get celebrities by category
-   */
-  public async getByCategory(category: string): Promise<ICelebrity[]> {
-    try {
-      return await Celebrity.findByCategory(category);
-    } catch (error) {
-      logger.error('Error getting celebrities by category:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get top performing celebrities
+   * Get top performing celebrities (by article count)
    */
   public async getTopPerformers(limit: number = 10): Promise<ICelebrity[]> {
     try {
-      return await Celebrity.getTopPerformers(limit);
+      return await Celebrity.find({ isActive: true })
+        .sort({ totalArticles: -1, avgArticlesPerDay: -1 })
+        .limit(limit)
+        .exec();
     } catch (error) {
       logger.error('Error getting top performing celebrities:', error);
       throw error;
@@ -326,8 +302,6 @@ export class CelebrityRepository {
     totalCelebrities: number;
     activeCelebrities: number;
     inactiveCelebrities: number;
-    categoriesBreakdown: Array<{ category: string; count: number }>;
-    priorityBreakdown: Array<{ priority: number; count: number }>;
     topPerformers: ICelebrity[];
     recentlyAdded: ICelebrity[];
   }> {
@@ -336,26 +310,12 @@ export class CelebrityRepository {
         totalCelebrities,
         activeCelebrities,
         inactiveCelebrities,
-        categoriesBreakdown,
-        priorityBreakdown,
         topPerformers,
         recentlyAdded,
       ] = await Promise.all([
         Celebrity.countDocuments().exec(),
         Celebrity.countDocuments({ isActive: true }).exec(),
         Celebrity.countDocuments({ isActive: false }).exec(),
-        Celebrity.aggregate([
-          { $match: { isActive: true } },
-          { $group: { _id: '$category', count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-          { $project: { category: '$_id', count: 1, _id: 0 } },
-        ]).exec(),
-        Celebrity.aggregate([
-          { $match: { isActive: true } },
-          { $group: { _id: '$priority', count: { $sum: 1 } } },
-          { $sort: { _id: -1 } },
-          { $project: { priority: '$_id', count: 1, _id: 0 } },
-        ]).exec(),
         this.getTopPerformers(5),
         Celebrity.find({ isActive: true }).sort({ createdAt: -1 }).limit(5).exec(),
       ]);
@@ -364,8 +324,6 @@ export class CelebrityRepository {
         totalCelebrities,
         activeCelebrities,
         inactiveCelebrities,
-        categoriesBreakdown,
-        priorityBreakdown,
         topPerformers,
         recentlyAdded,
       };
@@ -397,9 +355,6 @@ export class CelebrityRepository {
           continue;
         }
 
-        // Determine category based on name (simple heuristic)
-        const category = this.inferCategory(name);
-
         await this.create({
           name: name.trim(),
           slug: name
@@ -407,10 +362,7 @@ export class CelebrityRepository {
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-*|-*$/g, ''),
-          category,
-          priority: 5, // Default priority
           aliases: [name.trim().toLowerCase()],
-          searchTerms: [name.trim().toLowerCase()],
           isActive: true,
         });
 
@@ -432,40 +384,11 @@ export class CelebrityRepository {
     // Default to active celebrities
     query.isActive = filters.isActive !== undefined ? filters.isActive : true;
 
-    if (filters.category) {
-      query.category = filters.category;
-    }
-
-    if (filters.minPriority !== undefined || filters.maxPriority !== undefined) {
-      query.priority = {};
-      if (filters.minPriority !== undefined) {
-        query.priority.$gte = filters.minPriority;
-      }
-      if (filters.maxPriority !== undefined) {
-        query.priority.$lte = filters.maxPriority;
-      }
-    }
-
     if (filters.hasArticles) {
       query.totalArticles = { $gt: 0 };
     }
 
     return query;
-  }
-
-  /**
-   * Simple category inference (can be improved with ML)
-   */
-  private inferCategory(name: string): ICelebrity['category'] {
-    const lowerName = name.toLowerCase();
-
-    // Simple keyword matching (in production, you'd want a more sophisticated approach)
-    if (lowerName.includes('anitta') || lowerName.includes('luisa')) return 'singer';
-    if (lowerName.includes('paolla') || lowerName.includes('deborah')) return 'actress';
-    if (lowerName.includes('jade') || lowerName.includes('influencer')) return 'influencer';
-
-    // Default to influencer for now
-    return 'influencer';
   }
 }
 

@@ -133,7 +133,8 @@ export class CelebrityService {
       }
 
       // Get from database
-      const celebrities = await celebrityRepository.getHighPriority(7); // Priority 7+
+      // Priority system removed - get all active celebrities instead
+      const celebrities = await celebrityRepository.getActiveForFetching();
       const names = celebrities.map(celebrity => celebrity.name);
 
       // Cache for 2 hours
@@ -160,7 +161,8 @@ export class CelebrityService {
       }
 
       // Get from database
-      const celebrities = await celebrityRepository.getByCategory(category);
+      // Category system removed - get all active celebrities instead
+      const celebrities = await celebrityRepository.getActiveForFetching();
       const names = celebrities.map(celebrity => celebrity.name);
 
       // Cache for 1 hour
@@ -226,12 +228,7 @@ export class CelebrityService {
    */
   public async addCelebrity(celebrityData: {
     name: string;
-    category: ICelebrity['category'];
-    priority?: number;
     aliases?: string[];
-    searchTerms?: string[];
-    socialMedia?: ICelebrity['socialMedia'];
-    description?: string;
   }): Promise<ICelebrity> {
     try {
       // Generate slug from name
@@ -245,9 +242,7 @@ export class CelebrityService {
       const celebrity = await celebrityRepository.create({
         ...celebrityData,
         slug,
-        priority: celebrityData.priority || 5,
         aliases: celebrityData.aliases || [],
-        searchTerms: celebrityData.searchTerms || [celebrityData.name],
         isActive: true,
       });
 
@@ -333,8 +328,6 @@ export class CelebrityService {
     totalCelebrities: number;
     activeCelebrities: number;
     inactiveCelebrities: number;
-    categoriesBreakdown: Array<{ category: string; count: number }>;
-    priorityBreakdown: Array<{ priority: number; count: number }>;
     topPerformers: ICelebrity[];
     recentlyAdded: ICelebrity[];
   }> {
@@ -346,8 +339,6 @@ export class CelebrityService {
         totalCelebrities: number;
         activeCelebrities: number;
         inactiveCelebrities: number;
-        categoriesBreakdown: Array<{ category: string; count: number }>;
-        priorityBreakdown: Array<{ priority: number; count: number }>;
         topPerformers: ICelebrity[];
         recentlyAdded: ICelebrity[];
       }>(cacheKey);

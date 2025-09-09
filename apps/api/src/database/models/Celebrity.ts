@@ -5,22 +5,9 @@ export interface ICelebrity extends Document {
   name: string;
   slug: string; // URL-friendly version of name
   aliases: string[]; // Alternative names, nicknames
-  category: 'actress' | 'singer' | 'influencer' | 'model' | 'athlete' | 'presenter' | 'other';
-  priority: number; // 1-10, higher = more important
   isActive: boolean;
 
-  // Social media handles (for future features)
-  socialMedia?: {
-    instagram?: string;
-    twitter?: string;
-    tiktok?: string;
-  };
-
-  // Search optimization
-  searchTerms: string[]; // Additional search terms
-  description?: string;
-
-  // Analytics
+  // Analytics (auto-calculated)
   totalArticles: number;
   lastFetchedAt?: Date;
   avgArticlesPerDay: number;
@@ -32,12 +19,9 @@ export interface ICelebrity extends Document {
 
 // Interface for Celebrity model static methods
 export interface ICelebrityModel extends Model<ICelebrity> {
-  findActive(limit?: number): Promise<ICelebrity[]>;
-  findByPriority(minPriority?: number): Promise<ICelebrity[]>;
-  findByCategory(category: string): Promise<ICelebrity[]>;
-  searchByName(query: string): Promise<ICelebrity[]>;
-  getTopPerformers(limit?: number): Promise<ICelebrity[]>;
-  updateArticleStats(celebrityId: string, articleCount: number): Promise<ICelebrity | null>;
+  findActive(_limit?: number): Promise<ICelebrity[]>;
+  searchByName(_query: string): Promise<ICelebrity[]>;
+  updateArticleStats(_celebrityId: string, _articleCount: number): Promise<ICelebrity | null>;
 }
 
 // Celebrity Schema
@@ -64,48 +48,10 @@ const CelebritySchema = new Schema<ICelebrity>(
         index: true,
       },
     ],
-    category: {
-      type: String,
-      enum: ['actress', 'singer', 'influencer', 'model', 'athlete', 'presenter', 'other'],
-      required: true,
-      index: true,
-    },
-    priority: {
-      type: Number,
-      min: 1,
-      max: 10,
-      default: 5,
-      index: -1, // Descending index for priority queries
-    },
     isActive: {
       type: Boolean,
       default: true,
       index: true,
-    },
-    socialMedia: {
-      instagram: {
-        type: String,
-        trim: true,
-      },
-      twitter: {
-        type: String,
-        trim: true,
-      },
-      tiktok: {
-        type: String,
-        trim: true,
-      },
-    },
-    searchTerms: [
-      {
-        type: String,
-        trim: true,
-        index: true,
-      },
-    ],
-    description: {
-      type: String,
-      trim: true,
     },
     totalArticles: {
       type: Number,
@@ -129,19 +75,15 @@ const CelebritySchema = new Schema<ICelebrity>(
 );
 
 // Compound indexes for better query performance
-CelebritySchema.index({ isActive: 1, priority: -1 });
-CelebritySchema.index({ category: 1, priority: -1 });
-CelebritySchema.index({ totalArticles: -1, priority: -1 });
+CelebritySchema.index({ isActive: 1, totalArticles: -1 });
 
 // Text index for search
 CelebritySchema.index({
   name: 'text',
   aliases: 'text',
-  searchTerms: 'text',
-  description: 'text',
 });
 
-// Pre-save middleware to generate slug and search terms
+// Pre-save middleware to generate slug
 CelebritySchema.pre('save', function (next) {
   if (this.isModified('name')) {
     this.slug = this.name
@@ -154,78 +96,21 @@ CelebritySchema.pre('save', function (next) {
       .trim();
   }
 
-  // Generate search terms from name and aliases
-  if (this.isModified('name') || this.isModified('aliases')) {
-    const terms = new Set<string>();
-
-    // Add name
-    if (this.name) {
-      terms.add(this.name.toLowerCase());
-    }
-
-    // Add aliases
-    if (this.aliases && Array.isArray(this.aliases)) {
-      this.aliases.forEach(alias => {
-        if (alias) {
-          terms.add(alias.toLowerCase());
-        }
-      });
-    }
-
-    this.searchTerms = Array.from(terms);
-  }
-
   next();
 });
 
 // Static methods
 CelebritySchema.statics.findActive = function (limit: number = 100): Promise<ICelebrity[]> {
-  return this.find({ isActive: true })
-    .sort({ priority: -1, totalArticles: -1 })
-    .limit(limit)
-    .exec();
-};
-
-CelebritySchema.statics.findByPriority = function (minPriority: number = 7): Promise<ICelebrity[]> {
-  return this.find({
-    isActive: true,
-    priority: { $gte: minPriority },
-  })
-    .sort({ priority: -1 })
-    .exec();
-};
-
-CelebritySchema.statics.findByCategory = function (category: string): Promise<ICelebrity[]> {
-  return this.find({
-    isActive: true,
-    category,
-  })
-    .sort({ priority: -1, totalArticles: -1 })
-    .exec();
+  return this.find({ isActive: true }).sort({ totalArticles: -1, name: 1 }).limit(limit).exec();
 };
 
 CelebritySchema.statics.searchByName = function (query: string): Promise<ICelebrity[]> {
   const searchRegex = new RegExp(query, 'i');
   return this.find({
     isActive: true,
-    $or: [
-      { name: searchRegex },
-      { aliases: { $in: [searchRegex] } },
-      { searchTerms: { $in: [searchRegex] } },
-    ],
+    $or: [{ name: searchRegex }, { aliases: { $in: [searchRegex] } }],
   })
-    .sort({ priority: -1, totalArticles: -1 })
-    .exec();
-};
-
-CelebritySchema.statics.getTopPerformers = function (limit: number = 10): Promise<ICelebrity[]> {
-  return this.find({ isActive: true })
-    .sort({
-      avgArticlesPerDay: -1,
-      totalArticles: -1,
-      priority: -1,
-    })
-    .limit(limit)
+    .sort({ totalArticles: -1, name: 1 })
     .exec();
 };
 
@@ -250,7 +135,7 @@ CelebritySchema.statics.updateArticleStats = function (
 
 // Instance methods
 CelebritySchema.methods.getAllSearchTerms = function (): string[] {
-  return [this.name, ...this.aliases, ...this.searchTerms].filter(Boolean);
+  return [this.name, ...this.aliases].filter(Boolean);
 };
 
 CelebritySchema.methods.updatePerformanceMetrics = function (newArticleCount: number) {

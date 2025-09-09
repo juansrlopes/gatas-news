@@ -14,7 +14,7 @@
  */
 export const logComponentRender = (
   componentName: string,
-  props?: Record<string, any>,
+  props?: Record<string, unknown>,
   renderTime?: number
 ) => {
   if (process.env.NODE_ENV !== 'development') return;
@@ -39,7 +39,7 @@ export const logComponentRender = (
 export const logApiRequest = (
   url: string,
   method: string = 'GET',
-  data?: any,
+  data?: unknown,
   duration?: number
 ) => {
   if (process.env.NODE_ENV !== 'development') return;
@@ -64,7 +64,7 @@ export const logApiRequest = (
  */
 export const logError = (
   error: Error | string,
-  context?: Record<string, any>,
+  context?: Record<string, unknown>,
   component?: string
 ) => {
   if (process.env.NODE_ENV !== 'development') return;
@@ -138,7 +138,11 @@ export const memory = {
   log: (label?: string) => {
     if (process.env.NODE_ENV !== 'development' || !('memory' in performance)) return;
 
-    const memInfo = (performance as any).memory;
+    const memInfo = (
+      performance as {
+        memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
+      }
+    ).memory;
     console.group(`🧠 Memory Usage${label ? ` - ${label}` : ''}`);
     console.log(`Used: ${(memInfo.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
     console.log(`Total: ${(memInfo.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
@@ -222,7 +226,7 @@ export const state = {
    * @param oldValue - Previous state value
    * @param newValue - New state value
    */
-  logChange: (componentName: string, stateName: string, oldValue: any, newValue: any) => {
+  logChange: (componentName: string, stateName: string, oldValue: unknown, newValue: unknown) => {
     if (process.env.NODE_ENV !== 'development') return;
 
     console.group(`🔄 State Change: ${componentName}.${stateName}`);
@@ -239,7 +243,7 @@ export const state = {
    * @returns Function to log state changes
    */
   createLogger: (componentName: string) => {
-    return (stateName: string, oldValue: any, newValue: any) => {
+    return (stateName: string, oldValue: unknown, newValue: unknown) => {
       state.logChange(componentName, stateName, oldValue, newValue);
     };
   },
@@ -298,6 +302,6 @@ export const devTools = {
 
 // Make devTools available globally in development
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  (window as any).devTools = devTools;
+  (window as { devTools?: typeof devTools }).devTools = devTools;
   console.log('🔧 Dev tools available at window.devTools');
 }

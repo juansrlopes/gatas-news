@@ -65,7 +65,7 @@ const NewsGrid = () => {
       // Use image proxy for external images
       return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
     },
-    [failedImages]
+    [failedImages, getContextualPlaceholder]
   );
 
   /**
@@ -185,7 +185,7 @@ const NewsGrid = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [lastFailedRequest]);
+  }, [lastFailedRequest, fetchArticles]);
 
   useEffect(() => {
     // Safely fetch articles on initial load with error boundary protection
@@ -199,7 +199,7 @@ const NewsGrid = () => {
     };
 
     initializeArticles();
-  }, []);
+  }, [fetchArticles]);
 
   /**
    * Fetches articles from the API with comprehensive error handling
@@ -228,132 +228,147 @@ const NewsGrid = () => {
    * await fetchArticles(1, 'Anitta', true);
    * ```
    */
-  const fetchArticles = async (pageNumber = 1, celebrityName = '', isRetry = false) => {
-    // Don't fetch if offline
-    if (!isOnline && !isRetry) {
-      setError('Você está offline. Verifique sua conexão com a internet.');
-      return;
-    }
+  const fetchArticles = useCallback(
+    async (pageNumber = 1, celebrityName = '', isRetry = false) => {
+      // Don't fetch if offline
+      if (!isOnline && !isRetry) {
+        setError('Você está offline. Verifique sua conexão com a internet.');
+        return;
+      }
 
-    setLoading(true);
-    if (!isRetry) {
-      setError('');
-      setRetryCount(0);
-    }
+      setLoading(true);
+      if (!isRetry) {
+        setError('');
+        setRetryCount(0);
+      }
 
-    // Sanitize input
-    const sanitizedCelebrityName = celebrityName.trim().replace(/[<>]/g, '');
+      // Sanitize input
+      const sanitizedCelebrityName = celebrityName.trim().replace(/[<>]/g, '');
 
-    try {
-      const config = getEnvConfig();
+      try {
+        const config = getEnvConfig();
 
-      // Build query parameters for GET request
-      const params = new URLSearchParams({
-        page: pageNumber.toString(),
-        limit: '20',
-        ...(sanitizedCelebrityName && { celebrity: sanitizedCelebrityName }),
-      });
+        // Build query parameters for GET request
+        const params = new URLSearchParams({
+          page: pageNumber.toString(),
+          limit: '20',
+          ...(sanitizedCelebrityName && { celebrity: sanitizedCelebrityName }),
+        });
 
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-      const response = await fetch(`${config.apiUrl}/api/v1/news?${params}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
-      });
+        const response = await fetch(`${config.apiUrl}/api/v1/news?${params}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('API não encontrada. Verifique se o servidor está rodando.');
-        } else if (response.status === 500) {
-          throw new Error('Erro interno do servidor. Tente novamente em alguns minutos.');
-        } else if (response.status >= 400 && response.status < 500) {
-          throw new Error('Erro na requisição. Verifique os parâmetros.');
-        } else {
-          throw new Error(`Erro do servidor: ${response.status}`);
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('API não encontrada. Verifique se o servidor está rodando.');
+          } else if (response.status === 500) {
+            throw new Error('Erro interno do servidor. Tente novamente em alguns minutos.');
+          } else if (response.status >= 400 && response.status < 500) {
+            throw new Error('Erro na requisição. Verifique os parâmetros.');
+          } else {
+            throw new Error(`Erro do servidor: ${response.status}`);
+          }
         }
-      }
 
-      const data = await response.json();
+        const data = await response.json();
 
-      // Handle the API response structure: { success: true, data: { articles: [...] } }
-      const articles = data.data?.articles || data.articles || [];
+        // Handle the API response structure: { success: true, data: { articles: [...] } }
+        const articles = data.data?.articles || data.articles || [];
 
-      // Validate articles structure
-      const validArticles = articles.filter(
-        (article: any) =>
-          article &&
-          typeof article.title === 'string' &&
-          typeof article.url === 'string' &&
-          article.title.trim() !== '' &&
-          article.url.trim() !== ''
-      );
+        // Validate articles structure
+        const validArticles = articles.filter(
+          (article: unknown): article is Article =>
+            article !== null &&
+            typeof article === 'object' &&
+            'title' in article &&
+            'url' in article &&
+            typeof (article as Article).title === 'string' &&
+            typeof (article as Article).url === 'string' &&
+            (article as Article).title.trim() !== '' &&
+            (article as Article).url.trim() !== ''
+        );
 
-      if (pageNumber === 1) {
-        setArticles(validArticles);
-        setFailedImages(new Set()); // Clear failed images on new search
-      } else {
-        setArticles(prevArticles => [...prevArticles, ...validArticles]);
-      }
-
-      // Reset retry count on success
-      setRetryCount(0);
-      setLastFailedRequest(null);
-
-      if (validArticles.length === 0 && pageNumber === 1) {
-        if (sanitizedCelebrityName) {
-          setError(
-            `Nenhuma notícia encontrada para "${sanitizedCelebrityName}". Tente outro nome ou limpe o filtro.`
-          );
+        if (pageNumber === 1) {
+          setArticles(validArticles);
+          setFailedImages(new Set()); // Clear failed images on new search
         } else {
-          setError('Nenhuma notícia disponível no momento. Tente novamente mais tarde.');
+          setArticles(prevArticles => [...prevArticles, ...validArticles]);
         }
+
+        // Reset retry count on success
+        setRetryCount(0);
+        setLastFailedRequest(null);
+
+        if (validArticles.length === 0 && pageNumber === 1) {
+          if (sanitizedCelebrityName) {
+            setError(
+              `Nenhuma notícia encontrada para "${sanitizedCelebrityName}". Tente outro nome ou limpe o filtro.`
+            );
+          } else {
+            setError('Nenhuma notícia disponível no momento. Tente novamente mais tarde.');
+          }
+        }
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorName = error instanceof Error ? error.name : 'UnknownError';
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        const errorCode =
+          error && typeof error === 'object' && 'code' in error
+            ? (error as { code: unknown }).code
+            : undefined;
+
+        console.error('Error fetching articles:', {
+          message: errorMessage,
+          name: errorName,
+          stack: errorStack,
+          code: errorCode,
+          type: typeof error,
+          error: error,
+        });
+
+        // Store failed request for retry when back online
+        setLastFailedRequest({ page: pageNumber, celebrity: sanitizedCelebrityName });
+
+        let displayErrorMessage = 'Erro inesperado. Tente novamente.';
+
+        if (errorName === 'AbortError') {
+          displayErrorMessage = 'A requisição demorou muito para responder. Verifique sua conexão.';
+        } else if (
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('NetworkError') ||
+          errorMessage.includes('fetch') ||
+          errorCode === 'NETWORK_ERROR' ||
+          !navigator.onLine
+        ) {
+          displayErrorMessage =
+            'Servidor indisponível. Verifique se a API está rodando e tente novamente.';
+        } else if (errorMessage) {
+          displayErrorMessage = errorMessage;
+        }
+
+        // Ensure error state is always set
+        setError(displayErrorMessage || 'Erro de conexão. Verifique se a API está rodando.');
+
+        if (pageNumber === 1) {
+          setArticles([]);
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      console.error('Error fetching articles:', {
-        message: error?.message,
-        name: error?.name,
-        stack: error?.stack,
-        code: error?.code,
-        type: typeof error,
-        error: error,
-      });
-
-      // Store failed request for retry when back online
-      setLastFailedRequest({ page: pageNumber, celebrity: sanitizedCelebrityName });
-
-      let errorMessage = 'Erro inesperado. Tente novamente.';
-
-      if (error.name === 'AbortError') {
-        errorMessage = 'A requisição demorou muito para responder. Verifique sua conexão.';
-      } else if (
-        error.message.includes('Failed to fetch') ||
-        error.message.includes('NetworkError') ||
-        error.message.includes('fetch') ||
-        error.code === 'NETWORK_ERROR' ||
-        !navigator.onLine
-      ) {
-        errorMessage = 'Servidor indisponível. Verifique se a API está rodando e tente novamente.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      // Ensure error state is always set
-      setError(errorMessage || 'Erro de conexão. Verifique se a API está rodando.');
-
-      if (pageNumber === 1) {
-        setArticles([]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [isOnline]
+  );
 
   /**
    * Retries the last failed API request with incremented retry count
@@ -380,7 +395,7 @@ const NewsGrid = () => {
       setRetryCount(newRetryCount);
       fetchArticles(page, query, true);
     }
-  }, [lastFailedRequest, retryCount, page, query]);
+  }, [lastFailedRequest, retryCount, page, query, fetchArticles]);
 
   /**
    * Loads the next page of articles for infinite scroll pagination
@@ -402,7 +417,7 @@ const NewsGrid = () => {
   const handleSearch = useCallback(() => {
     setPage(1);
     fetchArticles(1, query);
-  }, [query]);
+  }, [query, fetchArticles]);
 
   /**
    * Clears the search input and resets to show all articles
@@ -413,7 +428,7 @@ const NewsGrid = () => {
     setQuery('');
     setPage(1);
     fetchArticles(1);
-  }, []);
+  }, [fetchArticles]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);

@@ -24,6 +24,11 @@ const eslintConfig = [
       '.nx/',
     ],
   },
+  {
+    rules: {
+      '@next/next/no-html-link-for-pages': 'off',
+    },
+  },
 ];
 
 export default eslintConfig;

@@ -14,7 +14,7 @@ export const webVitals = {
    *
    * @param onReport - Callback to handle the metrics
    */
-  measureCoreWebVitals: (onReport: (metric: WebVitalMetric) => void) => {
+  measureCoreWebVitals: (onReport: (_metric: WebVitalMetric) => void) => {
     if (typeof window === 'undefined') return;
 
     // Largest Contentful Paint (LCP)
@@ -160,7 +160,7 @@ export const monitor = {
    */
   monitorMemory: (
     interval: number = 5000,
-    onUpdate: (usage: MemoryUsage) => void
+    onUpdate: (_usage: MemoryUsage) => void
   ): (() => void) => {
     if (!('memory' in performance)) {
       console.warn('Memory monitoring not supported in this browser');
@@ -168,11 +168,11 @@ export const monitor = {
     }
 
     const intervalId = setInterval(() => {
-      const usage = getDetailedMemoryUsage();
-      onUpdate(usage);
+      const _usage = getDetailedMemoryUsage();
+      onUpdate(_usage);
 
       if (process.env.NODE_ENV === 'development') {
-        if (usage.usedJSHeapSize > usage.jsHeapSizeLimit * 0.9) {
+        if (_usage.usedJSHeapSize > _usage.jsHeapSizeLimit * 0.9) {
           console.warn('⚠️ Memory usage is approaching the limit');
         }
       }
@@ -193,15 +193,15 @@ export const optimize = {
    * @param wait - Wait time in milliseconds
    * @returns Debounced function
    */
-  debounce: <T extends (...args: any[]) => any>(
+  debounce: <T extends (..._args: unknown[]) => unknown>(
     func: T,
     wait: number
-  ): ((...args: Parameters<T>) => void) => {
+  ): ((..._args: Parameters<T>) => void) => {
     let timeout: NodeJS.Timeout;
 
-    return (...args: Parameters<T>) => {
+    return (..._args: Parameters<T>) => {
       clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
+      timeout = setTimeout(() => func(..._args), wait);
     };
   },
 
@@ -212,15 +212,15 @@ export const optimize = {
    * @param limit - Time limit in milliseconds
    * @returns Throttled function
    */
-  throttle: <T extends (...args: any[]) => any>(
+  throttle: <T extends (..._args: unknown[]) => unknown>(
     func: T,
     limit: number
-  ): ((...args: Parameters<T>) => void) => {
+  ): ((..._args: Parameters<T>) => void) => {
     let inThrottle: boolean;
 
-    return (...args: Parameters<T>) => {
+    return (..._args: Parameters<T>) => {
       if (!inThrottle) {
-        func(...args);
+        func(..._args);
         inThrottle = true;
         setTimeout(() => (inThrottle = false), limit);
       }
@@ -234,20 +234,20 @@ export const optimize = {
    * @param getKey - Function to generate cache key
    * @returns Memoized function
    */
-  memoize: <T extends (...args: any[]) => any>(
+  memoize: <T extends (..._args: unknown[]) => unknown>(
     func: T,
-    getKey?: (...args: Parameters<T>) => string
+    getKey?: (..._args: Parameters<T>) => string
   ): T => {
     const cache = new Map();
 
-    return ((...args: Parameters<T>) => {
-      const key = getKey ? getKey(...args) : JSON.stringify(args);
+    return ((..._args: Parameters<T>) => {
+      const key = getKey ? getKey(..._args) : JSON.stringify(_args);
 
       if (cache.has(key)) {
         return cache.get(key);
       }
 
-      const result = func(...args);
+      const result = func(..._args);
       cache.set(key, result);
 
       return result;
@@ -435,12 +435,12 @@ interface BundleAnalysis {
 /**
  * Helper functions
  */
-function measureLCP(onReport: (metric: WebVitalMetric) => void) {
+function measureLCP(onReport: (_metric: WebVitalMetric) => void) {
   if (!('PerformanceObserver' in window)) return;
 
   const observer = new PerformanceObserver(list => {
     const entries = list.getEntries();
-    const lastEntry = entries[entries.length - 1] as any;
+    const lastEntry = entries[entries.length - 1] as PerformanceEntry;
 
     if (lastEntry) {
       const metric: WebVitalMetric = {
@@ -457,12 +457,12 @@ function measureLCP(onReport: (metric: WebVitalMetric) => void) {
   observer.observe({ entryTypes: ['largest-contentful-paint'] });
 }
 
-function measureFID(onReport: (metric: WebVitalMetric) => void) {
+function measureFID(onReport: (_metric: WebVitalMetric) => void) {
   if (!('PerformanceObserver' in window)) return;
 
   const observer = new PerformanceObserver(list => {
     const entries = list.getEntries();
-    entries.forEach((entry: any) => {
+    entries.forEach((entry: PerformanceEntry) => {
       const metric: WebVitalMetric = {
         name: 'FID',
         value: entry.processingStart - entry.startTime,
@@ -477,17 +477,17 @@ function measureFID(onReport: (metric: WebVitalMetric) => void) {
   observer.observe({ entryTypes: ['first-input'] });
 }
 
-function measureCLS(onReport: (metric: WebVitalMetric) => void) {
+function measureCLS(onReport: (_metric: WebVitalMetric) => void) {
   if (!('PerformanceObserver' in window)) return;
 
   let clsValue = 0;
   let sessionValue = 0;
-  let sessionEntries: any[] = [];
+  let sessionEntries: PerformanceEntry[] = [];
 
   const observer = new PerformanceObserver(list => {
     const entries = list.getEntries();
 
-    entries.forEach((entry: any) => {
+    entries.forEach((entry: PerformanceEntry & { hadRecentInput?: boolean; value?: number }) => {
       if (!entry.hadRecentInput) {
         const firstSessionEntry = sessionEntries[0];
         const lastSessionEntry = sessionEntries[sessionEntries.length - 1];
@@ -523,12 +523,12 @@ function measureCLS(onReport: (metric: WebVitalMetric) => void) {
   observer.observe({ entryTypes: ['layout-shift'] });
 }
 
-function measureFCP(onReport: (metric: WebVitalMetric) => void) {
+function measureFCP(onReport: (_metric: WebVitalMetric) => void) {
   if (!('PerformanceObserver' in window)) return;
 
   const observer = new PerformanceObserver(list => {
     const entries = list.getEntries();
-    entries.forEach((entry: any) => {
+    entries.forEach((entry: PerformanceEntry) => {
       if (entry.name === 'first-contentful-paint') {
         const metric: WebVitalMetric = {
           name: 'FCP',
@@ -545,25 +545,27 @@ function measureFCP(onReport: (metric: WebVitalMetric) => void) {
   observer.observe({ entryTypes: ['paint'] });
 }
 
-function measureTTFB(onReport: (metric: WebVitalMetric) => void) {
+function measureTTFB(onReport: (_metric: WebVitalMetric) => void) {
   if (!('PerformanceObserver' in window)) return;
 
   const observer = new PerformanceObserver(list => {
     const entries = list.getEntries();
-    entries.forEach((entry: any) => {
-      if (entry.entryType === 'navigation') {
-        const ttfb = entry.responseStart - entry.requestStart;
+    entries.forEach(
+      (entry: PerformanceEntry & { responseStart?: number; requestStart?: number }) => {
+        if (entry.entryType === 'navigation') {
+          const ttfb = (entry.responseStart || 0) - (entry.requestStart || 0);
 
-        const metric: WebVitalMetric = {
-          name: 'TTFB',
-          value: ttfb,
-          rating: webVitals.evaluateMetric('TTFB', ttfb),
-          delta: ttfb,
-          id: generateId(),
-        };
-        onReport(metric);
+          const metric: WebVitalMetric = {
+            name: 'TTFB',
+            value: ttfb,
+            rating: webVitals.evaluateMetric('TTFB', ttfb),
+            delta: ttfb,
+            id: generateId(),
+          };
+          onReport(metric);
+        }
       }
-    });
+    );
   });
 
   observer.observe({ entryTypes: ['navigation'] });
@@ -571,14 +573,18 @@ function measureTTFB(onReport: (metric: WebVitalMetric) => void) {
 
 function getMemoryUsage(): number {
   if ('memory' in performance) {
-    return (performance as any).memory.usedJSHeapSize;
+    return (performance as { memory: { usedJSHeapSize: number } }).memory.usedJSHeapSize;
   }
   return 0;
 }
 
 function getDetailedMemoryUsage(): MemoryUsage {
   if ('memory' in performance) {
-    const memory = (performance as any).memory;
+    const memory = (
+      performance as {
+        memory: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
+      }
+    ).memory;
     return {
       usedJSHeapSize: memory.usedJSHeapSize,
       totalJSHeapSize: memory.totalJSHeapSize,
