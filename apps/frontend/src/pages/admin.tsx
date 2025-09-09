@@ -53,10 +53,6 @@ const AdminPage = () => {
 
   // Removed categories - no longer needed
 
-  useEffect(() => {
-    fetchCelebrities();
-  }, [currentPage, fetchCelebrities]);
-
   const fetchCelebrities = useCallback(async () => {
     try {
       setLoading(true);
@@ -88,6 +84,10 @@ const AdminPage = () => {
       setLoading(false);
     }
   }, [currentPage, searchTerm]);
+
+  useEffect(() => {
+    fetchCelebrities();
+  }, [currentPage, fetchCelebrities]);
 
   const handleSearch = () => {
     setCurrentPage(1);

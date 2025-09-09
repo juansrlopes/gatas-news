@@ -133,7 +133,7 @@ async function main() {
   const apiKeys = [
     process.env.NEWS_API_KEY,
     process.env.NEWS_API_KEY_BACKUP,
-    process.env.NEWS_API_KEY_BACKUP2,
+    process.env.NEWS_API_KEY_BACKUP_2,
   ].filter(Boolean);
 
   if (apiKeys.length === 0) {
@@ -141,7 +141,7 @@ async function main() {
     log(colors.yellow, '💡 Make sure these are set in your .env file:');
     log(colors.yellow, '   - NEWS_API_KEY');
     log(colors.yellow, '   - NEWS_API_KEY_BACKUP');
-    log(colors.yellow, '   - NEWS_API_KEY_BACKUP2');
+    log(colors.yellow, '   - NEWS_API_KEY_BACKUP_2');
     process.exit(1);
   }
 
