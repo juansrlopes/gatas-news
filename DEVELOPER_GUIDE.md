@@ -68,11 +68,11 @@ npm run api:fetch
 npm run db:status
 ```
 
-## 🔑 NEW: API Key Validation Feature
+## 🔑 API Key Validation & Linting System
 
-**IMPORTANT**: The API now validates all NewsAPI keys on startup and crashes with a clear error if all keys are rate limited.
+### **API Key Validation Feature**
 
-### What This Means for Developers
+**IMPORTANT**: The API validates all NewsAPI keys on startup and crashes with clear error if all keys are rate limited.
 
 ```bash
 # When you start the API, it will:
@@ -82,21 +82,40 @@ npm run db:status
 
 # Example error message:
 # 🚨 FATAL ERROR: ALL API KEYS ARE RATE LIMITED!
-# NewsAPI Developer Account Limits:
-# - 100 requests per 24 hours
-# - 50 requests available every 12 hours
-# Solutions:
-# 1. ⏰ WAIT: Keys will reset in ~24 hours
-# 2. 🔑 NEW KEYS: Get additional keys from https://newsapi.org/register
-# 3. 💰 UPGRADE: Purchase paid NewsAPI plan
+# Solutions: Wait ~24 hours, get new keys, or upgrade plan
 ```
 
-### Benefits
+### **🚨 CRITICAL: New Linting System**
 
-- **No more guessing**: You'll know immediately if keys are rate limited
-- **Clear solutions**: Tells you exactly what to do
-- **Prevents wasted time**: Server won't start with broken keys
-- **Professional error handling**: Clean, informative messages
+**ZERO TOLERANCE POLICY**: All code must pass linting with zero errors and zero warnings.
+
+#### **Fixed Linting Issues**
+
+- ✅ **`npm run lint` no longer hangs** - Fixed circular dependency issue
+- ✅ **Git Hooks**: Automatic pre-commit and pre-push linting
+- ✅ **Comprehensive Coverage**: All projects linted (shared-types, shared-utils, api, frontend)
+- ✅ **TypeScript Strict**: No `any` types allowed, proper error handling
+
+#### **Linting Commands**
+
+```bash
+# ✅ WORKING - Fast and reliable
+npm run lint               # Lint all projects (267ms)
+npm run lint:frontend      # Frontend only
+npm run lint:api           # API only
+
+# 🔧 Git Hooks (Automatic)
+# Pre-commit: Lints staged files
+# Pre-push: Full workspace lint
+```
+
+#### **Quality Standards**
+
+- **Zero Errors**: No ESLint errors allowed
+- **Zero Warnings**: No ESLint warnings allowed  
+- **TypeScript Strict**: Proper typing required
+- **Unused Variables**: Must be prefixed with `_`
+- **Error Handling**: Use type guards, not `any`
 
 ## 📁 Key Files to Know
 
@@ -203,12 +222,27 @@ npm run services:start
 # Check environment file exists
 ls -la apps/api/.env
 
-# NEW: Check for API key rate limit errors
+# Check for API key rate limit errors
 # If you see "FATAL ERROR: ALL API KEYS ARE RATE LIMITED!"
 # - Wait ~24 hours for rate limits to reset
 # - Get additional API keys from https://newsapi.org/register
-# - Check current key status manually:
-curl -s "https://newsapi.org/v2/everything?q=test&apiKey=YOUR_KEY&pageSize=1" | jq '.status'
+```
+
+### Linting Issues
+
+```bash
+# If npm run lint hangs or fails:
+npx nx reset                    # Clear Nx cache
+npm run lint                    # Should work now (267ms)
+
+# If you see linting errors:
+# 1. Fix all errors and warnings (zero tolerance)
+# 2. Use type guards instead of 'any'
+# 3. Prefix unused variables with '_'
+# 4. Ensure proper TypeScript typing
+
+# Git hooks not working:
+npm run prepare                 # Reinstall Husky hooks
 ```
 
 ### No Articles Fetched

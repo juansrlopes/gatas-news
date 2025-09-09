@@ -85,9 +85,11 @@ Before contributing, make sure you have:
 
    ```bash
    npm run test
-   npm run lint
+   npm run lint          # Must pass with zero errors/warnings
    npm run format
    ```
+
+   **🚨 CRITICAL**: All code must pass linting with **zero errors and zero warnings**. The Git hooks will enforce this automatically.
 
 5. **Commit with meaningful messages**:
 
@@ -193,6 +195,8 @@ src/
 - **Provide meaningful error messages**
 - **Log errors with context**
 - **Handle errors at appropriate levels**
+- **Use type guards instead of `any`** for error handling
+- **Prefix unused parameters with `_`** to satisfy linting
 
 ```typescript
 // ✅ Good
@@ -272,10 +276,37 @@ npm run test -- --coverage
 
 - [ ] Code follows style guidelines
 - [ ] Tests pass: `npm run test`
-- [ ] Linting passes: `npm run lint`
+- [ ] **Linting passes with ZERO errors/warnings**: `npm run lint`
 - [ ] Code is formatted: `npm run format`
 - [ ] Documentation is updated if needed
 - [ ] Commit messages follow convention
+- [ ] **Git hooks are working** (automatic quality checks)
+
+### 🔧 Git Hooks (Automatic Quality Control)
+
+This project uses **Husky** and **lint-staged** for automatic quality control:
+
+#### **Pre-commit Hook**
+- Automatically runs linting on staged files
+- **Blocks commits** if linting fails
+- Ensures only clean code enters the repository
+
+#### **Pre-push Hook**
+- Runs full workspace lint before push
+- **Blocks pushes** if any project has linting errors
+- Final quality gate before code reaches remote
+
+#### **Setup Git Hooks**
+
+```bash
+# Git hooks are automatically installed after npm install
+# If hooks aren't working, reinstall them:
+npm run prepare
+
+# Test the hooks:
+git add .
+git commit -m "test commit"  # Should run pre-commit linting
+```
 
 ### PR Template
 

@@ -212,16 +212,19 @@ interface IArticle {
 }
 ```
 
-**Celebrity Schema:**
+**Celebrity Schema (Simplified):**
 
 ```typescript
 interface ICelebrity {
-  name: string; // Celebrity name
-  slug: string; // URL-friendly name
-  category?: string; // Celebrity category
+  name: string; // Celebrity name (primary identifier)
+  aliases: string[]; // Alternative names and nicknames
   isActive: boolean; // Active status
+  createdAt: Date; // Creation timestamp
+  updatedAt: Date; // Last update timestamp
 }
 ```
+
+**Note**: The celebrity model was simplified to remove bloat fields like `priority`, `category`, `socialMedia`, `description`, and `searchTerms` that were not being used effectively.
 
 ### ⚡ Caching Strategy (`services/cacheService.ts`)
 
@@ -292,7 +295,7 @@ curl -X POST http://localhost:8000/api/v1/admin/fetch/trigger \
 
 #### GET `/api/v1/admin/celebrities`
 
-Get all celebrities
+Get all celebrities (alphabetically sorted)
 
 ```bash
 curl http://localhost:8000/api/v1/admin/celebrities
@@ -300,12 +303,30 @@ curl http://localhost:8000/api/v1/admin/celebrities
 
 #### POST `/api/v1/admin/celebrities`
 
-Add new celebrity
+Add new celebrity (simplified - name only)
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/admin/celebrities \
   -H "Content-Type: application/json" \
-  -d '{"name": "New Celebrity", "category": "actress"}'
+  -d '{"name": "New Celebrity"}'
+```
+
+#### PUT `/api/v1/admin/celebrities/:id`
+
+Update celebrity (name and aliases)
+
+```bash
+curl -X PUT http://localhost:8000/api/v1/admin/celebrities/CELEBRITY_ID \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Updated Name", "aliases": ["Alias1", "Alias2"]}'
+```
+
+#### DELETE `/api/v1/admin/celebrities/:id`
+
+Delete celebrity
+
+```bash
+curl -X DELETE http://localhost:8000/api/v1/admin/celebrities/CELEBRITY_ID
 ```
 
 ## 🔄 Background Jobs
@@ -481,13 +502,14 @@ NEWS_API_KEY=production_api_key
 
 ## 🤝 Contributing
 
-### Code Style
+### Code Style & Quality
 
-- Use TypeScript for all new code
-- Follow existing patterns and naming conventions
-- Add JSDoc comments for public methods
-- Write tests for new features
-- Use meaningful commit messages
+- **TypeScript**: Strict mode enabled, no `any` types allowed
+- **ESLint**: Zero errors/warnings policy enforced by Git hooks
+- **Naming**: Follow existing patterns and conventions
+- **Documentation**: Add JSDoc comments for public methods
+- **Testing**: Write tests for new features
+- **Git Hooks**: Automatic pre-commit and pre-push quality checks
 
 ### Pull Request Process
 

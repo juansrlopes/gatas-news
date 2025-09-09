@@ -31,6 +31,8 @@ The Gatas News frontend is a modern, responsive web application built with Next.
 - **⚡ Performance**: Optimized images, caching, and loading states
 - **🛡️ Reliability**: Comprehensive error handling and offline support
 - **♿ Accessibility**: WCAG compliant with proper ARIA labels
+- **👥 Admin Interface**: Full celebrity management with CRUD operations
+- **🎯 Quality Control**: Zero-tolerance linting with Git hooks
 
 ## 🏗️ Architecture
 
@@ -64,7 +66,7 @@ apps/frontend/
 │   │   ├── api/          # API routes (image proxy)
 │   │   ├── _app.tsx      # App wrapper with error boundary
 │   │   ├── index.tsx     # Home page
-│   │   ├── about.tsx     # About page
+│   │   ├── admin.tsx     # Admin panel for celebrity management
 │   │   └── 404.tsx       # Custom 404 page
 │   ├── types/            # TypeScript type definitions
 │   └── styles/           # Global styles
@@ -515,11 +517,13 @@ See the main [CONTRIBUTING.md](../../CONTRIBUTING.md) for contribution guideline
 
 ### **Frontend-Specific Guidelines**
 
-- Use TypeScript for all new code
-- Follow existing component patterns
-- Add JSDoc comments for complex functions
-- Test on mobile devices
-- Ensure accessibility compliance
+- **TypeScript**: Strict mode enabled, no `any` types allowed
+- **Component Patterns**: Follow existing patterns and conventions
+- **Documentation**: Add JSDoc comments for complex functions
+- **Testing**: Test on mobile devices and various screen sizes
+- **Accessibility**: Ensure WCAG compliance with proper ARIA labels
+- **Quality Control**: Zero errors/warnings enforced by Git hooks
+- **Admin Interface**: Follow modal-based patterns for CRUD operations
 
 ---
 

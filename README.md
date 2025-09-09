@@ -183,6 +183,14 @@ Articles are scored on multiple factors:
 - **Learning system**: Logs new domains for future whitelisting
 - **Graceful fallbacks**: Smart image placeholders when sources fail
 
+### 👥 Celebrity Management
+
+- **Admin Interface**: Full CRUD operations via `/admin` page
+- **Alphabetical Sorting**: Celebrity lists ordered by name
+- **Simplified Model**: Streamlined celebrity data (name and aliases only)
+- **Modal-Based Editing**: Quick add/edit via popup modals
+- **Database-Driven**: 100+ celebrities stored in MongoDB
+
 ## 🛠️ Development
 
 ### Available Scripts
@@ -232,10 +240,16 @@ npm run logs:api           # View API logs
 npm run logs:error         # View error logs
 npm run kill:port          # Kill processes on port 8000
 
-# Code Quality
-npm run lint               # Lint all code
+# Code Quality & Git Hooks
+npm run lint               # Lint all code (fixed - no longer hangs!)
+npm run lint:frontend      # Lint frontend only
+npm run lint:api           # Lint API only
 npm run format             # Format code with Prettier
 npm run clean              # Clean and reinstall dependencies
+
+# Git Hooks (Automatic Quality Control)
+# Pre-commit: Runs linting on staged files
+# Pre-push: Runs full workspace lint before push
 ```
 
 ### Database Setup
@@ -369,13 +383,21 @@ Set `NODE_ENV=development` in your `.env` file to enable:
 4. Push to branch: `git push origin feature/amazing-feature`
 5. Open a Pull Request
 
-### Code Style
+### Code Style & Quality
 
-- Use TypeScript for all new code
-- Follow existing naming conventions
-- Add tests for new features
-- Run `npm run lint` before committing
-- Use `npm run format` to format code
+- **TypeScript**: Strict mode enabled, no `any` types allowed
+- **ESLint**: Comprehensive linting with zero errors/warnings policy
+- **Git Hooks**: Automatic pre-commit and pre-push quality checks
+- **Naming**: Follow existing patterns and conventions
+- **Testing**: Add tests for new features
+- **Formatting**: Use `npm run format` for consistent code style
+
+### Git Workflow
+
+1. **Pre-commit Hook**: Automatically runs linting on staged files
+2. **Pre-push Hook**: Runs full workspace lint before push
+3. **Quality Gates**: All commits must pass linting checks
+4. **Zero Tolerance**: No errors or warnings allowed in codebase
 
 ## 📄 License
 
