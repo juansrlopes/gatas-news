@@ -15,8 +15,6 @@
     "lint": "nx run-many --target=lint --all",
     "lint:frontend": "nx run frontend:lint",
     "lint:api": "nx lint api",
-    "lint:fix": "nx run-many --target=lint --all --fix",
-    "lint:staged": "lint-staged",
     "test": "nx run-many --target=test --all",
     "test:frontend": "nx test frontend",
     "test:api": "nx test api",
