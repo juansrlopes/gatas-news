@@ -44,31 +44,6 @@ const NewsGrid = () => {
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   /**
-   * PHASE 2: Enhanced image source selection with multiple fallback options
-   *
-   * @param imageUrl - The original image URL from the article
-   * @param article - The full article object for context-aware fallbacks
-   * @returns The best available image source
-   */
-  const getImageSrc = useCallback(
-    (imageUrl: string | null | undefined, article?: Article): string => {
-      // No image URL provided - use context-aware placeholder
-      if (!imageUrl) {
-        return getContextualPlaceholder(article);
-      }
-
-      // Image previously failed to load - use context-aware placeholder
-      if (failedImages.has(imageUrl)) {
-        return getContextualPlaceholder(article);
-      }
-
-      // Use image proxy for external images
-      return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
-    },
-    [failedImages, getContextualPlaceholder]
-  );
-
-  /**
    * PHASE 2: Context-aware placeholder selection
    * Returns different placeholders based on article content
    */
@@ -128,6 +103,31 @@ const NewsGrid = () => {
     // Default news placeholder
     return '/placeholder-news.svg';
   }, []);
+
+  /**
+   * PHASE 2: Enhanced image source selection with multiple fallback options
+   *
+   * @param imageUrl - The original image URL from the article
+   * @param article - The full article object for context-aware fallbacks
+   * @returns The best available image source
+   */
+  const getImageSrc = useCallback(
+    (imageUrl: string | null | undefined, article?: Article): string => {
+      // No image URL provided - use context-aware placeholder
+      if (!imageUrl) {
+        return getContextualPlaceholder(article);
+      }
+
+      // Image previously failed to load - use context-aware placeholder
+      if (failedImages.has(imageUrl)) {
+        return getContextualPlaceholder(article);
+      }
+
+      // Use image proxy for external images
+      return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+    },
+    [failedImages, getContextualPlaceholder]
+  );
 
   /**
    * Enhanced image error handling with domain monitoring
