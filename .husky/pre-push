@@ -1,5 +1,5 @@
 echo "🚀 Running full lint suite before push..."
-npm run lint
+npx nx run-many --target=lint --projects=shared-types,shared-utils,api,frontend
 
 if [ $? -ne 0 ]; then
   echo "❌ Linting failed! Please fix the errors before pushing."

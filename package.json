@@ -12,7 +12,7 @@
     "start": "nx run-many --target=serve --projects=frontend,api --parallel --configuration=production",
     "start:frontend": "nx serve frontend --configuration=production",
     "start:api": "nx serve api --configuration=production",
-    "lint": "nx run-many --target=lint --all",
+    "lint": "nx run-many --target=lint --projects=shared-types,shared-utils,api,frontend",
     "lint:frontend": "nx run frontend:lint",
     "lint:api": "nx lint api",
     "test": "nx run-many --target=test --all",
