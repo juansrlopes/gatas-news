@@ -6,26 +6,11 @@
   "tags": ["scope:backend", "type:app"],
   "targets": {
     "build": {
-      "executor": "@nx/node:build",
-      "outputs": ["{options.outputPath}"],
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
       "options": {
-        "outputPath": "dist/apps/api",
-        "main": "apps/api/index.ts",
-        "tsConfig": "apps/api/tsconfig.json",
-        "assets": ["apps/api/celebrities.json", "apps/api/src/**/*.json"]
-      },
-      "configurations": {
-        "production": {
-          "optimization": true,
-          "extractLicenses": true,
-          "inspect": false,
-          "fileReplacements": [
-            {
-              "replace": "apps/api/src/environments/environment.ts",
-              "with": "apps/api/src/environments/environment.prod.ts"
-            }
-          ]
-        }
+        "command": "npx tsc --build",
+        "cwd": "apps/api"
       }
     },
     "serve": {

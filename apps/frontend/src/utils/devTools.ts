@@ -144,9 +144,13 @@ export const memory = {
       }
     ).memory;
     console.group(`🧠 Memory Usage${label ? ` - ${label}` : ''}`);
-    console.log(`Used: ${(memInfo.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`Total: ${(memInfo.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`Limit: ${(memInfo.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`);
+    if (memInfo) {
+      console.log(`Used: ${(memInfo.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
+      console.log(`Total: ${(memInfo.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
+      console.log(`Limit: ${(memInfo.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`);
+    } else {
+      console.log('Memory info not available in this browser');
+    }
     console.groupEnd();
   },
 

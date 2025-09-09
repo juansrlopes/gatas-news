@@ -8,7 +8,7 @@
 import React, { ReactElement } from 'react';
 import { render, RenderOptions, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { UserEvent } from '@testing-library/user-event/dist/types/setup/setup';
+// import { UserEvent } from '@testing-library/user-event/dist/types/setup/setup';
 
 /**
  * Custom render function with common providers and setup
@@ -31,7 +31,7 @@ export const renderWithProviders = (ui: ReactElement, options?: Omit<RenderOptio
  *
  * @returns Configured UserEvent instance
  */
-export const setupUser = (): UserEvent => {
+export const setupUser = () => {
   return userEvent.setup({
     // Add default user event configuration
     advanceTimers: jest.advanceTimersByTime,
@@ -289,13 +289,13 @@ export const performance = {
   /**
    * Measures component render time
    */
-  measureRenderTime: async (renderFn: () => void) => {
-    const start = performance.now();
+  measureRenderTime: async (renderFn: () => void): Promise<number> => {
+    const start = window.performance.now();
     renderFn();
     await waitFor(() => {
       // Wait for component to be fully rendered
     });
-    const end = performance.now();
+    const end = window.performance.now();
     return end - start;
   },
 

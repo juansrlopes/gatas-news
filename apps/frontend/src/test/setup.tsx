@@ -1,10 +1,11 @@
 /**
  * Jest Test Setup
- * 
+ *
  * Global test configuration and mocks for the frontend test suite.
  * This file is run before each test file.
  */
 
+import React from 'react';
 import '@testing-library/jest-dom';
 
 // Mock Next.js router
@@ -74,6 +75,10 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock IntersectionObserver for lazy loading tests
 global.IntersectionObserver = class IntersectionObserver {
+  root = null;
+  rootMargin = '';
+  thresholds = [];
+
   constructor() {}
   observe() {
     return null;
@@ -84,7 +89,10 @@ global.IntersectionObserver = class IntersectionObserver {
   unobserve() {
     return null;
   }
-};
+  takeRecords() {
+    return [];
+  }
+} as any;
 
 // Mock fetch for API tests
 global.fetch = jest.fn();

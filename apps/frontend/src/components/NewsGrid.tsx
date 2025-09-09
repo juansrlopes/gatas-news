@@ -44,164 +44,6 @@ const NewsGrid = () => {
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   /**
-   * PHASE 2: Context-aware placeholder selection
-   * Returns different placeholders based on article content
-   */
-  const getContextualPlaceholder = useCallback((article?: Article): string => {
-    if (!article) {
-      return '/placeholder-news.svg';
-    }
-
-    const title = (article.title || '').toLowerCase();
-    const description = (article.description || '').toLowerCase();
-    const content = `${title} ${description}`;
-
-    // Fashion/Style content
-    if (
-      content.includes('look') ||
-      content.includes('vestido') ||
-      content.includes('moda') ||
-      content.includes('estilo') ||
-      content.includes('roupa')
-    ) {
-      return '/placeholder-fashion.svg';
-    }
-
-    // Beach/Bikini content
-    if (
-      content.includes('biquíni') ||
-      content.includes('praia') ||
-      content.includes('piscina') ||
-      content.includes('verão') ||
-      content.includes('maiô')
-    ) {
-      return '/placeholder-beach.svg';
-    }
-
-    // Fitness/Gym content
-    if (
-      content.includes('academia') ||
-      content.includes('treino') ||
-      content.includes('shape') ||
-      content.includes('corpo') ||
-      content.includes('fitness')
-    ) {
-      return '/placeholder-fitness.svg';
-    }
-
-    // Event/Party content
-    if (
-      content.includes('festa') ||
-      content.includes('evento') ||
-      content.includes('premiação') ||
-      content.includes('gala') ||
-      content.includes('tapete vermelho')
-    ) {
-      return '/placeholder-event.svg';
-    }
-
-    // Default news placeholder
-    return '/placeholder-news.svg';
-  }, []);
-
-  /**
-   * PHASE 2: Enhanced image source selection with multiple fallback options
-   *
-   * @param imageUrl - The original image URL from the article
-   * @param article - The full article object for context-aware fallbacks
-   * @returns The best available image source
-   */
-  const getImageSrc = useCallback(
-    (imageUrl: string | null | undefined, article?: Article): string => {
-      // No image URL provided - use context-aware placeholder
-      if (!imageUrl) {
-        return getContextualPlaceholder(article);
-      }
-
-      // Image previously failed to load - use context-aware placeholder
-      if (failedImages.has(imageUrl)) {
-        return getContextualPlaceholder(article);
-      }
-
-      // Use image proxy for external images
-      return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
-    },
-    [failedImages, getContextualPlaceholder]
-  );
-
-  /**
-   * Enhanced image error handling with domain monitoring
-   *
-   * @param imageUrl - The image URL that failed to load
-   */
-  const handleImageError = useCallback((imageUrl: string | null | undefined) => {
-    if (!imageUrl) return;
-
-    // Add to failed images set
-    setFailedImages(prev => new Set([...prev, imageUrl]));
-
-    // Extract domain for monitoring
-    try {
-      const url = new URL(imageUrl);
-      const domain = url.hostname;
-
-      // Log domain failure for future whitelisting
-      console.warn(`[IMAGE-FAILURE] Domain may need whitelisting:`, {
-        domain,
-        imageUrl,
-        timestamp: new Date().toISOString(),
-      });
-
-      // TODO: Future enhancement - send to monitoring service
-      // await reportImageFailure({ domain, imageUrl });
-    } catch (error) {
-      console.error('Error parsing failed image URL:', error);
-    }
-  }, []);
-
-  // Network connectivity detection
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      // Retry last failed request if we come back online
-      if (lastFailedRequest) {
-        fetchArticles(lastFailedRequest.page, lastFailedRequest.celebrity);
-        setLastFailedRequest(null);
-      }
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      setError('Você está offline. Verifique sua conexão com a internet.');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    // Check initial connectivity
-    setIsOnline(navigator.onLine);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [lastFailedRequest, fetchArticles]);
-
-  useEffect(() => {
-    // Safely fetch articles on initial load with error boundary protection
-    const initializeArticles = async () => {
-      try {
-        await fetchArticles(); // Fetch all articles on initial load
-      } catch (error) {
-        console.error('Failed to initialize articles:', error);
-        // Error is already handled in fetchArticles, this is just a safety net
-      }
-    };
-
-    initializeArticles();
-  }, [fetchArticles]);
-
-  /**
    * Fetches articles from the API with comprehensive error handling
    *
    * Features:
@@ -369,6 +211,164 @@ const NewsGrid = () => {
     },
     [isOnline]
   );
+
+  /**
+   * PHASE 2: Context-aware placeholder selection
+   * Returns different placeholders based on article content
+   */
+  const getContextualPlaceholder = useCallback((article?: Article): string => {
+    if (!article) {
+      return '/placeholder-news.svg';
+    }
+
+    const title = (article.title || '').toLowerCase();
+    const description = (article.description || '').toLowerCase();
+    const content = `${title} ${description}`;
+
+    // Fashion/Style content
+    if (
+      content.includes('look') ||
+      content.includes('vestido') ||
+      content.includes('moda') ||
+      content.includes('estilo') ||
+      content.includes('roupa')
+    ) {
+      return '/placeholder-fashion.svg';
+    }
+
+    // Beach/Bikini content
+    if (
+      content.includes('biquíni') ||
+      content.includes('praia') ||
+      content.includes('piscina') ||
+      content.includes('verão') ||
+      content.includes('maiô')
+    ) {
+      return '/placeholder-beach.svg';
+    }
+
+    // Fitness/Gym content
+    if (
+      content.includes('academia') ||
+      content.includes('treino') ||
+      content.includes('shape') ||
+      content.includes('corpo') ||
+      content.includes('fitness')
+    ) {
+      return '/placeholder-fitness.svg';
+    }
+
+    // Event/Party content
+    if (
+      content.includes('festa') ||
+      content.includes('evento') ||
+      content.includes('premiação') ||
+      content.includes('gala') ||
+      content.includes('tapete vermelho')
+    ) {
+      return '/placeholder-event.svg';
+    }
+
+    // Default news placeholder
+    return '/placeholder-news.svg';
+  }, []);
+
+  /**
+   * PHASE 2: Enhanced image source selection with multiple fallback options
+   *
+   * @param imageUrl - The original image URL from the article
+   * @param article - The full article object for context-aware fallbacks
+   * @returns The best available image source
+   */
+  const getImageSrc = useCallback(
+    (imageUrl: string | null | undefined, article?: Article): string => {
+      // No image URL provided - use context-aware placeholder
+      if (!imageUrl) {
+        return getContextualPlaceholder(article);
+      }
+
+      // Image previously failed to load - use context-aware placeholder
+      if (failedImages.has(imageUrl)) {
+        return getContextualPlaceholder(article);
+      }
+
+      // Use image proxy for external images
+      return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+    },
+    [failedImages, getContextualPlaceholder]
+  );
+
+  /**
+   * Enhanced image error handling with domain monitoring
+   *
+   * @param imageUrl - The image URL that failed to load
+   */
+  const handleImageError = useCallback((imageUrl: string | null | undefined) => {
+    if (!imageUrl) return;
+
+    // Add to failed images set
+    setFailedImages(prev => new Set([...prev, imageUrl]));
+
+    // Extract domain for monitoring
+    try {
+      const url = new URL(imageUrl);
+      const domain = url.hostname;
+
+      // Log domain failure for future whitelisting
+      console.warn(`[IMAGE-FAILURE] Domain may need whitelisting:`, {
+        domain,
+        imageUrl,
+        timestamp: new Date().toISOString(),
+      });
+
+      // TODO: Future enhancement - send to monitoring service
+      // await reportImageFailure({ domain, imageUrl });
+    } catch (error) {
+      console.error('Error parsing failed image URL:', error);
+    }
+  }, []);
+
+  // Network connectivity detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Retry last failed request if we come back online
+      if (lastFailedRequest) {
+        fetchArticles(lastFailedRequest.page, lastFailedRequest.celebrity);
+        setLastFailedRequest(null);
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      setError('Você está offline. Verifique sua conexão com a internet.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Check initial connectivity
+    setIsOnline(navigator.onLine);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [lastFailedRequest, fetchArticles]);
+
+  useEffect(() => {
+    // Safely fetch articles on initial load with error boundary protection
+    const initializeArticles = async () => {
+      try {
+        await fetchArticles(); // Fetch all articles on initial load
+      } catch (error) {
+        console.error('Failed to initialize articles:', error);
+        // Error is already handled in fetchArticles, this is just a safety net
+      }
+    };
+
+    initializeArticles();
+  }, [fetchArticles]);
 
   /**
    * Retries the last failed API request with incremented retry count

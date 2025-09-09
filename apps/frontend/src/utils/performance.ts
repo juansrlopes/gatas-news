@@ -8,7 +8,11 @@
 /**
  * Core Web Vitals monitoring
  */
-export const webVitals = {
+export const webVitals: {
+  measureCoreWebVitals: (_onReport: (_metric: WebVitalMetric) => void) => void;
+  evaluateMetric: (_name: string, _value: number) => 'good' | 'needs-improvement' | 'poor';
+  getThresholds: () => Record<string, { good: number; needsImprovement: number }>;
+} = {
   /**
    * Measures and reports Core Web Vitals
    *
@@ -51,11 +55,9 @@ export const webVitals = {
    * @param value - Metric value
    * @returns Performance rating
    */
-  evaluateMetric: (
-    metricName: keyof ReturnType<typeof webVitals.getThresholds>,
-    value: number
-  ): 'good' | 'needs-improvement' | 'poor' => {
+  evaluateMetric: (metricName: string, value: number): 'good' | 'needs-improvement' | 'poor' => {
     const thresholds = webVitals.getThresholds()[metricName];
+    if (!thresholds) return 'poor';
 
     if (value <= thresholds.good) return 'good';
     if (value <= thresholds.needsImprovement) return 'needs-improvement';
@@ -463,14 +465,18 @@ function measureFID(onReport: (_metric: WebVitalMetric) => void) {
   const observer = new PerformanceObserver(list => {
     const entries = list.getEntries();
     entries.forEach((entry: PerformanceEntry) => {
-      const metric: WebVitalMetric = {
-        name: 'FID',
-        value: entry.processingStart - entry.startTime,
-        rating: webVitals.evaluateMetric('FID', entry.processingStart - entry.startTime),
-        delta: entry.processingStart - entry.startTime,
-        id: generateId(),
-      };
-      onReport(metric);
+      const fidEntry = entry as PerformanceEntry & { processingStart?: number };
+      if (fidEntry.processingStart) {
+        const value = fidEntry.processingStart - entry.startTime;
+        const metric: WebVitalMetric = {
+          name: 'FID',
+          value,
+          rating: webVitals.evaluateMetric('FID', value),
+          delta: value,
+          id: generateId(),
+        };
+        onReport(metric);
+      }
     });
   });
 
@@ -497,10 +503,10 @@ function measureCLS(onReport: (_metric: WebVitalMetric) => void) {
           entry.startTime - lastSessionEntry.startTime < 1000 &&
           entry.startTime - firstSessionEntry.startTime < 5000
         ) {
-          sessionValue += entry.value;
+          sessionValue += entry.value || 0;
           sessionEntries.push(entry);
         } else {
-          sessionValue = entry.value;
+          sessionValue = entry.value || 0;
           sessionEntries = [entry];
         }
 
@@ -511,7 +517,7 @@ function measureCLS(onReport: (_metric: WebVitalMetric) => void) {
             name: 'CLS',
             value: clsValue,
             rating: webVitals.evaluateMetric('CLS', clsValue),
-            delta: entry.value,
+            delta: entry.value || 0,
             id: generateId(),
           };
           onReport(metric);

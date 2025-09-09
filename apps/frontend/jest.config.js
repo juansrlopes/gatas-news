@@ -18,7 +18,7 @@ const customJestConfig = {
   testEnvironment: 'jsdom',
 
   // Setup files
-  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/test/setup.tsx'],
 
   // Module name mapping for absolute imports and CSS modules
   moduleNameMapper: {

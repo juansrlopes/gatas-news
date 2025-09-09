@@ -6,17 +6,11 @@
   "tags": ["scope:frontend", "type:app"],
   "targets": {
     "build": {
-      "executor": "@nx/next:build",
-      "outputs": ["{options.outputPath}"],
-      "defaultConfiguration": "production",
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/.next"],
       "options": {
-        "outputPath": "dist/apps/frontend"
-      },
-      "configurations": {
-        "development": {
-          "outputPath": "apps/frontend"
-        },
-        "production": {}
+        "command": "npx next build",
+        "cwd": "apps/frontend"
       }
     },
     "serve": {

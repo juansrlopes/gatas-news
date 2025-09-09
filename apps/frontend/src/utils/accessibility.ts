@@ -5,6 +5,8 @@
  * Includes focus management, ARIA helpers, and keyboard navigation utilities.
  */
 
+import React from 'react';
+
 /**
  * Manages focus for better keyboard navigation
  */
