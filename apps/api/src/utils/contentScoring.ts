@@ -400,7 +400,9 @@ export function analyzePortugueseContent(
     // Major boost if celebrity name is in title
     if (titleLower.includes(celebrityLower)) {
       relevance += 30;
-      reasons.push(`Celebrity name in title: ${celebrityName}`);
+      // AGGRESSIVE GROWTH: Additional visual appeal bonus for celebrity in title
+      visualAppeal += 15;
+      reasons.push(`Celebrity name in title: ${celebrityName} (+45 total)`);
     }
 
     // Medium boost if celebrity name is in first part of description
@@ -467,9 +469,9 @@ export function analyzePortugueseContent(
     relevance += 15;
     reasons.push(`Visual content indicators: ${photoMatches.join(', ')}`);
   } else {
-    // Heavily penalize articles without photo indicators
-    visualAppeal -= 30;
-    reasons.push(`No visual content indicators found - major penalty`);
+    // AGGRESSIVE GROWTH: Reduced penalty for articles without photo indicators
+    visualAppeal -= 15;
+    reasons.push(`No visual content indicators found - moderate penalty`);
   }
 
   // PHASE 1 ENHANCEMENT: Source quality scoring

@@ -12,10 +12,7 @@
         "outputPath": "dist/apps/api",
         "main": "apps/api/index.ts",
         "tsConfig": "apps/api/tsconfig.json",
-        "assets": [
-          "apps/api/celebrities.json",
-          "apps/api/src/**/*.json"
-        ]
+        "assets": ["apps/api/celebrities.json", "apps/api/src/**/*.json"]
       },
       "configurations": {
         "production": {
@@ -50,7 +47,7 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "nodemon --exec \"npx ts-node\" apps/api/index.ts",
+        "command": "nodemon --config apps/api/nodemon.json",
         "cwd": "{workspaceRoot}"
       }
     },
@@ -58,7 +55,7 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/api/**/*.{js,ts}"]
+        "lintFilePatterns": ["apps/api/src/**/*.{js,ts}", "apps/api/*.{js,ts}"]
       }
     },
     "test": {

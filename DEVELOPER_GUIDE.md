@@ -14,9 +14,11 @@ npm run dev                      # Start both frontend and API
 npm run services:start           # Start MongoDB and Redis
 npm run kill:port               # Kill processes on port 8000
 
-# Database operations
+# Database operations (SAFE)
 npm run db:status               # Check database contents
-npm run db:clear                # Clear articles and logs
+npm run db:clear:safe           # 🛡️ Clear articles and logs (preserves celebrities)
+npm run db:reset:safe           # 🛡️ Full reset (preserves celebrities)
+npm run db:backup:celebrities   # 💾 Backup celebrities to JSON file
 npm run api:fetch               # Trigger news fetch
 
 # Monitoring
@@ -24,6 +26,46 @@ npm run api:health              # Check API health
 npm run api:news                # Check article count
 npm run logs:api                # View API logs
 npm run services:status         # Check service status
+```
+
+## 🛡️ CRITICAL: Safe Database Operations
+
+**ALWAYS use safe database commands to preserve celebrities!**
+
+### ✅ Safe Commands (Use These)
+
+```bash
+npm run db:clear:safe           # Clear articles and logs only
+npm run db:clear:articles       # Clear articles only
+npm run db:clear:logs          # Clear fetch logs only
+npm run db:clear:cache         # Clear Redis cache only
+npm run db:reset:safe          # Full reset preserving celebrities
+npm run db:backup:celebrities  # Create celebrity backup
+```
+
+### ❌ Dangerous Commands (Avoid These)
+
+```bash
+# These can delete celebrities - DON'T USE:
+mongosh gatas-news --eval "db.celebrities.deleteMany({})"
+mongosh gatas-news --eval "db.dropDatabase()"
+npm run db:clear  # Shows warning, redirects to safe version
+```
+
+### 🔄 Recommended Workflow
+
+```bash
+# 1. Always backup first
+npm run db:backup:celebrities
+
+# 2. Safe clear
+npm run db:clear:safe
+
+# 3. Repopulate articles
+npm run api:fetch
+
+# 4. Verify
+npm run db:status
 ```
 
 ## 🔑 NEW: API Key Validation Feature

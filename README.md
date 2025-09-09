@@ -204,10 +204,18 @@ npm run test               # Run all tests
 npm run test:api           # Run API tests
 npm run test:frontend      # Run frontend tests
 
-# Database Operations
+# Database Operations (Safe)
 npm run db:status          # Check database contents
-npm run db:clear           # Clear articles and logs
+npm run db:clear:safe      # 🛡️ Clear articles and logs (preserves celebrities)
+npm run db:clear:articles  # Clear articles only
+npm run db:clear:logs      # Clear fetch logs only
+npm run db:clear:cache     # Clear Redis cache
+npm run db:reset:safe      # 🛡️ Full reset (preserves celebrities)
+npm run db:backup:celebrities # 💾 Backup celebrities to JSON file
 npm run migrate:celebrities # Populate database with celebrities
+
+# ⚠️ DEPRECATED (use safe versions above)
+npm run db:clear           # Old unsafe clear (shows warning)
 
 # API Operations
 npm run api:health         # Check API health
@@ -237,6 +245,25 @@ The API automatically connects to MongoDB and creates necessary collections. To 
 ```bash
 npm run migrate:celebrities
 ```
+
+### 🛡️ Safe Database Operations
+
+**IMPORTANT**: Always use the safe database commands to preserve celebrities:
+
+```bash
+# ✅ SAFE - Preserves celebrities
+npm run db:clear:safe      # Clear articles and logs only
+npm run db:reset:safe      # Full reset preserving celebrities
+
+# ❌ AVOID - Can delete celebrities
+mongosh gatas-news --eval "db.articles.deleteMany({}); db.celebrities.deleteMany({})"
+```
+
+**Best Practice Workflow**:
+
+1. `npm run db:backup:celebrities` - Create backup
+2. `npm run db:clear:safe` - Safe clear
+3. `npm run api:fetch` - Repopulate articles
 
 ### Testing the API
 

@@ -17,6 +17,7 @@ interface ArticleWithCelebrity extends ArticleType {
   celebrity: string;
 }
 import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
+import { isImageUrlDomainValid } from '../utils/imageValidation';
 import logger from '../utils/logger';
 
 export interface FetchResult {
@@ -34,6 +35,7 @@ export class NewsFetcher {
   private readonly REQUEST_TIMEOUT = 15000; // 15 seconds
   private readonly MAX_RETRIES = 3;
   private readonly BATCH_SIZE = 100; // Process articles in batches
+  private currentApiKeyIndex = 0; // Track which API key we're using
 
   private constructor() {}
 
@@ -42,6 +44,40 @@ export class NewsFetcher {
       NewsFetcher.instance = new NewsFetcher();
     }
     return NewsFetcher.instance;
+  }
+
+  /**
+   * Get all available API keys from config
+   */
+  private getAvailableApiKeys(config: ReturnType<typeof getEnvConfig>): string[] {
+    const keys = [config.newsApiKey, config.newsApiKeyBackup, config.newsApiKeyBackup2].filter(
+      Boolean
+    ) as string[];
+
+    return keys;
+  }
+
+  /**
+   * Get the current API key to use
+   */
+  private getCurrentApiKey(config: ReturnType<typeof getEnvConfig>): string | null {
+    const keys = this.getAvailableApiKeys(config);
+    if (keys.length === 0) return null;
+
+    return keys[this.currentApiKeyIndex % keys.length];
+  }
+
+  /**
+   * Switch to the next available API key
+   */
+  private switchToNextApiKey(config: ReturnType<typeof getEnvConfig>): string | null {
+    const keys = this.getAvailableApiKeys(config);
+    if (keys.length === 0) return null;
+
+    this.currentApiKeyIndex = (this.currentApiKeyIndex + 1) % keys.length;
+    const newKey = keys[this.currentApiKeyIndex];
+    logger.info(`🔄 Switching to API key ${this.currentApiKeyIndex + 1}/${keys.length}`);
+    return newKey;
   }
 
   /**
@@ -72,15 +108,16 @@ export class NewsFetcher {
       // Get fresh config (not cached at module level)
       const config = getEnvConfig();
 
-      // Check if API key is configured
-      if (!config.newsApiKey) {
-        logger.warn('⚠️ News API key is not configured - skipping news fetch');
+      // Check if any API key is configured
+      const currentApiKey = this.getCurrentApiKey(config);
+      if (!currentApiKey) {
+        logger.warn('⚠️ No News API keys are configured - skipping news fetch');
         return {
           success: false,
           articlesProcessed: 0,
           newArticlesAdded: 0,
           duplicatesFound: 0,
-          errors: ['News API key not configured'],
+          errors: ['No News API keys configured'],
           duration: 0,
         };
       }
@@ -253,10 +290,15 @@ export class NewsFetcher {
     try {
       logger.debug(`Fetching articles for: ${celebrity}`);
 
+      const currentApiKey = this.getCurrentApiKey(config);
+      if (!currentApiKey) {
+        throw new Error('No API keys available');
+      }
+
       const response: AxiosResponse<NewsApiResponse> = await axios.get(this.NEWS_API_URL, {
         params: {
           q: celebrity,
-          apiKey: config.newsApiKey,
+          apiKey: currentApiKey,
           sortBy: 'publishedAt',
           language: 'pt',
           pageSize: 100, // Maximum allowed by NewsAPI
@@ -298,16 +340,17 @@ export class NewsFetcher {
         message?: string;
       };
 
-      // Handle rate limiting
+      // Handle rate limiting by switching to next API key
       if (axiosError.response?.status === 429) {
-        const retryAfter = axiosError.response.headers?.['retry-after'] || 60;
-        const retryAfterNum =
-          typeof retryAfter === 'string' ? parseInt(retryAfter, 10) : retryAfter;
-        logger.warn(`Rate limited for ${celebrity}, retrying after ${retryAfterNum}s`);
+        logger.warn(`Rate limited for ${celebrity}, switching to next API key...`);
 
-        if (retryCount < this.MAX_RETRIES) {
-          await this.delay(retryAfterNum * 1000);
+        const nextApiKey = this.switchToNextApiKey(config);
+        if (nextApiKey && retryCount < this.MAX_RETRIES) {
+          // Try with the next API key immediately
           return this.fetchArticlesForCelebrity(celebrity, config, retryCount + 1);
+        } else {
+          logger.error(`All API keys are rate limited for ${celebrity}`);
+          return { articles: [] };
         }
       }
 
@@ -330,6 +373,51 @@ export class NewsFetcher {
   }
 
   /**
+   * Apply per-celebrity limits to prevent clustering
+   * Keeps the highest quality articles for each celebrity
+   */
+  private applyPerCelebrityLimits(
+    articles: ArticleWithCelebrity[],
+    maxPerCelebrity: number
+  ): ArticleWithCelebrity[] {
+    const celebrityGroups = new Map<string, ArticleWithCelebrity[]>();
+
+    // Group articles by celebrity
+    articles.forEach(article => {
+      const celebrity = article.celebrity;
+      if (!celebrityGroups.has(celebrity)) {
+        celebrityGroups.set(celebrity, []);
+      }
+      celebrityGroups.get(celebrity)!.push(article);
+    });
+
+    const limitedArticles: ArticleWithCelebrity[] = [];
+
+    // Apply limits per celebrity, keeping highest quality articles
+    celebrityGroups.forEach((celebrityArticles, celebrity) => {
+      // Sort by content score (if available) or by date
+      const sortedArticles = celebrityArticles.sort((a, b) => {
+        // Sort by publishedAt date (newest first) as quality proxy
+        const dateA = new Date(a.publishedAt || 0).getTime();
+        const dateB = new Date(b.publishedAt || 0).getTime();
+        return dateB - dateA;
+      });
+
+      // Take only the top articles for this celebrity
+      const selectedArticles = sortedArticles.slice(0, maxPerCelebrity);
+      limitedArticles.push(...selectedArticles);
+
+      if (celebrityArticles.length > maxPerCelebrity) {
+        logger.debug(
+          `Limited ${celebrity}: ${celebrityArticles.length} → ${selectedArticles.length} articles`
+        );
+      }
+    });
+
+    return limitedArticles;
+  }
+
+  /**
    * Process and store articles in database
    */
   private async processAndStoreArticles(
@@ -345,37 +433,85 @@ export class NewsFetcher {
 
     logger.info(`Processing ${articles.length} articles...`);
 
-    // Filter articles that are actually about the celebrities AND have good visual content
+    // PHASE 1: Enhanced filtering for content relevance and quality
     const relevantArticles = articles.filter(article => {
-      // Article already has celebrity name assigned from fetch
-      if (!article.celebrity) return false;
+      // FILTER 1: Must have valid celebrity assignment
+      if (!article.celebrity || article.celebrity === 'unknown') {
+        logger.debug(`❌ Filtered: No valid celebrity assignment - ${article.title}`);
+        return false;
+      }
 
-      // Check content quality using Portuguese scoring (Phase 1 enhanced)
+      // FILTER 2: Celebrity name must appear in title or description
+      const titleLower = (article.title || '').toLowerCase();
+      const descLower = (article.description || '').toLowerCase();
+      const celebrityLower = article.celebrity.toLowerCase();
+
+      const celebrityInTitle = titleLower.includes(celebrityLower);
+      const celebrityInDesc = descLower.includes(celebrityLower);
+
+      if (!celebrityInTitle && !celebrityInDesc) {
+        logger.debug(
+          `❌ Filtered: Celebrity name not found in content - ${article.title} (${article.celebrity})`
+        );
+        return false;
+      }
+
+      // FILTER 3: Content quality scoring (Phase 1 enhanced)
       const contentScore = analyzePortugueseContent(
         article.title,
         article.description,
         article.url,
         article.celebrity // Pass celebrity name for enhanced relevance scoring
       );
-      const keepArticle = shouldKeepArticle(contentScore, 10); // Lowered threshold for testing
 
-      // Only log filtered articles in development mode
-      if (!keepArticle && process.env.NODE_ENV === 'development') {
-        logger.debug(`❌ Filtered: ${article.title} (score: ${contentScore.overallScore})`);
+      // AGGRESSIVE GROWTH: Threshold 15 for maximum article count while avoiding trash
+      const keepArticle = shouldKeepArticle(contentScore, 15);
+
+      if (!keepArticle) {
+        if (process.env.NODE_ENV === 'development') {
+          logger.debug(
+            `❌ Filtered: Low quality score ${contentScore.overallScore}/100 - ${article.title}`
+          );
+          logger.debug(`   Reasons: ${contentScore.reasons.join(', ')}`);
+        }
+        return false;
       }
 
-      return keepArticle;
+      // FILTER 4: PHASE 2 - Image URL validation (domain check only for performance)
+      if (article.urlToImage) {
+        const isImageDomainValid = isImageUrlDomainValid(article.urlToImage);
+        if (!isImageDomainValid) {
+          logger.debug(`❌ Filtered: Invalid image domain - ${article.title}`);
+          logger.debug(`   Image URL: ${article.urlToImage}`);
+          return false;
+        }
+      } else {
+        // Articles without images get lower priority but aren't filtered out
+        logger.debug(`⚠️ Article has no image: ${article.title}`);
+      }
+
+      // Log accepted articles for monitoring
+      if (process.env.NODE_ENV === 'development') {
+        logger.debug(
+          `✅ Accepted: Score ${contentScore.overallScore}/100 - ${article.title} (${article.celebrity})`
+        );
+      }
+
+      return true;
     });
 
     logger.info(
       `Found ${relevantArticles.length} high-quality relevant articles after Portuguese content filtering`
     );
 
-    // Remove duplicates based on URL
-    const uniqueArticles = filterDuplicates(
-      relevantArticles,
-      (article: ArticleType) => article.url
+    // AGGRESSIVE GROWTH: Apply per-celebrity limits to prevent clustering
+    const limitedArticles = this.applyPerCelebrityLimits(relevantArticles, 3);
+    logger.info(
+      `Applied per-celebrity limits: ${relevantArticles.length} → ${limitedArticles.length} articles`
     );
+
+    // Remove duplicates based on URL
+    const uniqueArticles = filterDuplicates(limitedArticles, (article: ArticleType) => article.url);
     const duplicatesFound = relevantArticles.length - uniqueArticles.length;
 
     logger.info(`Found ${duplicatesFound} duplicates, ${uniqueArticles.length} unique articles`);

@@ -53,6 +53,11 @@ const Header = () => {
               Sobre
             </Link>
           </div>
+          <div className="ml-4">
+            <Link href="/admin" className="hover:text-purple-400 transition-colors duration-200">
+              Admin
+            </Link>
+          </div>
         </div>
       </nav>
       <h4 className="mt-4">O portal de notícias sobre as mulheres mais admiradas do mundo</h4>

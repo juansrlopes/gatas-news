@@ -8,6 +8,12 @@ import { mongoConnection } from './database/connections/mongodb';
 import { redisConnection } from './database/connections/redis';
 import { jobScheduler } from './jobs/scheduler';
 import { validateApiKeysOnStartup } from './utils/apiKeyValidator';
+import { validateCelebritiesOnStartup } from './middleware/celebrityProtection';
+import {
+  createAutomaticBackup,
+  scheduleAutomaticBackups,
+  verifyBackupIntegrity,
+} from './utils/celebrityBackup';
 
 // Load environment variables from .env file
 // Primary location: apps/api/.env
@@ -59,6 +65,17 @@ const initializeServices = async (): Promise<void> => {
     logger.info('📊 Connecting to MongoDB...');
     await mongoConnection.connect();
 
+    // CRITICAL: Celebrity protection safeguards
+    logger.info('👥 Validating celebrity data...');
+    await validateCelebritiesOnStartup();
+    logger.info('💾 Creating celebrity backup...');
+    await createAutomaticBackup();
+    logger.info('🔍 Verifying backup integrity...');
+    const backupValid = await verifyBackupIntegrity();
+    if (!backupValid) {
+      logger.warn('⚠️ Backup integrity check failed, but continuing startup...');
+    }
+
     // Connect to Redis (optional, will fallback to memory cache if fails)
     logger.info('🚀 Connecting to Redis...');
     try {
@@ -70,6 +87,11 @@ const initializeServices = async (): Promise<void> => {
     // Initialize job scheduler
     logger.info('⏰ Initializing job scheduler...');
     await jobScheduler.initialize();
+
+    // TEMPORARY: Disable automatic backups for debugging
+    // TODO: Re-enable after fixing startup issues
+    // logger.info('🔄 Starting automatic celebrity backup scheduler...');
+    scheduleAutomaticBackups();
 
     console.log('');
     logger.info('✅ All services initialized successfully');

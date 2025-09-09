@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "test:keys": "node test-api-keys.js"
   },
   "dependencies": {
     "axios": "^0.21.1",

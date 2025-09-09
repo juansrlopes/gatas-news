@@ -54,3 +54,6 @@ next-env.d.ts
 # Cursor
 .cursor/
 node_modules
+
+# API backups (contain sensitive data)
+apps/api/backups/

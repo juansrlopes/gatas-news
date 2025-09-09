@@ -44,21 +44,22 @@ const NewsGrid = () => {
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   /**
-   * Smart image source selection with fallback strategy
+   * PHASE 2: Enhanced image source selection with multiple fallback options
    *
    * @param imageUrl - The original image URL from the article
+   * @param article - The full article object for context-aware fallbacks
    * @returns The best available image source
    */
   const getImageSrc = useCallback(
-    (imageUrl: string | null | undefined): string => {
-      // No image URL provided
+    (imageUrl: string | null | undefined, article?: Article): string => {
+      // No image URL provided - use context-aware placeholder
       if (!imageUrl) {
-        return '/placeholder-news.svg';
+        return getContextualPlaceholder(article);
       }
 
-      // Image previously failed to load
+      // Image previously failed to load - use context-aware placeholder
       if (failedImages.has(imageUrl)) {
-        return '/placeholder-news.svg';
+        return getContextualPlaceholder(article);
       }
 
       // Use image proxy for external images
@@ -66,6 +67,67 @@ const NewsGrid = () => {
     },
     [failedImages]
   );
+
+  /**
+   * PHASE 2: Context-aware placeholder selection
+   * Returns different placeholders based on article content
+   */
+  const getContextualPlaceholder = useCallback((article?: Article): string => {
+    if (!article) {
+      return '/placeholder-news.svg';
+    }
+
+    const title = (article.title || '').toLowerCase();
+    const description = (article.description || '').toLowerCase();
+    const content = `${title} ${description}`;
+
+    // Fashion/Style content
+    if (
+      content.includes('look') ||
+      content.includes('vestido') ||
+      content.includes('moda') ||
+      content.includes('estilo') ||
+      content.includes('roupa')
+    ) {
+      return '/placeholder-fashion.svg';
+    }
+
+    // Beach/Bikini content
+    if (
+      content.includes('biquíni') ||
+      content.includes('praia') ||
+      content.includes('piscina') ||
+      content.includes('verão') ||
+      content.includes('maiô')
+    ) {
+      return '/placeholder-beach.svg';
+    }
+
+    // Fitness/Gym content
+    if (
+      content.includes('academia') ||
+      content.includes('treino') ||
+      content.includes('shape') ||
+      content.includes('corpo') ||
+      content.includes('fitness')
+    ) {
+      return '/placeholder-fitness.svg';
+    }
+
+    // Event/Party content
+    if (
+      content.includes('festa') ||
+      content.includes('evento') ||
+      content.includes('premiação') ||
+      content.includes('gala') ||
+      content.includes('tapete vermelho')
+    ) {
+      return '/placeholder-event.svg';
+    }
+
+    // Default news placeholder
+    return '/placeholder-news.svg';
+  }, []);
 
   /**
    * Enhanced image error handling with domain monitoring
@@ -471,7 +533,7 @@ const NewsGrid = () => {
             >
               <div className="relative">
                 <Image
-                  src={getImageSrc(article.urlToImage)}
+                  src={getImageSrc(article.urlToImage, article)}
                   alt={article.title || 'Notícia'}
                   width={500}
                   height={300}

@@ -1,0 +1,7 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#06B6D4"/>
+  <circle cx="320" cy="60" r="30" fill="#FCD34D"/>
+  <path d="M0 200 Q100 180 200 200 T400 200 V300 H0 Z" fill="#0EA5E9"/>
+  <path d="M0 220 Q100 200 200 220 T400 220 V300 H0 Z" fill="#0284C7"/>
+  <text x="200" y="250" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">PRAIA</text>
+</svg>

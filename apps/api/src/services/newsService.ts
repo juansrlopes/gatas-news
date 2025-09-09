@@ -9,6 +9,8 @@ import { celebrityService } from './celebrityService';
 import { newsFetcher } from '../jobs/newsFetcher';
 import { NewsResponse } from '../../../../libs/shared/types/src/index';
 import { ValidationError } from '../types/errors';
+import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
+import { isImageUrlDomainValid } from '../utils/imageValidation';
 import logger from '../utils/logger';
 
 export class NewsService {
@@ -66,8 +68,9 @@ export class NewsService {
       dateTo,
     } = params;
 
-    // Generate cache key based on all parameters
-    const cacheKey = this.generateCacheKey(params);
+    // Generate cache key based on all parameters (including mixing flag)
+    const willApplyMixing = !celebrity && !searchTerm && sortBy === 'publishedAt';
+    const cacheKey = this.generateCacheKey({ ...params, mixing: willApplyMixing });
 
     try {
       // Try to get from cache first
@@ -111,9 +114,22 @@ export class NewsService {
         result = await articleRepository.findWithFilters(filters, paginationOptions);
       }
 
+      // PHASE 1: Apply content quality filtering at serve time
+      const filteredArticles = this.applyPhase1Filtering(result.articles);
+      logger.info(
+        `Phase 1 filtering: ${result.articles.length} → ${filteredArticles.length} articles`
+      );
+
+      // Apply conservative mixing if no specific celebrity filter and not searching
+      let articlesToReturn = filteredArticles;
+      if (!celebrity && !searchTerm && sortBy === 'publishedAt') {
+        articlesToReturn = this.applyConservativeMixing(filteredArticles);
+        logger.info(`Applied conservative mixing to ${filteredArticles.length} articles`);
+      }
+
       // Convert to API response format
       const response: NewsResponse = {
-        articles: result.articles.map(this.convertToApiFormat),
+        articles: articlesToReturn.map(this.convertToApiFormat),
         totalResults: result.totalCount,
         page: result.currentPage,
         totalPages: result.totalPages,
@@ -415,6 +431,203 @@ export class NewsService {
   }
 
   /**
+   * Apply conservative mixing algorithm to prevent consecutive articles from same celebrity
+   *
+   * Algorithm:
+   * 1. Group articles by time buckets (6h, 12h, 24h, older)
+   * 2. Within each bucket, limit consecutive articles per celebrity (max 2)
+   * 3. Maintain chronological order within celebrity groups
+   * 4. Interleave celebrities while respecting time boundaries
+   *
+   * @param articles - Articles sorted by publishedAt DESC (newest first)
+   * @returns Mixed articles maintaining recency while adding diversity
+   */
+  /**
+   * PHASE 1: Apply content quality filtering at serve time
+   * This ensures all articles meet our quality standards even if they were
+   * inserted directly into the database bypassing the fetch filtering
+   */
+  private applyPhase1Filtering(articles: IArticle[]): IArticle[] {
+    return articles.filter(article => {
+      // FILTER 1: Must have valid celebrity assignment
+      if (!article.celebrity || article.celebrity === 'unknown') {
+        logger.debug(`❌ Serve-time filtered: Invalid celebrity - ${article.title}`);
+        return false;
+      }
+
+      // FILTER 2: Celebrity name must appear in title or description
+      const titleLower = (article.title || '').toLowerCase();
+      const descLower = (article.description || '').toLowerCase();
+      const celebrityLower = article.celebrity.toLowerCase();
+
+      const celebrityInTitle = titleLower.includes(celebrityLower);
+      const celebrityInDesc = descLower.includes(celebrityLower);
+
+      if (!celebrityInTitle && !celebrityInDesc) {
+        logger.debug(
+          `❌ Serve-time filtered: Celebrity name not in content - ${article.title} (${article.celebrity})`
+        );
+        return false;
+      }
+
+      // FILTER 3: Content quality scoring (Phase 1 enhanced)
+      const contentScore = analyzePortugueseContent(
+        article.title,
+        article.description,
+        article.url,
+        article.celebrity
+      );
+
+      const keepArticle = shouldKeepArticle(contentScore, 15); // Aggressive growth threshold
+
+      if (!keepArticle) {
+        logger.debug(
+          `❌ Serve-time filtered: Low quality score ${contentScore.overallScore}/100 - ${article.title}`
+        );
+        return false;
+      }
+
+      // FILTER 4: PHASE 2 - Image URL validation (serve-time)
+      if (article.urlToImage) {
+        const isImageDomainValid = isImageUrlDomainValid(article.urlToImage);
+        if (!isImageDomainValid) {
+          logger.debug(`❌ Serve-time filtered: Invalid image domain - ${article.title}`);
+          logger.debug(`   Image URL: ${article.urlToImage}`);
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  private applyConservativeMixing(articles: IArticle[]): IArticle[] {
+    if (articles.length <= 2) {
+      return articles; // No mixing needed for small sets
+    }
+
+    const now = new Date();
+    const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+    const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Group articles by time buckets
+    const timeBuckets = {
+      recent: [] as IArticle[], // Last 6 hours
+      semiRecent: [] as IArticle[], // 6-12 hours ago
+      daily: [] as IArticle[], // 12-24 hours ago
+      older: [] as IArticle[], // Older than 24 hours
+    };
+
+    // Sort articles into time buckets
+    for (const article of articles) {
+      const publishedAt = article.publishedAt;
+      if (!publishedAt) {
+        timeBuckets.older.push(article);
+        continue;
+      }
+
+      if (publishedAt >= sixHoursAgo) {
+        timeBuckets.recent.push(article);
+      } else if (publishedAt >= twelveHoursAgo) {
+        timeBuckets.semiRecent.push(article);
+      } else if (publishedAt >= oneDayAgo) {
+        timeBuckets.daily.push(article);
+      } else {
+        timeBuckets.older.push(article);
+      }
+    }
+
+    // Apply mixing within each bucket
+    const mixedBuckets = {
+      recent: this.mixArticlesWithinBucket(timeBuckets.recent),
+      semiRecent: this.mixArticlesWithinBucket(timeBuckets.semiRecent),
+      daily: this.mixArticlesWithinBucket(timeBuckets.daily),
+      older: this.mixArticlesWithinBucket(timeBuckets.older),
+    };
+
+    // Combine buckets back into single array (maintaining time order)
+    const mixedArticles = [
+      ...mixedBuckets.recent,
+      ...mixedBuckets.semiRecent,
+      ...mixedBuckets.daily,
+      ...mixedBuckets.older,
+    ];
+
+    logger.info('Conservative mixing applied', {
+      originalCount: articles.length,
+      mixedCount: mixedArticles.length,
+      bucketSizes: {
+        recent: mixedBuckets.recent.length,
+        semiRecent: mixedBuckets.semiRecent.length,
+        daily: mixedBuckets.daily.length,
+        older: mixedBuckets.older.length,
+      },
+    });
+
+    return mixedArticles;
+  }
+
+  /**
+   * Mix articles within a time bucket to prevent celebrity clustering
+   *
+   * @param bucketArticles - Articles within the same time bucket
+   * @returns Mixed articles with max 2 consecutive per celebrity
+   */
+  private mixArticlesWithinBucket(bucketArticles: IArticle[]): IArticle[] {
+    if (bucketArticles.length <= 2) {
+      return bucketArticles;
+    }
+
+    const mixed: IArticle[] = [];
+    const remaining = [...bucketArticles]; // Copy to avoid mutation
+    let lastCelebrity = '';
+    let consecutiveCount = 0;
+    const maxConsecutive = 2;
+
+    while (remaining.length > 0) {
+      let selectedIndex = -1;
+      let foundDifferent = false;
+
+      // If we've reached the consecutive limit, MUST find a different celebrity
+      if (consecutiveCount >= maxConsecutive && lastCelebrity !== '') {
+        for (let i = 0; i < remaining.length; i++) {
+          if (remaining[i].celebrity !== lastCelebrity) {
+            selectedIndex = i;
+            foundDifferent = true;
+            break;
+          }
+        }
+
+        // If no different celebrity found, we have to take the same one (edge case)
+        if (!foundDifferent) {
+          selectedIndex = 0;
+          logger.warn(
+            `Forced to take consecutive ${lastCelebrity} - no other celebrities available`
+          );
+        }
+      } else {
+        // Haven't hit limit yet, or this is the first article - take chronologically first
+        selectedIndex = 0;
+      }
+
+      // Move selected article to mixed array
+      const selectedArticle = remaining.splice(selectedIndex, 1)[0];
+      mixed.push(selectedArticle);
+
+      // Update tracking variables
+      if (selectedArticle.celebrity === lastCelebrity) {
+        consecutiveCount++;
+      } else {
+        lastCelebrity = selectedArticle.celebrity;
+        consecutiveCount = 1;
+      }
+    }
+
+    return mixed;
+  }
+
+  /**
    * Convert database article to API format
    */
   private convertToApiFormat(article: IArticle): {
@@ -458,6 +671,7 @@ export class NewsService {
       sentiment,
       dateFrom,
       dateTo,
+      mixing = false,
     } = params;
 
     let key = `news:`;
@@ -481,6 +695,11 @@ export class NewsService {
     }
 
     key += `page:${page}:limit:${limit}:sort:${sortBy}`;
+
+    // Add mixing flag to cache key
+    if (mixing) {
+      key += ':mixed';
+    }
 
     return key;
   }
