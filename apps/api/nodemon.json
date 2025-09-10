@@ -10,7 +10,7 @@
     "**/*.test.ts",
     "**/*.spec.ts"
   ],
-  "exec": "npx ts-node apps/api/index.ts",
+  "exec": "cd apps/api && npx ts-node index.ts",
   "env": {
     "NODE_ENV": "development"
   },

@@ -587,47 +587,31 @@ const NewsGrid = () => {
             </button>
           </div>
         </div>
-        <p className="text-sm text-gray-600">
-          🗃️ Pesquise em mais de 50.000 notícias da nossa base de dados
-        </p>
-      </div>
 
-      {/* "Can't Find" Prompt (Conditional) */}
-      {!showLiveSearch && (
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="text-center">
-            <p className="text-gray-700 mb-2">💡 Não encontrou a gata que você quer?</p>
+        <p className="text-sm text-white">🗃️ Busca rápida e gratuita na nossa base de dados</p>
+
+        {/* Live Search Trigger */}
+        {!showLiveSearch && (
+          <div className="mt-2">
             <button
               onClick={handleShowLiveSearch}
-              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
-              aria-label="Abrir busca ao vivo"
+              className="text-sm text-white hover:text-purple-300 underline transition-colors cursor-pointer"
+              aria-label="Mostrar busca ao vivo"
             >
-              Clique aqui para busca ao vivo
+              + Não encontrou? Buscar ao vivo ({maxDailySearches - dailySearchCount} restantes)
             </button>
-            <p className="text-xs text-gray-500 mt-1">Busque qualquer celebridade em tempo real</p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Live Search Section (Conditional) */}
+      {/* Live Search Section - Clean design matching database search */}
       {showLiveSearch && (
-        <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold text-red-800">🔴 Busca ao Vivo (Limitada)</h3>
-            <button
-              onClick={handleCancelLiveSearch}
-              className="text-red-600 hover:text-red-800 focus:outline-none"
-              aria-label="Cancelar busca ao vivo"
-            >
-              ✕
-            </button>
-          </div>
-
+        <div className="mb-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
             <input
               type="text"
-              className="p-2 border border-red-300 rounded w-full sm:w-96 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              placeholder="Digite o nome da celebridade..."
+              className="p-2 border border-gray-300 rounded w-full sm:w-96 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="Digite o nome da celebridade para busca ao vivo..."
               value={liveQuery}
               onChange={handleLiveInputChange}
               onKeyPress={handleLiveKeyPress}
@@ -636,7 +620,7 @@ const NewsGrid = () => {
             <div className="flex gap-2">
               <button
                 onClick={handleLiveSearch}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+                className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50"
                 disabled={loading || dailySearchCount >= maxDailySearches}
                 aria-label="Buscar ao vivo"
               >
@@ -651,15 +635,13 @@ const NewsGrid = () => {
               </button>
             </div>
           </div>
-
-          <div className="flex items-center justify-between text-sm">
-            <p className="text-red-700">
-              ⚠️ {maxDailySearches - dailySearchCount}/{maxDailySearches} buscas restantes hoje
-            </p>
-            <p className="text-red-600">Cada busca consome uma cota diária limitada</p>
-          </div>
+          <p className="text-sm text-white">
+            🔴 Busca ao vivo limitada: {maxDailySearches - dailySearchCount}/{maxDailySearches}{' '}
+            buscas restantes hoje
+          </p>
         </div>
       )}
+
       {loading && articles.length === 0 && <ArticleSkeleton count={8} />}
 
       {/* Network Status Indicator */}

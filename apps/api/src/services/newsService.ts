@@ -10,7 +10,7 @@ import { newsFetcher } from '../jobs/newsFetcher';
 import { NewsResponse } from '../../../../libs/shared/types/src/index';
 import { ValidationError } from '../types/errors';
 import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
-import { isImageUrlDomainValid } from '../utils/imageValidation';
+// Removed unused import - simplified filtering approach
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 import logger from '../utils/logger';
 
@@ -451,60 +451,16 @@ export class NewsService {
    * @returns Mixed articles maintaining recency while adding diversity
    */
   /**
-   * PHASE 1: Apply content quality filtering at serve time
-   * This ensures all articles meet our quality standards even if they were
-   * inserted directly into the database bypassing the fetch filtering
+   * SIMPLIFIED: Minimal filtering - just ensure basic data quality
    */
   private applyPhase1Filtering(articles: IArticle[]): IArticle[] {
     return articles.filter(article => {
-      // FILTER 1: Must have valid celebrity assignment
+      // Only filter out articles with no celebrity assignment
       if (!article.celebrity || article.celebrity === 'unknown') {
-        logger.debug(`❌ Serve-time filtered: Invalid celebrity - ${article.title}`);
         return false;
       }
 
-      // FILTER 2: Celebrity name must appear in title or description
-      const titleLower = (article.title || '').toLowerCase();
-      const descLower = (article.description || '').toLowerCase();
-      const celebrityLower = article.celebrity.toLowerCase();
-
-      const celebrityInTitle = titleLower.includes(celebrityLower);
-      const celebrityInDesc = descLower.includes(celebrityLower);
-
-      if (!celebrityInTitle && !celebrityInDesc) {
-        logger.debug(
-          `❌ Serve-time filtered: Celebrity name not in content - ${article.title} (${article.celebrity})`
-        );
-        return false;
-      }
-
-      // FILTER 3: Content quality scoring (Phase 1 enhanced)
-      const contentScore = analyzePortugueseContent(
-        article.title,
-        article.description,
-        article.url,
-        article.celebrity
-      );
-
-      const keepArticle = shouldKeepArticle(contentScore, 15); // Aggressive growth threshold
-
-      if (!keepArticle) {
-        logger.debug(
-          `❌ Serve-time filtered: Low quality score ${contentScore.overallScore}/100 - ${article.title}`
-        );
-        return false;
-      }
-
-      // FILTER 4: PHASE 2 - Image URL validation (serve-time)
-      if (article.urlToImage) {
-        const isImageDomainValid = isImageUrlDomainValid(article.urlToImage);
-        if (!isImageDomainValid) {
-          logger.debug(`❌ Serve-time filtered: Invalid image domain - ${article.title}`);
-          logger.debug(`   Image URL: ${article.urlToImage}`);
-          return false;
-        }
-      }
-
+      // Keep everything else - let users see all content!
       return true;
     });
   }

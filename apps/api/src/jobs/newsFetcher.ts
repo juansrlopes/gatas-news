@@ -16,8 +16,7 @@ import { Article as ArticleType, NewsApiResponse } from '../../../../libs/shared
 interface ArticleWithCelebrity extends ArticleType {
   celebrity: string;
 }
-import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
-import { isImageUrlDomainValid } from '../utils/imageValidation';
+// Removed unused imports - simplified filtering approach
 import { apiKeyManager } from '../services/apiKeyManager';
 import logger from '../utils/logger';
 
@@ -318,8 +317,8 @@ export class NewsFetcher {
   }
 
   /**
-   * Fetch articles for all celebrities using smart batch OR queries
-   * 🚀 NEW: 96% more efficient - uses batch OR queries instead of individual calls
+   * Fetch articles for ALL celebrities - SIMPLIFIED APPROACH
+   * Just get articles for ALL celebrities in one API call, no complex batching
    */
   private async fetchArticlesForAllCelebrities(
     celebrities: string[],
@@ -331,61 +330,71 @@ export class NewsFetcher {
     rateLimitRemaining?: number;
     rateLimitReset?: Date;
   }> {
-    logger.info('🚀 Starting SMART BATCH fetching for celebrities', {
+    logger.info('🚀 Fetching articles for ALL celebrities', {
       totalCelebrities: celebrities.length,
-      batchSize: this.CELEBRITY_BATCH_SIZE,
     });
 
-    // Create celebrity batches for efficient API usage
-    const celebrityBatches = this.createCelebrityBatches(celebrities);
+    // SIMPLIFIED: Split celebrities into smaller batches to avoid query length limits
+    const BATCH_SIZE = 20; // 20 celebrities per API call
+    const batches: string[][] = [];
 
-    // For this fetch cycle, process only ONE batch (rotation ensures all get coverage)
-    const currentBatch = await this.getNextBatch(celebrityBatches);
-
-    if (currentBatch.length === 0) {
-      logger.warn('No celebrities in current batch');
-      return {
-        articles: [],
-        totalArticles: 0,
-        apiCallsUsed: 0,
-      };
+    for (let i = 0; i < celebrities.length; i += BATCH_SIZE) {
+      batches.push(celebrities.slice(i, i + BATCH_SIZE));
     }
 
-    // Create OR query for the entire batch
-    const batchQuery = this.createBatchQuery(currentBatch);
+    logger.info(`🎯 Fetching articles for ALL celebrities in ${batches.length} batches`);
 
-    logger.info(`🎯 Fetching articles with batch OR query`, {
-      batchSize: currentBatch.length,
-      queryPreview: batchQuery.substring(0, 100) + '...',
+    let allArticles: ArticleWithCelebrity[] = [];
+    let totalApiCalls = 0;
+    let lastRateLimitInfo: { rateLimitRemaining?: number; rateLimitReset?: Date } = {};
+
+    // Process each batch
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      const batchQuery = batch.map(name => `"${name}"`).join(' OR ');
+
+      logger.info(`📦 Processing batch ${i + 1}/${batches.length} (${batch.length} celebrities)`);
+
+      try {
+        const result = await this.fetchArticlesForBatch(batchQuery, batch, config);
+        allArticles = allArticles.concat(result.articles);
+        totalApiCalls++;
+
+        if (result.rateLimitRemaining !== undefined) {
+          lastRateLimitInfo.rateLimitRemaining = result.rateLimitRemaining;
+        }
+        if (result.rateLimitReset) {
+          lastRateLimitInfo.rateLimitReset = result.rateLimitReset;
+        }
+
+        logger.info(`✅ Batch ${i + 1} completed: ${result.articles.length} articles found`);
+
+        // Small delay between batches to be respectful to the API
+        if (i < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      } catch (error) {
+        logger.error(`❌ Batch ${i + 1} failed:`, error);
+        totalApiCalls++;
+        // Continue with next batch even if one fails
+      }
+    }
+
+    logger.info('✅ Fetch completed for ALL celebrities', {
+      articlesFound: allArticles.length,
+      apiCallsUsed: totalApiCalls,
+      rateLimitRemaining: lastRateLimitInfo.rateLimitRemaining,
+      celebritiesProcessed: celebrities.length,
+      batchesProcessed: batches.length,
     });
 
-    try {
-      // Make SINGLE API call for entire batch
-      const result = await this.fetchArticlesForBatch(batchQuery, currentBatch, config);
-
-      logger.info('✅ Smart batch fetch completed', {
-        articlesFound: result.articles.length,
-        apiCallsUsed: 1, // Only 1 call instead of 25-109 calls!
-        rateLimitRemaining: result.rateLimitRemaining,
-        efficiencyGain: `96% reduction (1 call vs ${celebrities.length} individual calls)`,
-        batchCoverage: `${currentBatch.length}/${celebrities.length} celebrities in this cycle`,
-      });
-
-      return {
-        articles: result.articles,
-        totalArticles: result.articles.length,
-        apiCallsUsed: 1, // 🎉 MASSIVE IMPROVEMENT: 1 call vs 25-109 calls
-        rateLimitRemaining: result.rateLimitRemaining,
-        rateLimitReset: result.rateLimitReset,
-      };
-    } catch (error) {
-      logger.error('❌ Smart batch fetch failed:', error);
-      return {
-        articles: [],
-        totalArticles: 0,
-        apiCallsUsed: 1,
-      };
-    }
+    return {
+      articles: allArticles,
+      totalArticles: allArticles.length,
+      apiCallsUsed: totalApiCalls,
+      rateLimitRemaining: lastRateLimitInfo.rateLimitRemaining,
+      rateLimitReset: lastRateLimitInfo.rateLimitReset,
+    };
   }
 
   /**
@@ -682,81 +691,36 @@ export class NewsFetcher {
     logger.info(`Processing ${articles.length} articles...`);
 
     // PHASE 1: Enhanced filtering for content relevance and quality
+    // SMART FILTERING: Maximum articles while removing obvious trash
     const relevantArticles = articles.filter(article => {
-      // FILTER 1: Must have valid celebrity assignment
+      // Filter 1: Must have celebrity assignment
       if (!article.celebrity || article.celebrity === 'unknown') {
-        logger.debug(`❌ Filtered: No valid celebrity assignment - ${article.title}`);
         return false;
       }
 
-      // FILTER 2: Celebrity name must appear in title or description
+      // Filter 2: Celebrity name must appear in title or description (simple relevance check)
       const titleLower = (article.title || '').toLowerCase();
       const descLower = (article.description || '').toLowerCase();
       const celebrityLower = article.celebrity.toLowerCase();
 
+      // Check if celebrity name appears in content
       const celebrityInTitle = titleLower.includes(celebrityLower);
       const celebrityInDesc = descLower.includes(celebrityLower);
 
       if (!celebrityInTitle && !celebrityInDesc) {
-        logger.debug(
-          `❌ Filtered: Celebrity name not found in content - ${article.title} (${article.celebrity})`
-        );
+        // This is likely a false positive - article not actually about this celebrity
         return false;
       }
 
-      // FILTER 3: Content quality scoring (Phase 1 enhanced)
-      const contentScore = analyzePortugueseContent(
-        article.title,
-        article.description,
-        article.url,
-        article.celebrity // Pass celebrity name for enhanced relevance scoring
-      );
-
-      // AGGRESSIVE GROWTH: Threshold 15 for maximum article count while avoiding trash
-      const keepArticle = shouldKeepArticle(contentScore, 15);
-
-      if (!keepArticle) {
-        if (process.env.NODE_ENV === 'development') {
-          logger.debug(
-            `❌ Filtered: Low quality score ${contentScore.overallScore}/100 - ${article.title}`
-          );
-          logger.debug(`   Reasons: ${contentScore.reasons.join(', ')}`);
-        }
-        return false;
-      }
-
-      // FILTER 4: PHASE 2 - Image URL validation (domain check only for performance)
-      if (article.urlToImage) {
-        const isImageDomainValid = isImageUrlDomainValid(article.urlToImage);
-        if (!isImageDomainValid) {
-          logger.debug(`❌ Filtered: Invalid image domain - ${article.title}`);
-          logger.debug(`   Image URL: ${article.urlToImage}`);
-          return false;
-        }
-      } else {
-        // Articles without images get lower priority but aren't filtered out
-        logger.debug(`⚠️ Article has no image: ${article.title}`);
-      }
-
-      // Log accepted articles for monitoring
-      if (process.env.NODE_ENV === 'development') {
-        logger.debug(
-          `✅ Accepted: Score ${contentScore.overallScore}/100 - ${article.title} (${article.celebrity})`
-        );
-      }
-
+      // Keep everything else - maximum relevant articles!
       return true;
     });
 
-    logger.info(
-      `Found ${relevantArticles.length} high-quality relevant articles after Portuguese content filtering`
-    );
+    logger.info(`Found ${relevantArticles.length} articles - keeping ALL for maximum content!`);
 
-    // AGGRESSIVE GROWTH: Apply per-celebrity limits to prevent clustering
-    const limitedArticles = this.applyPerCelebrityLimits(relevantArticles, 3);
-    logger.info(
-      `Applied per-celebrity limits: ${relevantArticles.length} → ${limitedArticles.length} articles`
-    );
+    // MAXIMUM ARTICLES: No per-celebrity limits - keep all articles!
+    const limitedArticles = relevantArticles;
+    logger.info(`Keeping ALL ${relevantArticles.length} articles - no artificial limits!`);
 
     // Remove duplicates based on URL
     const uniqueArticles = filterDuplicates(limitedArticles, (article: ArticleType) => article.url);

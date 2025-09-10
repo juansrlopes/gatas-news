@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@gatas-news/shared-utils', '@gatas-news/shared-types'],
 
   // Performance optimizations
-  swcMinify: true,
   compress: true,
   poweredByHeader: false,
 
@@ -58,7 +57,6 @@ const nextConfig: NextConfig = {
 
   // Enable experimental features for better performance
   experimental: {
-    optimizeCss: true,
     scrollRestoration: true,
   },
 };
