@@ -263,7 +263,8 @@ export class ArticleRepository {
    */
   public async existsByUrl(url: string): Promise<boolean> {
     try {
-      const count = await Article.countDocuments({ url }).exec();
+      // FRESH START FIX: Only check against active articles to avoid duplicate detection with backed-up articles
+      const count = await Article.countDocuments({ url, isActive: true }).exec();
       return count > 0;
     } catch (error) {
       logger.error('Error checking article existence:', error);

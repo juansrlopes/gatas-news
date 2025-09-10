@@ -334,8 +334,8 @@ export class NewsFetcher {
       totalCelebrities: celebrities.length,
     });
 
-    // SIMPLIFIED: Split celebrities into smaller batches to avoid query length limits
-    const BATCH_SIZE = 20; // 20 celebrities per API call
+    // AGGRESSIVE STRATEGY: Smaller batches = more API calls = more articles per celebrity
+    const BATCH_SIZE = 5; // 5 celebrities per API call for maximum articles per celebrity
     const batches: string[][] = [];
 
     for (let i = 0; i < celebrities.length; i += BATCH_SIZE) {
@@ -428,7 +428,7 @@ export class NewsFetcher {
           sortBy: 'publishedAt',
           language: 'pt',
           pageSize: 100, // Maximum allowed by NewsAPI
-          from: this.getFromDate(), // Only get articles from last 7 days
+          from: this.getFromDate(30), // Get articles from last 30 days for more volume
         },
         timeout: this.REQUEST_TIMEOUT,
       });
@@ -538,7 +538,7 @@ export class NewsFetcher {
           sortBy: 'publishedAt',
           language: 'pt',
           pageSize: 100, // Maximum allowed by NewsAPI
-          from: this.getFromDate(), // Only get articles from last 7 days
+          from: this.getFromDate(30), // Get articles from last 30 days for more volume
         },
         timeout: this.REQUEST_TIMEOUT,
       });
@@ -693,24 +693,30 @@ export class NewsFetcher {
     // PHASE 1: Enhanced filtering for content relevance and quality
     // SMART FILTERING: Maximum articles while removing obvious trash
     const relevantArticles = articles.filter(article => {
-      // Filter 1: Must have celebrity assignment
-      if (!article.celebrity || article.celebrity === 'unknown') {
+      // Filter 1: Must have celebrity assignment (but allow 'unknown' for now to debug)
+      if (!article.celebrity) {
         return false;
       }
+
+      // TEMPORARILY RELAXED: Allow 'unknown' articles to see what we're getting
+      // if (article.celebrity === 'unknown') {
+      //   return false;
+      // }
 
       // Filter 2: Celebrity name must appear in title or description (simple relevance check)
-      const titleLower = (article.title || '').toLowerCase();
-      const descLower = (article.description || '').toLowerCase();
-      const celebrityLower = article.celebrity.toLowerCase();
+      // TEMPORARILY RELAXED: Skip this check to see what we're filtering out
+      // const titleLower = (article.title || '').toLowerCase();
+      // const descLower = (article.description || '').toLowerCase();
+      // const celebrityLower = article.celebrity.toLowerCase();
 
       // Check if celebrity name appears in content
-      const celebrityInTitle = titleLower.includes(celebrityLower);
-      const celebrityInDesc = descLower.includes(celebrityLower);
+      // const celebrityInTitle = titleLower.includes(celebrityLower);
+      // const celebrityInDesc = descLower.includes(celebrityLower);
 
-      if (!celebrityInTitle && !celebrityInDesc) {
-        // This is likely a false positive - article not actually about this celebrity
-        return false;
-      }
+      // if (!celebrityInTitle && !celebrityInDesc) {
+      //   // This is likely a false positive - article not actually about this celebrity
+      //   return false;
+      // }
 
       // Keep everything else - maximum relevant articles!
       return true;
@@ -793,11 +799,11 @@ export class NewsFetcher {
   }
 
   /**
-   * Get date for fetching recent articles (last 7 days)
+   * Get date for fetching recent articles (configurable days back)
    */
-  private getFromDate(): string {
+  private getFromDate(daysBack: number = 7): string {
     const date = new Date();
-    date.setDate(date.getDate() - 7); // Last 7 days
+    date.setDate(date.getDate() - daysBack);
     return date.toISOString().split('T')[0]; // YYYY-MM-DD format
   }
 

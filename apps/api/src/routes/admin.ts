@@ -112,11 +112,46 @@ router.get('/articles/stats', generalLimiter, AdminController.getArticleStats);
 router.post('/articles/:id/toggle', generalLimiter, AdminController.toggleArticleStatus);
 
 /**
+ * @route   DELETE /api/v1/admin/articles/cleanup-unknown
+ * @desc    Permanently remove unknown articles from database
+ * @access  Admin
+ */
+router.delete('/articles/cleanup-unknown', generalLimiter, AdminController.cleanupUnknownArticles);
+
+/**
  * @route   DELETE /api/v1/admin/articles/:id
  * @desc    Delete article (hard delete)
  * @access  Admin
  */
 router.delete('/articles/:id', generalLimiter, AdminController.deleteArticle);
+
+/**
+ * @route   DELETE /api/v1/admin/articles/clear
+ * @desc    Clear all articles from database (for testing)
+ * @access  Admin
+ */
+router.delete('/articles/clear', generalLimiter, AdminController.clearAllArticles);
+
+/**
+ * @route   POST /api/v1/admin/articles/restore-quality
+ * @desc    Reactivate backed-up articles that meet quality criteria
+ * @access  Admin
+ */
+router.post('/articles/restore-quality', generalLimiter, AdminController.restoreQualityArticles);
+
+/**
+ * @route   POST /api/v1/admin/articles/backup
+ * @desc    Mark all current articles as inactive (backup for fresh start)
+ * @access  Admin
+ */
+router.post('/articles/backup', generalLimiter, AdminController.backupArticles);
+
+/**
+ * @route   GET /api/v1/admin/articles/quality-analysis
+ * @desc    Analyze article quality for trash filtering (Phase 1 Diagnostics)
+ * @access  Admin
+ */
+router.get('/articles/quality-analysis', generalLimiter, AdminController.analyzeArticleQuality);
 
 /**
  * Scheduler Management Routes

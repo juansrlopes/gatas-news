@@ -106,8 +106,9 @@ export class NewsService {
         filters.celebrity = foundCelebrity;
       }
 
-      // Pagination options - no need for extra articles since we're not mixing
-      const adjustedLimit = limit; // Always use exact limit requested
+      // Pagination options - fetch extra articles to account for filtering
+      // Since we filter out 'unknown' articles, we need to fetch more to ensure we return the requested amount
+      const adjustedLimit = Math.ceil(limit * 1.5); // Fetch 50% more to account for filtering
       
       const paginationOptions: PaginationOptions = {
         page,
@@ -134,7 +135,8 @@ export class NewsService {
 
       // SIMPLIFIED: Show ALL articles without aggressive mixing
       // Users want maximum content, not filtered/mixed content
-      let articlesToReturn = filteredArticles;
+      // Trim to requested limit after filtering
+      let articlesToReturn = filteredArticles.slice(0, limit);
       
       // Only apply mixing if explicitly requested (never by default)
       if (willApplyMixing && !params.noMixing) {
@@ -468,18 +470,23 @@ export class NewsService {
    * @returns Mixed articles maintaining recency while adding diversity
    */
   /**
-   * MINIMAL FILTERING: Show ALL articles to users - maximum content visibility!
-   * Only filter out completely broken/invalid articles
+   * PHASE 2 FILTERING: Remove obvious trash while preserving volume
+   * Based on diagnostic analysis showing 14% "unknown" articles are trash
    */
   private applyPhase1Filtering(articles: IArticle[]): IArticle[] {
     return articles.filter(article => {
-      // Only filter out articles that are completely broken
+      // Filter out completely broken articles
       if (!article.title || !article.url) {
         return false;
       }
 
-      // KEEP EVERYTHING ELSE - including 'unknown' celebrity articles!
-      // Users want to see ALL content, not filtered content
+      // PHASE 2 IMPROVEMENT: Filter out "unknown" celebrity articles
+      // Diagnostic analysis showed these are 14% trash (events, generic news, etc.)
+      if (article.celebrity === 'unknown') {
+        return false;
+      }
+
+      // Keep all articles with identified celebrities
       return true;
     });
   }

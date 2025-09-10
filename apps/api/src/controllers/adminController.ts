@@ -4,6 +4,7 @@ import { enhancedCacheService } from '../services/cacheService';
 import { jobScheduler } from '../jobs/scheduler';
 import { newsFetcher } from '../jobs/newsFetcher';
 import { articleRepository } from '../database/repositories/ArticleRepository';
+import { Article } from '../database/models/Article';
 import { FetchLog } from '../database/models/FetchLog';
 import { mongoConnection } from '../database/connections/mongodb';
 import { redisConnection } from '../database/connections/redis';
@@ -25,6 +26,212 @@ export class AdminController {
       success: true,
       message: 'News fetch triggered successfully',
       data: result,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * DELETE /api/v1/admin/articles/cleanup-unknown
+   * Permanently remove unknown articles from database
+   */
+  public static cleanupUnknownArticles = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Cleanup unknown articles triggered by admin', { ip: req.ip });
+
+    const result = await Article.deleteMany({ celebrity: 'unknown' });
+    
+    // Clear cache after cleanup
+    await enhancedCacheService.invalidateNewsCache();
+
+    logger.info(`Permanently removed ${result.deletedCount} unknown articles`);
+
+    res.json({
+      success: true,
+      message: `Successfully removed ${result.deletedCount} unknown articles`,
+      data: {
+        deletedCount: result.deletedCount,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * DELETE /api/v1/admin/articles/clear
+   * Clear all articles from database (for testing)
+   */
+  public static clearAllArticles = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Clear all articles triggered by admin', { ip: req.ip });
+
+    const result = await Article.deleteMany({});
+    
+    // Clear cache after clearing articles
+    await enhancedCacheService.invalidateNewsCache();
+
+    logger.info(`Cleared ${result.deletedCount} articles from database`);
+
+    res.json({
+      success: true,
+      message: `Successfully cleared ${result.deletedCount} articles`,
+      data: {
+        deletedCount: result.deletedCount,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * POST /api/v1/admin/articles/restore-quality
+   * Reactivate backed-up articles that meet quality criteria (no 'unknown' celebrities)
+   */
+  public static restoreQualityArticles = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Restore quality articles from backup triggered by admin', { ip: req.ip });
+
+    // Reactivate articles that are NOT 'unknown' celebrity (our quality criteria)
+    const result = await Article.updateMany(
+      { 
+        isActive: false,
+        celebrity: { $ne: 'unknown' } // Not equal to 'unknown'
+      },
+      { 
+        isActive: true,
+        updatedAt: new Date()
+      }
+    );
+
+    // Clear cache after restoration
+    await enhancedCacheService.invalidateNewsCache();
+
+    logger.info(`Restored ${result.modifiedCount} quality articles from backup`);
+
+    res.json({
+      success: true,
+      message: `Successfully restored ${result.modifiedCount} quality articles`,
+      data: {
+        restoredCount: result.modifiedCount,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * POST /api/v1/admin/articles/backup
+   * Mark all current articles as inactive (backup for fresh start)
+   */
+  public static backupArticles = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Backup articles (mark inactive) triggered by admin', { ip: req.ip });
+
+    const result = await Article.updateMany(
+      { isActive: true },
+      { 
+        isActive: false,
+        updatedAt: new Date()
+      }
+    );
+
+    // Clear cache after backup
+    await enhancedCacheService.invalidateNewsCache();
+
+    logger.info(`Backed up ${result.modifiedCount} articles (marked as inactive)`);
+
+    res.json({
+      success: true,
+      message: `Successfully backed up ${result.modifiedCount} articles`,
+      data: {
+        backedUpCount: result.modifiedCount,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * GET /api/v1/admin/articles/quality-analysis
+   * Analyze article quality for trash filtering (Phase 1 Diagnostics)
+   */
+  public static analyzeArticleQuality = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Article quality analysis requested', { ip: req.ip });
+
+    const sampleSize = parseInt(req.query.sample as string) || 50;
+    const category = req.query.category as string; // 'all', 'unknown', 'specific-celebrity'
+    const celebrity = req.query.celebrity as string;
+
+    // Build query based on category - ALWAYS include isActive: true for accurate analysis
+    let query: { isActive: boolean; celebrity?: string } = { isActive: true };
+    
+    if (category === 'unknown') {
+      query.celebrity = 'unknown';
+    } else if (category === 'specific-celebrity' && celebrity) {
+      query.celebrity = celebrity;
+    }
+    
+    // IMPORTANT: Quality analysis should only check active articles for accurate metrics
+
+    // Get random sample of articles
+    const articles = await Article.aggregate([
+      { $match: query },
+      { $sample: { size: sampleSize } }
+    ]);
+
+    // Analyze patterns in the sample
+    const analysis = {
+      sampleSize: articles.length,
+      categories: {
+        unknown: articles.filter(a => a.celebrity === 'unknown').length,
+        withCelebrityInTitle: articles.filter(a => 
+          a.celebrity !== 'unknown' && 
+          a.title.toLowerCase().includes(a.celebrity.toLowerCase())
+        ).length,
+        withoutCelebrityInTitle: articles.filter(a => 
+          a.celebrity !== 'unknown' && 
+          !a.title.toLowerCase().includes(a.celebrity.toLowerCase())
+        ).length,
+      },
+      sources: [...new Set(articles.map(a => a.source?.name).filter(Boolean))],
+      languages: {
+        portuguese: articles.filter(a => 
+          /[áàâãéêíóôõúç]/i.test(a.title + ' ' + (a.description || ''))
+        ).length,
+        other: articles.filter(a => 
+          !/[áàâãéêíóôõúç]/i.test(a.title + ' ' + (a.description || ''))
+        ).length,
+      },
+      titlePatterns: {
+        hasQuotes: articles.filter(a => /["'"]/.test(a.title)).length,
+        hasList: articles.filter(a => /\d+\s*(coisas|fatos|fotos|looks)/i.test(a.title)).length,
+        hasAction: articles.filter(a => /(mostra|exibe|posta|aparece|surge)/i.test(a.title)).length,
+      }
+    };
+
+    // Return sample articles with analysis
+    const sampleArticles = articles.slice(0, 20).map(article => ({
+      id: article._id,
+      title: article.title,
+      description: article.description?.substring(0, 150) + '...',
+      celebrity: article.celebrity,
+      source: article.source?.name,
+      url: article.url,
+      publishedAt: article.publishedAt,
+      // Quality indicators for manual review
+      qualityIndicators: {
+        celebrityInTitle: article.celebrity !== 'unknown' && 
+          article.title.toLowerCase().includes(article.celebrity.toLowerCase()),
+        hasPortugueseChars: /[áàâãéêíóôõúç]/i.test(article.title + ' ' + (article.description || '')),
+        hasActionVerbs: /(mostra|exibe|posta|aparece|surge|faz|está)/i.test(article.title),
+        hasQuotes: /["'"]/.test(article.title),
+        isList: /\d+\s*(coisas|fatos|fotos|looks)/i.test(article.title),
+      }
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        analysis,
+        sampleArticles,
+        recommendations: {
+          highRisk: analysis.categories.unknown,
+          mediumRisk: analysis.categories.withoutCelebrityInTitle,
+          lowRisk: analysis.categories.withCelebrityInTitle,
+          nonPortuguese: analysis.languages.other,
+        }
+      },
       timestamp: new Date().toISOString(),
     });
   });

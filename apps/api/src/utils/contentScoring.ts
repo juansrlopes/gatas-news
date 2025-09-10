@@ -447,8 +447,16 @@ export function analyzePortugueseContent(
   );
 
   if (lowValueMatches.length > 0) {
-    visualAppeal -= lowValueMatches.length * 15;
-    reasons.push(`Low-value content penalty: ${lowValueMatches.join(', ')}`);
+    // MINIMIZED: Reduced penalty for low-value content - users want maximum articles
+    visualAppeal -= lowValueMatches.length * 5; // Reduced from 15 to 5
+    reasons.push(`Low-value content (minimal penalty): ${lowValueMatches.join(', ')}`);
+  }
+
+  // PHASE 2 ENHANCEMENT: Strong boost for celebrity name in title (indicates main subject)
+  if (celebrityName && title.toLowerCase().includes(celebrityName.toLowerCase())) {
+    relevance += 40; // Strong boost for celebrity in title
+    visualAppeal += 20; // Also boost visual appeal
+    reasons.push(`Celebrity name in title: ${celebrityName}`);
   }
 
   // Check for action verbs (indicates celebrity is main subject)
@@ -469,9 +477,9 @@ export function analyzePortugueseContent(
     relevance += 15;
     reasons.push(`Visual content indicators: ${photoMatches.join(', ')}`);
   } else {
-    // AGGRESSIVE GROWTH: Reduced penalty for articles without photo indicators
-    visualAppeal -= 15;
-    reasons.push(`No visual content indicators found - moderate penalty`);
+    // MINIMIZED: Further reduced penalty for articles without photo indicators
+    visualAppeal -= 5; // Reduced from 15 to 5
+    reasons.push(`No visual content indicators found - minimal penalty`);
   }
 
   // PHASE 1 ENHANCEMENT: Source quality scoring
@@ -491,8 +499,10 @@ export function analyzePortugueseContent(
     } else if (
       PORTUGUESE_KEYWORDS.sourceQuality.avoid.some(domain => sourceDomain.includes(domain))
     ) {
-      visualAppeal -= 20;
-      reasons.push(`News source penalty (not entertainment)`);
+      // REMOVED: No longer penalize news sources - accept ALL sources NewsAPI provides
+      // visualAppeal -= 20;
+      // reasons.push(`News source penalty (not entertainment)`);
+      reasons.push(`News source accepted (no penalty)`);
     }
   }
 
