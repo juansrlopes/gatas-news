@@ -117,4 +117,7 @@ const SocialMedia = () => {
   );
 };
 
+// Add display name for React DevTools
+SocialMedia.displayName = 'SocialMedia';
+
 export default memo(SocialMedia);

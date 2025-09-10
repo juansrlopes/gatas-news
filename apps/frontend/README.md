@@ -21,11 +21,30 @@
 - [🚀 Deployment](#-deployment)
 - [🐛 Troubleshooting](#-troubleshooting)
 
+## ✨ Recent Updates (September 2025)
+
+### 🎨 UI/UX Enhancements
+- **Smart Pagination**: Initial load shows 4 rows (20 articles), "Load More" adds 4 more rows
+- **Consistent Card Heights**: All article cards now uniform 320px height for clean grid
+- **3-Line Descriptions**: Article descriptions clamped to exactly 3 lines with ellipsis
+- **Page Refresh Reset**: Refreshing resets to initial 4 rows for better user experience
+
+### 🧹 Component Improvements  
+- **NewsGrid Cleanup**: Removed 100+ lines of unnecessary complexity
+- **Simplified Image Handling**: Removed contextual placeholder logic
+- **Clean Error Handling**: Streamlined retry mechanisms
+- **Performance Optimizations**: Removed unused imports and complex algorithms
+
+### 🔧 Technical Fixes
+- **Zero Linting Errors**: All ESLint and TypeScript errors resolved
+- **React DevTools**: Added displayName to all components for better debugging
+- **Code Splitting**: Optimized dynamic imports for better performance
+
 ## 🎯 Overview
 
 The Gatas News frontend is a modern, responsive web application built with Next.js that provides:
 
-- **📰 News Browsing**: Elegant grid layout for celebrity news articles
+- **📰 News Browsing**: Elegant grid layout with consistent card heights
 - **🔍 Dual Search System**: Database search + live NewsAPI search with rate limiting
 - **📱 Mobile-First**: Responsive design that works on all devices
 - **⚡ Performance**: Code splitting, optimized images, and smart caching

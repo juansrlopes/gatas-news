@@ -31,6 +31,9 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({ className = ''
   return <div className={`animate-pulse bg-gray-300 rounded ${className}`} />;
 };
 
+// Add display name for React DevTools
+LoadingSkeleton.displayName = 'LoadingSkeleton';
+
 /**
  * Props for the ArticleSkeleton component
  */
@@ -76,6 +79,9 @@ export const ArticleSkeleton: React.FC<ArticleSkeletonProps> = ({ count = 6 }) =
   );
 };
 
+// Add display name for React DevTools
+ArticleSkeleton.displayName = 'ArticleSkeleton';
+
 /**
  * Props for the InstagramSkeleton component
  */
@@ -118,5 +124,8 @@ export const InstagramSkeleton: React.FC<InstagramSkeletonProps> = ({ count = 10
     </div>
   );
 };
+
+// Add display name for React DevTools
+InstagramSkeleton.displayName = 'InstagramSkeleton';
 
 export default LoadingSkeleton;

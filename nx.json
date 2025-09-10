@@ -40,5 +40,17 @@
         "linter": "eslint"
       }
     }
-  }
+  },
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx/tasks-runners/default",
+      "options": {
+        "cacheableOperations": ["build", "lint", "test"],
+        "parallel": 1,
+        "maxParallel": 1
+      }
+    }
+  },
+  "useDaemonProcess": false,
+  "daemon": false
 }

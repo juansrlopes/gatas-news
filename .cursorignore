@@ -1,0 +1,16 @@
+# Large files that cause JSON Language Server issues
+package-lock.json
+node_modules/
+.nx/
+dist/
+build/
+coverage/
+
+# Generated files
+*.tsbuildinfo
+*.log
+
+# Large JSON files
+**/capsize-font-metrics.json
+**/font-data.json
+**/entries.json

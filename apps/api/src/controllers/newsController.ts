@@ -14,13 +14,14 @@ export class NewsController {
     const {
       page = 1,
       celebrity,
-      limit = 20,
+      limit = 50, // Increased default to show more articles
       sortBy = 'publishedAt',
       searchTerm,
       sentiment,
       dateFrom,
       dateTo,
       source = 'database', // 'database' or 'live'
+      noMixing = 'false', // 'true' to disable mixing for complete rows
     } = req.query;
 
     logger.info('News request received', {
@@ -44,6 +45,7 @@ export class NewsController {
       dateFrom: dateFrom ? new Date(dateFrom as string) : undefined,
       dateTo: dateTo ? new Date(dateTo as string) : undefined,
       source: source as 'database' | 'live',
+      noMixing: noMixing === 'true',
     });
 
     res.json({

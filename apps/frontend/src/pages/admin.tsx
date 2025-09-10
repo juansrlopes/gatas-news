@@ -16,7 +16,7 @@ interface Celebrity {
   updatedAt: string;
 }
 
-interface CelebritiesResponse {
+interface _CelebritiesResponse {
   success: boolean;
   data: {
     celebrities: Celebrity[];
@@ -27,16 +27,28 @@ interface CelebritiesResponse {
 }
 
 const AdminPage = () => {
+  console.log('🎯 [DEBUG] AdminPage component rendering...');
+
   const config = getEnvConfig();
-  const [celebrities, setCelebrities] = useState<Celebrity[]>([]);
+  const [allCelebrities, setAllCelebrities] = useState<Celebrity[]>([]);
+  const [filteredCelebrities, setFilteredCelebrities] = useState<Celebrity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
+
+  // Pagination settings
+  const ITEMS_PER_PAGE = 20;
+
+  console.log('🔢 [DEBUG] Current state:', {
+    allCelebrities: allCelebrities.length,
+    filteredCelebrities: filteredCelebrities.length,
+    loading,
+    totalResults,
+  });
   const [editingCelebrity, setEditingCelebrity] = useState<Celebrity | null>(null);
   const [editName, setEditName] = useState('');
-  const [editAliases, setEditAliases] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addName, setAddName] = useState('');
@@ -53,57 +65,223 @@ const AdminPage = () => {
 
   // Removed categories - no longer needed
 
-  const fetchCelebrities = useCallback(async () => {
+  // Update pagination based on filtered results
+  const updatePagination = useCallback((celebrities: Celebrity[], _page: number) => {
+    const totalItems = celebrities.length;
+    const totalPagesCount = Math.ceil(totalItems / ITEMS_PER_PAGE);
+    setTotalPages(totalPagesCount);
+    setTotalResults(totalItems);
+  }, []);
+
+  // ROBUST: Load ALL celebrities with proper error handling
+  const fetchAllCelebrities = useCallback(async () => {
+    console.log('🚀 [DEBUG] Starting to fetch ALL celebrities...');
+    setLoading(true);
+
+    // Ensure we're on client side
+    if (typeof window === 'undefined') {
+      console.log('❌ [DEBUG] Not on client side, aborting fetch');
+      setLoading(false);
+      return;
+    }
+
+    // Small delay to ensure API is ready
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Test API connectivity first
     try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '20',
-        ...(searchTerm && { q: searchTerm }),
+      console.log('🏥 [DEBUG] Testing API health...');
+      const healthResponse = await fetch(`${createApiUrl('/health')}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
       });
-
-      const response = await fetch(createApiUrl(`${API_ENDPOINTS.ADMIN_CELEBRITIES}?${params}`));
-
-      if (response.ok) {
-        const data: CelebritiesResponse = await response.json();
-        setCelebrities(data.data.celebrities);
-        setTotalPages(data.data.totalPages);
-        setTotalResults(data.data.totalCount);
-      } else {
-        console.error('Failed to fetch celebrities');
-        setCelebrities([]);
-        setTotalResults(0);
-        setTotalPages(1);
+      
+      if (!healthResponse.ok) {
+        throw new Error(`API health check failed: ${healthResponse.status}`);
       }
+      console.log('✅ [DEBUG] API health check passed');
+    } catch (healthError) {
+      console.error('❌ [DEBUG] API health check failed:', healthError);
+      throw new Error(`Cannot connect to API server. Please ensure the API is running on port 8000.`);
+    }
+
+    try {
+      let allCelebs: Celebrity[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+      const pageSize = 100; // Fetch 100 per page
+      const maxRetries = 3;
+
+      while (hasMore) {
+        const url = `${createApiUrl(API_ENDPOINTS.ADMIN_CELEBRITIES)}?page=${currentPage}&limit=${pageSize}`;
+        console.log(`🌐 [DEBUG] Fetching page ${currentPage} from: ${url}`);
+
+        let retryCount = 0;
+        let success = false;
+
+        while (retryCount < maxRetries && !success) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+            console.log(`🌐 [DEBUG] Making fetch request to: ${url}`);
+            const response = await fetch(url, {
+              signal: controller.signal,
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+
+            clearTimeout(timeoutId);
+            console.log(`📡 [DEBUG] Page ${currentPage} response status: ${response.status}`);
+            console.log(`📡 [DEBUG] Response headers:`, Object.fromEntries(response.headers.entries()));
+
+            if (!response.ok) {
+              if (response.status >= 500) {
+                throw new Error(`Server error ${response.status} on page ${currentPage}`);
+              } else {
+                throw new Error(`HTTP ${response.status} on page ${currentPage}`);
+              }
+            }
+
+            const data = await response.json();
+            console.log(`📊 [DEBUG] Page ${currentPage} received:`, {
+              celebrities: data.data?.celebrities?.length || 0,
+              totalCount: data.data?.totalCount,
+              hasMore: data.data?.hasMore
+            });
+
+            if (data.success && data.data && data.data.celebrities) {
+              const pageCelebrities = data.data.celebrities;
+              allCelebs = [...allCelebs, ...pageCelebrities];
+              
+              // Check if there are more pages
+              hasMore = data.data.hasMore || false;
+              currentPage++;
+              success = true;
+              
+              console.log(`📈 [DEBUG] Total celebrities so far: ${allCelebs.length}`);
+            } else {
+              console.error('❌ [DEBUG] Invalid response format on page', currentPage, data);
+              hasMore = false;
+              success = true; // Don't retry for invalid format
+            }
+
+          } catch (fetchError) {
+            retryCount++;
+            console.warn(`⚠️ [DEBUG] Fetch attempt ${retryCount} failed for page ${currentPage}:`, fetchError);
+            console.warn(`⚠️ [DEBUG] Error details:`, {
+              name: fetchError instanceof Error ? fetchError.name : 'Unknown',
+              message: fetchError instanceof Error ? fetchError.message : String(fetchError),
+              stack: fetchError instanceof Error ? fetchError.stack : undefined
+            });
+            
+            if (retryCount >= maxRetries) {
+              console.error(`❌ [DEBUG] Max retries reached for page ${currentPage}`);
+              if (allCelebs.length > 0) {
+                // If we have some data, show what we have
+                showMessage('error', `Failed to load all celebrities. Showing ${allCelebs.length} loaded so far.`);
+                hasMore = false;
+                success = true;
+              } else {
+                // If no data at all, throw error
+                throw new Error(`Failed to fetch celebrities after ${maxRetries} attempts. Error: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+              }
+            } else {
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+            }
+          }
+        }
+      }
+
+      console.log(`✅ [DEBUG] FINAL: Found ${allCelebs.length} total celebrities`);
+      setAllCelebrities(allCelebs);
+      setFilteredCelebrities(allCelebs);
+      setTotalResults(allCelebs.length);
+      setTotalPages(Math.ceil(allCelebs.length / ITEMS_PER_PAGE));
+
+      if (allCelebs.length > 0) {
+        showMessage('success', `Successfully loaded ${allCelebs.length} celebrities`);
+      }
+
     } catch (error) {
-      console.error('Error fetching celebrities:', error);
-      setCelebrities([]);
+      console.error('❌ [DEBUG] Fetch error:', error);
+      setAllCelebrities([]);
+      setFilteredCelebrities([]);
       setTotalResults(0);
       setTotalPages(1);
+      
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      showMessage('error', `Failed to load celebrities: ${errorMessage}`);
     } finally {
       setLoading(false);
+      console.log('🏁 [DEBUG] Fetch completed');
     }
-  }, [currentPage, searchTerm]);
+  }, [showMessage]);
 
+  // Client-side filtering function
+  const filterCelebrities = useCallback(
+    (searchQuery: string) => {
+      if (!searchQuery.trim()) {
+        // No search term - show all celebrities
+        setFilteredCelebrities(allCelebrities);
+        updatePagination(allCelebrities, 1);
+        setCurrentPage(1);
+        return;
+      }
+
+      const query = searchQuery.toLowerCase().trim();
+      const filtered = allCelebrities.filter(celebrity => {
+        // Search only in name (aliases removed for simplicity)
+        return celebrity.name.toLowerCase().includes(query);
+      });
+
+      setFilteredCelebrities(filtered);
+      updatePagination(filtered, 1);
+      setCurrentPage(1); // Reset to first page when filtering
+    },
+    [allCelebrities, updatePagination]
+  );
+
+  // Get celebrities for current page
+  const getCurrentPageCelebrities = useCallback(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredCelebrities.slice(startIndex, endIndex);
+  }, [filteredCelebrities, currentPage]);
+
+  // Load all celebrities on mount (client-side only)
   useEffect(() => {
-    fetchCelebrities();
-  }, [currentPage, fetchCelebrities]);
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      console.log('🎯 [DEBUG] useEffect triggered (client-side), calling fetchAllCelebrities...');
+      fetchAllCelebrities();
+    } else {
+      console.log('🎯 [DEBUG] useEffect triggered (server-side), skipping fetch...');
+    }
+  }, []); // Empty dependency array - run once on mount
+
+  // Filter celebrities when search term changes
+  useEffect(() => {
+    filterCelebrities(searchTerm);
+  }, [searchTerm, filterCelebrities]);
 
   const handleSearch = () => {
+    // Search happens automatically via useEffect when searchTerm changes
+    // This function is kept for the search button, but it's not really needed
     setCurrentPage(1);
-    fetchCelebrities();
   };
 
   const handleClearSearch = () => {
     setSearchTerm('');
-    setCurrentPage(1);
-    fetchCelebrities();
+    // Filtering happens automatically via useEffect when searchTerm changes
   };
 
   const handleEditCelebrity = (celebrity: Celebrity) => {
     setEditingCelebrity(celebrity);
     setEditName(celebrity.name);
-    setEditAliases(celebrity.aliases.join(', '));
     setIsEditModalOpen(true);
   };
 
@@ -111,7 +289,6 @@ const AdminPage = () => {
     setIsEditModalOpen(false);
     setEditingCelebrity(null);
     setEditName('');
-    setEditAliases('');
   };
 
   const handleOpenAddModal = () => {
@@ -124,33 +301,85 @@ const AdminPage = () => {
     setAddName('');
   };
 
+  // Check if celebrity name already exists
+  const checkDuplicateName = useCallback((name: string): boolean => {
+    const trimmedName = name.trim().toLowerCase();
+    return allCelebrities.some(celebrity => 
+      celebrity.name.toLowerCase() === trimmedName
+    );
+  }, [allCelebrities]);
+
   const handleSaveAdd = async () => {
-    if (!addName.trim()) {
+    const trimmedName = addName.trim();
+    
+    if (!trimmedName) {
       showMessage('error', 'Name is required');
       return;
     }
 
+    // Check for duplicates before making API call
+    if (checkDuplicateName(trimmedName)) {
+      showMessage('error', `Celebrity "${trimmedName}" already exists`);
+      return;
+    }
+
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
       const response = await fetch(createApiUrl(API_ENDPOINTS.ADMIN_CELEBRITIES), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: addName.trim(),
-        }),
+        body: JSON.stringify({ name: trimmedName }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (response.ok) {
-        showMessage('success', 'Celebrity added successfully');
+        const _result = await response.json();
+        showMessage('success', `Celebrity "${trimmedName}" added successfully`);
         handleCloseAddModal();
-        fetchCelebrities();
+        fetchAllCelebrities(); // Refresh the list
       } else {
-        showMessage('error', 'Failed to add celebrity');
+        // Handle different error types
+        let errorMessage = 'Failed to add celebrity';
+        
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          // If response is not JSON, use status-based message
+          if (response.status === 400) {
+            errorMessage = 'Invalid celebrity data';
+          } else if (response.status === 409) {
+            errorMessage = `Celebrity "${trimmedName}" already exists`;
+          } else if (response.status >= 500) {
+            errorMessage = 'Server error. Please try again later.';
+          }
+        }
+        
+        showMessage('error', errorMessage);
       }
     } catch (error) {
       console.error('Error adding celebrity:', error);
-      showMessage('error', 'Error adding celebrity');
+      
+      let errorMessage = 'Error adding celebrity';
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = 'Request timed out. Please check your connection.';
+        } else if (error.message.includes('fetch')) {
+          errorMessage = 'Cannot connect to server. Please check if the API is running.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      showMessage('error', errorMessage);
     }
   };
 
@@ -161,11 +390,6 @@ const AdminPage = () => {
     }
 
     try {
-      const aliases = editAliases
-        .split(',')
-        .map(alias => alias.trim())
-        .filter(alias => alias);
-
       const response = await fetch(
         createApiUrl(`${API_ENDPOINTS.ADMIN_CELEBRITIES}/${editingCelebrity._id}`),
         {
@@ -175,7 +399,6 @@ const AdminPage = () => {
           },
           body: JSON.stringify({
             name: editName.trim(),
-            aliases: aliases,
           }),
         }
       );
@@ -183,7 +406,7 @@ const AdminPage = () => {
       if (response.ok) {
         showMessage('success', 'Celebrity updated successfully');
         handleCloseEditModal();
-        fetchCelebrities();
+        fetchAllCelebrities(); // Reload all celebrities
       } else {
         showMessage('error', 'Failed to update celebrity');
       }
@@ -210,7 +433,7 @@ const AdminPage = () => {
 
       if (response.ok) {
         showMessage('success', 'Celebrity deleted successfully');
-        fetchCelebrities();
+        fetchAllCelebrities(); // Reload all celebrities
         setConfirmDelete(null);
       } else {
         showMessage('error', 'Failed to delete celebrity');
@@ -268,6 +491,33 @@ const AdminPage = () => {
           <div className="mb-4 md:mb-0">
             <h2 className="text-xl font-bold text-white">Celebrities ({totalResults} total)</h2>
             <p className="text-gray-400">Manage your celebrity database</p>
+            <p className="text-yellow-400 text-sm">
+              DEBUG: All={allCelebrities.length}, Filtered={filteredCelebrities.length}, Loading=
+              {loading.toString()}
+            </p>
+            <button
+              onClick={async () => {
+                console.log('🔥 [DEBUG] Manual fetch button clicked!');
+                try {
+                  console.log('🧪 [DEBUG] Testing direct API call...');
+                  const testUrl = 'http://localhost:8000/api/v1/admin/celebrities?page=1&limit=1';
+                  console.log('🌐 [DEBUG] Test URL:', testUrl);
+                  const response = await fetch(testUrl);
+                  console.log('📡 [DEBUG] Test response status:', response.status);
+                  const data = await response.json();
+                  console.log('📊 [DEBUG] Test data:', data);
+                  
+                  // Now try the full fetch
+                  fetchAllCelebrities();
+                } catch (error) {
+                  console.error('❌ [DEBUG] Test fetch failed:', error);
+                }
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs mt-1 transition-colors"
+              disabled={loading}
+            >
+              {loading ? '⏳ Loading...' : '🔥 Manual Fetch Test'}
+            </button>
           </div>
           <button
             onClick={handleOpenAddModal}
@@ -312,7 +562,7 @@ const AdminPage = () => {
         <div className="bg-gray-800 rounded-lg border border-gray-700">
           {loading ? (
             <div className="p-8 text-center text-gray-400">Loading celebrities...</div>
-          ) : celebrities.length === 0 ? (
+          ) : getCurrentPageCelebrities().length === 0 ? (
             <div className="p-8 text-center">
               <div className="text-gray-400 mb-2">No celebrities found</div>
               <p className="text-gray-500 text-sm">
@@ -335,16 +585,11 @@ const AdminPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {celebrities.map(celebrity => (
+                  {getCurrentPageCelebrities().map(celebrity => (
                     <tr key={celebrity._id} className="hover:bg-gray-750">
                       <td className="px-6 py-4">
                         <div>
                           <div className="text-sm font-medium text-white">{celebrity.name}</div>
-                          {celebrity.aliases.length > 0 && (
-                            <div className="text-sm text-gray-400">
-                              Aliases: {celebrity.aliases.join(', ')}
-                            </div>
-                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -375,12 +620,16 @@ const AdminPage = () => {
             <div className="px-6 py-4 border-t border-gray-700">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-400">
-                  Showing {(currentPage - 1) * 20 + 1} to {Math.min(currentPage * 20, totalResults)}{' '}
-                  of {totalResults} results
+                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+                  {Math.min(currentPage * ITEMS_PER_PAGE, totalResults)} of {totalResults} results
                 </div>
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    onClick={() => {
+                      const newPage = Math.max(1, currentPage - 1);
+                      setCurrentPage(newPage);
+                      updatePagination(filteredCelebrities, newPage);
+                    }}
                     disabled={currentPage === 1}
                     className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
                   >
@@ -390,7 +639,11 @@ const AdminPage = () => {
                     Page {currentPage} of {totalPages}
                   </span>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    onClick={() => {
+                      const newPage = Math.min(totalPages, currentPage + 1);
+                      setCurrentPage(newPage);
+                      updatePagination(filteredCelebrities, newPage);
+                    }}
                     disabled={currentPage === totalPages}
                     className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
                   >
@@ -418,17 +671,6 @@ const AdminPage = () => {
                   onChange={e => setEditName(e.target.value)}
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter celebrity name"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Aliases</label>
-                <input
-                  type="text"
-                  value={editAliases}
-                  onChange={e => setEditAliases(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="Alternative names, separated by commas"
                 />
               </div>
             </div>
@@ -464,10 +706,19 @@ const AdminPage = () => {
                   type="text"
                   value={addName}
                   onChange={e => setAddName(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className={`w-full px-3 py-2 bg-gray-700 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-colors ${
+                    addName.trim() && checkDuplicateName(addName.trim())
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-600 focus:ring-purple-500'
+                  }`}
                   placeholder="Enter celebrity name"
-                  onKeyPress={e => e.key === 'Enter' && handleSaveAdd()}
+                  onKeyPress={e => e.key === 'Enter' && !checkDuplicateName(addName.trim()) && handleSaveAdd()}
                 />
+                {addName.trim() && checkDuplicateName(addName.trim()) && (
+                  <p className="text-red-400 text-sm mt-1">
+                    ⚠️ Celebrity "{addName.trim()}" already exists
+                  </p>
+                )}
               </div>
             </div>
 
@@ -480,7 +731,12 @@ const AdminPage = () => {
               </button>
               <button
                 onClick={handleSaveAdd}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                disabled={!addName.trim() || checkDuplicateName(addName.trim())}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  !addName.trim() || checkDuplicateName(addName.trim())
+                    ? 'bg-gray-500 cursor-not-allowed text-gray-300'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                }`}
               >
                 Add
               </button>

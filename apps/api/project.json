@@ -32,7 +32,7 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "nodemon --config apps/api/nodemon.json",
+        "command": "NODE_ENV=development nodemon --config apps/api/nodemon.json",
         "cwd": "{workspaceRoot}"
       }
     },

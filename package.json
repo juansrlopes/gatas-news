@@ -132,13 +132,16 @@
   },
   "lint-staged": {
     "apps/frontend/src/**/*.{ts,tsx}": [
-      "eslint --fix --config eslint.config.js"
+      "eslint --fix --config eslint.config.js",
+      "bash -c 'cd apps/frontend && npx tsc --noEmit'"
     ],
     "apps/api/src/**/*.{js,ts}": [
-      "eslint --fix --config eslint.config.js"
+      "eslint --fix --config eslint.config.js",
+      "bash -c 'cd apps/api && npx tsc --noEmit'"
     ],
     "libs/shared/**/*.ts": [
-      "eslint --fix --config eslint.config.js"
+      "eslint --fix --config eslint.config.js",
+      "bash -c 'npx tsc --noEmit --project libs/shared/types/tsconfig.lib.json && npx tsc --noEmit --project libs/shared/utils/tsconfig.lib.json'"
     ]
   },
   "nx": {}

@@ -65,4 +65,7 @@ const Header = () => {
   );
 };
 
+// Add display name for React DevTools
+Header.displayName = 'Header';
+
 export default Header;

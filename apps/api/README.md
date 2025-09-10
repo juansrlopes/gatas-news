@@ -2,6 +2,20 @@
 
 The backend API for the Gatas News platform, built with Node.js, Express, and TypeScript.
 
+## ✨ Recent Updates (September 2025)
+
+### 🧹 Code Quality Improvements
+- **Zero Linting Errors**: All ESLint and TypeScript errors resolved
+- **Simplified Services**: Removed unnecessary complexity from newsService
+- **Clean Error Handling**: Streamlined retry logic and removed unused parameters
+- **Proper Environment Detection**: Fixed NODE_ENV handling for development vs production
+
+### 🔧 Technical Enhancements
+- **Rate Limiting**: Development-friendly limits (100 requests/5min vs 20 in production)
+- **Cache Optimization**: Improved cache handling for article pagination
+- **Parameter Cleanup**: Removed unused function parameters and variables
+- **Middleware Improvements**: Enhanced security and error handling middleware
+
 ## 🏗️ Architecture Overview
 
 ```

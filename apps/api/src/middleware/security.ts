@@ -2,7 +2,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 
-const config = getEnvConfig();
+const _config = getEnvConfig();
 
 // Security middleware configuration
 export const securityMiddleware = helmet({
@@ -23,9 +23,38 @@ export const securityMiddleware = helmet({
 
 // CORS configuration
 export const corsMiddleware = cors({
-  origin: config.isDevelopment
-    ? ['http://localhost:3000', 'http://localhost:3001'] // Allow local development
-    : ['https://yourdomain.com'], // Replace with your production domain
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // In development, allow localhost origins
+    if (process.env.NODE_ENV !== 'production') {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001'
+      ];
+      
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+    }
+    
+    // In production, only allow specific domains
+    const productionOrigins = ['https://yourdomain.com'];
+    if (process.env.NODE_ENV === 'production' && productionOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // For development, be more permissive
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // Reject the request
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true,

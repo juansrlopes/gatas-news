@@ -27,6 +27,27 @@ Gatas News automatically fetches, filters, and curates news articles about Brazi
                        └─────────────────┘
 ```
 
+## ✨ Recent Updates (September 2025)
+
+### 🎯 UI/UX Improvements
+- **Smart Pagination**: Shows 4 rows (20 articles) initially, "Load More" adds 4 more rows
+- **Consistent Card Heights**: All article cards now have uniform 320px height
+- **3-Line Descriptions**: Article descriptions limited to exactly 3 lines with ellipsis
+- **Page Refresh Reset**: Refreshing page resets to initial 4 rows for better UX
+
+### 🧹 Code Quality Enhancements  
+- **Removed Unnecessary Complexity**: Eliminated 100+ lines of unused code
+- **Simplified Retry Logic**: Streamlined error handling and network connectivity
+- **Clean Linting**: Zero ESLint errors across entire codebase
+- **TypeScript Compliance**: All type errors resolved
+- **Performance Optimizations**: Removed unused imports and complex algorithms
+
+### 🔧 Technical Improvements
+- **Environment Detection**: Fixed development vs production mode detection
+- **Rate Limiting**: Proper development-friendly rate limits (100 vs 20 requests)
+- **Terminal Management**: Improved development workflow with proper terminal usage
+- **Cache Management**: Better cache handling for article pagination
+
 ## 🚀 Quick Start
 
 ### Prerequisites

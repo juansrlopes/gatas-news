@@ -5,7 +5,7 @@ import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 
 const config = getEnvConfig();
 
-export const errorHandler = (error: Error, req: Request, res: Response): void => {
+export const errorHandler = (error: Error, req: Request, res: Response, _next: NextFunction): void => {
   let customError = error;
 
   // Log error details

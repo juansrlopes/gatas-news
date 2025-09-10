@@ -36,4 +36,7 @@ const BackToTopButton = () => {
   );
 };
 
+// Add display name for React DevTools
+BackToTopButton.displayName = 'BackToTopButton';
+
 export default BackToTopButton;

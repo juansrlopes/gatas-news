@@ -1,8 +1,60 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 import { Article } from '../../../../libs/shared/types/src/index';
 import { ArticleSkeleton } from './LoadingSkeleton';
+
+/**
+ * ArticleCard Component - Individual article display
+ */
+interface ArticleCardProps {
+  article: Article;
+  onImageError: (_imageUrl: string | null | undefined) => void;
+  getImageSrc: (_urlToImage: string | null | undefined, _article: Article) => string;
+}
+
+const ArticleCard: React.FC<ArticleCardProps> = ({ article, onImageError, getImageSrc }) => (
+  <article className="group h-80"> {/* Fixed height for consistent card sizes */}
+    <a
+      href={article.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex flex-col h-full bg-purple-950 bg-opacity-50 rounded-lg shadow hover:shadow-lg transition-all duration-200 group-hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+      aria-label={`Ler notícia: ${article.title}`}
+    >
+      <div className="relative flex-shrink-0">
+        <Image
+          src={getImageSrc(article.urlToImage, article)}
+          alt={article.title || 'Notícia'}
+          width={500}
+          height={300}
+          className="w-full h-48 object-cover rounded-t-lg"
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+          onError={() => onImageError(article.urlToImage)}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-t-lg"></div>
+      </div>
+      <div className="flex-1 flex flex-col p-3">
+        <h3 className="font-bold text-sm text-white line-clamp-2 mb-2 flex-shrink-0">{article.title}</h3>
+        <p 
+          className="text-gray-300 text-xs leading-relaxed overflow-hidden"
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            lineHeight: '1.4',
+            maxHeight: '4.2em' // 3 lines * 1.4 line-height
+          }}
+        >
+          {article.description}
+        </p>
+      </div>
+    </a>
+  </article>
+);
+
+// Add display name for React DevTools
+ArticleCard.displayName = 'ArticleCard';
 
 /**
  * NewsGrid Component
@@ -30,7 +82,10 @@ import { ArticleSkeleton } from './LoadingSkeleton';
  * ```
  */
 const NewsGrid = () => {
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [allArticles, setAllArticles] = useState<Article[]>([]); // All fetched articles
+  const [displayedArticles, setDisplayedArticles] = useState<Article[]>([]); // Currently displayed articles
+  const [articlesToShow, setArticlesToShow] = useState(20); // How many articles to show (starts at 20)
+  const [hasMoreFromAPI, setHasMoreFromAPI] = useState(true); // Whether API has more articles
   const [dbQuery, setDbQuery] = useState(''); // Database search query
   const [liveQuery, setLiveQuery] = useState(''); // Live search query
   const [showLiveSearch, setShowLiveSearch] = useState(false); // Show/hide live search
@@ -39,17 +94,20 @@ const NewsGrid = () => {
   const [page, setPage] = useState(1);
   const [retryCount, setRetryCount] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
-  const [lastFailedRequest, setLastFailedRequest] = useState<{
-    page: number;
-    celebrity: string;
-    isLive?: boolean;
-  } | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   // Rate limiting for live search
   const [dailySearchCount, setDailySearchCount] = useState(0);
   const [maxDailySearches] = useState(5);
   const [searchSource, setSearchSource] = useState<'database' | 'live'>('database');
+  
+  // Grid configuration - show 4 rows initially, then 4 more rows on Load More
+  const ARTICLES_PER_PAGE = 20; // 4 rows × 5 columns = 20 articles per load
+
+  // Update displayed articles when articlesToShow or allArticles changes
+  useEffect(() => {
+    setDisplayedArticles(allArticles.slice(0, articlesToShow));
+  }, [allArticles, articlesToShow]);
 
   /**
    * Fetches articles from the API with comprehensive error handling
@@ -96,12 +154,11 @@ const NewsGrid = () => {
       const sanitizedCelebrityName = celebrityName.trim().replace(/[<>]/g, '');
 
       try {
-        const config = getEnvConfig();
 
         // Build query parameters for GET request
         const params = new URLSearchParams({
           page: pageNumber.toString(),
-          limit: '20',
+          limit: ARTICLES_PER_PAGE.toString(),
           ...(sanitizedCelebrityName && { celebrity: sanitizedCelebrityName }),
           source: isLiveSearch ? 'live' : 'database',
         });
@@ -110,7 +167,7 @@ const NewsGrid = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-        const response = await fetch(`${config.apiUrl}/api/v1/news?${params}`, {
+        const response = await fetch(`http://localhost:8000/api/v1/news?${params}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -134,8 +191,9 @@ const NewsGrid = () => {
 
         const data = await response.json();
 
-        // Handle the API response structure: { success: true, data: { articles: [...] } }
+        // Handle the API response structure: { success: true, data: { articles: [...], hasMore: boolean } }
         const articles = data.data?.articles || data.articles || [];
+        const hasMore = data.data?.hasMore ?? true; // Default to true if not provided
 
         // Validate articles structure
         const validArticles = articles.filter(
@@ -151,15 +209,18 @@ const NewsGrid = () => {
         );
 
         if (pageNumber === 1) {
-          setArticles(validArticles);
+          setAllArticles(validArticles);
+          setArticlesToShow(20); // Reset to show only 4 rows initially
           setFailedImages(new Set()); // Clear failed images on new search
         } else {
-          setArticles(prevArticles => [...prevArticles, ...validArticles]);
+          setAllArticles(prevArticles => [...prevArticles, ...validArticles]);
         }
+
+        // Update hasMore state based on API response
+        setHasMoreFromAPI(hasMore);
 
         // Reset retry count on success
         setRetryCount(0);
-        setLastFailedRequest(null);
 
         if (validArticles.length === 0 && pageNumber === 1) {
           if (sanitizedCelebrityName) {
@@ -188,12 +249,7 @@ const NewsGrid = () => {
           error: error,
         });
 
-        // Store failed request for retry when back online
-        setLastFailedRequest({
-          page: pageNumber,
-          celebrity: sanitizedCelebrityName,
-          isLive: isLiveSearch,
-        });
+        // Failed request - will be retried with current state
 
         let displayErrorMessage = 'Erro inesperado. Tente novamente.';
 
@@ -216,7 +272,9 @@ const NewsGrid = () => {
         setError(displayErrorMessage || 'Erro de conexão. Verifique se a API está rodando.');
 
         if (pageNumber === 1) {
-          setArticles([]);
+          setAllArticles([]);
+          setArticlesToShow(20);
+          setHasMoreFromAPI(true); // Reset for new search
         }
       } finally {
         setLoading(false);
@@ -225,90 +283,21 @@ const NewsGrid = () => {
     [isOnline]
   );
 
-  /**
-   * PHASE 2: Context-aware placeholder selection
-   * Returns different placeholders based on article content
-   */
-  const getContextualPlaceholder = useCallback((article?: Article): string => {
-    if (!article) {
-      return '/placeholder-news.svg';
-    }
-
-    const title = (article.title || '').toLowerCase();
-    const description = (article.description || '').toLowerCase();
-    const content = `${title} ${description}`;
-
-    // Fashion/Style content
-    if (
-      content.includes('look') ||
-      content.includes('vestido') ||
-      content.includes('moda') ||
-      content.includes('estilo') ||
-      content.includes('roupa')
-    ) {
-      return '/placeholder-fashion.svg';
-    }
-
-    // Beach/Bikini content
-    if (
-      content.includes('biquíni') ||
-      content.includes('praia') ||
-      content.includes('piscina') ||
-      content.includes('verão') ||
-      content.includes('maiô')
-    ) {
-      return '/placeholder-beach.svg';
-    }
-
-    // Fitness/Gym content
-    if (
-      content.includes('academia') ||
-      content.includes('treino') ||
-      content.includes('shape') ||
-      content.includes('corpo') ||
-      content.includes('fitness')
-    ) {
-      return '/placeholder-fitness.svg';
-    }
-
-    // Event/Party content
-    if (
-      content.includes('festa') ||
-      content.includes('evento') ||
-      content.includes('premiação') ||
-      content.includes('gala') ||
-      content.includes('tapete vermelho')
-    ) {
-      return '/placeholder-event.svg';
-    }
-
-    // Default news placeholder
-    return '/placeholder-news.svg';
-  }, []);
 
   /**
-   * PHASE 2: Enhanced image source selection with multiple fallback options
-   *
-   * @param imageUrl - The original image URL from the article
-   * @param article - The full article object for context-aware fallbacks
-   * @returns The best available image source
+   * Simple image source selection with fallback placeholder
    */
   const getImageSrc = useCallback(
-    (imageUrl: string | null | undefined, article?: Article): string => {
-      // No image URL provided - use context-aware placeholder
-      if (!imageUrl) {
-        return getContextualPlaceholder(article);
-      }
-
-      // Image previously failed to load - use context-aware placeholder
-      if (failedImages.has(imageUrl)) {
-        return getContextualPlaceholder(article);
+    (imageUrl: string | null | undefined, _article?: Article): string => {
+      // No image URL provided or failed to load - use simple placeholder
+      if (!imageUrl || failedImages.has(imageUrl)) {
+        return '/placeholder-news.svg';
       }
 
       // Use image proxy for external images
       return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
     },
-    [failedImages, getContextualPlaceholder]
+    [failedImages]
   );
 
   /**
@@ -365,25 +354,17 @@ const NewsGrid = () => {
 
   // Auto-hide live search after successful database search
   useEffect(() => {
-    if (articles.length > 0 && !liveQuery && searchSource === 'database') {
+    if (displayedArticles.length > 0 && !liveQuery && searchSource === 'database') {
       setShowLiveSearch(false);
     }
-  }, [articles, liveQuery, searchSource]);
+  }, [displayedArticles, liveQuery, searchSource]);
 
   // Network connectivity detection
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      // Retry last failed request if we come back online
-      if (lastFailedRequest) {
-        fetchArticles(
-          lastFailedRequest.page,
-          lastFailedRequest.celebrity,
-          false,
-          lastFailedRequest.isLive || false
-        );
-        setLastFailedRequest(null);
-      }
+      // Clear error when back online
+      setError('');
     };
 
     const handleOffline = () => {
@@ -401,7 +382,7 @@ const NewsGrid = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [lastFailedRequest, fetchArticles]);
+  }, [fetchArticles]);
 
   useEffect(() => {
     // Safely fetch articles on initial load with error boundary protection
@@ -426,29 +407,17 @@ const NewsGrid = () => {
    * @example
    * ```tsx
    * // Retry button onClick handler
-   * <button onClick={retryLastRequest}>
+   * <button onClick={retryRequest}>
    *   Tentar Novamente
    * </button>
    * ```
    */
-  const retryLastRequest = useCallback(() => {
-    if (lastFailedRequest) {
-      const newRetryCount = retryCount + 1;
-      setRetryCount(newRetryCount);
-      fetchArticles(
-        lastFailedRequest.page,
-        lastFailedRequest.celebrity,
-        true,
-        lastFailedRequest.isLive || false
-      );
-    } else {
-      // Retry current page with current search source
-      const newRetryCount = retryCount + 1;
-      setRetryCount(newRetryCount);
-      const currentQuery = searchSource === 'live' ? liveQuery : dbQuery;
-      fetchArticles(page, currentQuery, true, searchSource === 'live');
-    }
-  }, [lastFailedRequest, retryCount, page, dbQuery, liveQuery, searchSource, fetchArticles]);
+  const retryRequest = useCallback(() => {
+    const newRetryCount = retryCount + 1;
+    setRetryCount(newRetryCount);
+    const currentQuery = searchSource === 'live' ? liveQuery : dbQuery;
+    fetchArticles(page, currentQuery, true, searchSource === 'live');
+  }, [retryCount, page, dbQuery, liveQuery, searchSource, fetchArticles]);
 
   /**
    * Loads the next page of articles for infinite scroll pagination
@@ -457,10 +426,19 @@ const NewsGrid = () => {
    * which are appended to the existing articles array.
    */
   const loadMoreArticles = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    const currentQuery = searchSource === 'live' ? liveQuery : dbQuery;
-    fetchArticles(nextPage, currentQuery, false, searchSource === 'live');
+    const newArticlesToShow = articlesToShow + 20;
+    
+    // If we have enough articles already fetched, just show more
+    if (allArticles.length >= newArticlesToShow) {
+      setArticlesToShow(newArticlesToShow);
+    } else {
+      // Need to fetch more articles from API
+      const nextPage = page + 1;
+      setPage(nextPage);
+      const currentQuery = searchSource === 'live' ? liveQuery : dbQuery;
+      setArticlesToShow(newArticlesToShow); // Update display count
+      fetchArticles(nextPage, currentQuery, false, searchSource === 'live');
+    }
   };
 
   /**
@@ -642,7 +620,7 @@ const NewsGrid = () => {
         </div>
       )}
 
-      {loading && articles.length === 0 && <ArticleSkeleton count={8} />}
+      {loading && displayedArticles.length === 0 && <ArticleSkeleton count={ARTICLES_PER_PAGE} />}
 
       {/* Network Status Indicator */}
       {!isOnline && (
@@ -674,7 +652,7 @@ const NewsGrid = () => {
               {/* Retry Button */}
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={retryLastRequest}
+                  onClick={retryRequest}
                   disabled={loading}
                   className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -708,38 +686,17 @@ const NewsGrid = () => {
         </div>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {articles.map(article => (
-          <article key={article.url} className="group">
-            <a
-              href={article.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block bg-purple-950 bg-opacity-50 rounded-lg shadow hover:shadow-lg transition-all duration-200 group-hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-              aria-label={`Ler notícia: ${article.title}`}
-            >
-              <div className="relative">
-                <Image
-                  src={getImageSrc(article.urlToImage, article)}
-                  alt={article.title || 'Notícia'}
-                  width={500}
-                  height={300}
-                  className="w-full h-48 object-cover rounded-t-lg"
-                  placeholder="blur"
-                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-                  onError={() => handleImageError(article.urlToImage)}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-t-lg"></div>
-              </div>
-              <div className="p-3">
-                <h3 className="font-bold text-sm text-white line-clamp-2 mb-2">{article.title}</h3>
-                <p className="text-gray-300 text-xs line-clamp-3">{article.description}</p>
-              </div>
-            </a>
-          </article>
+        {displayedArticles.map(article => (
+          <ArticleCard
+            key={article.url}
+            article={article}
+            onImageError={handleImageError}
+            getImageSrc={getImageSrc}
+          />
         ))}
       </div>
       {/* Loading more articles indicator */}
-      {loading && articles.length > 0 && (
+      {loading && displayedArticles.length > 0 && (
         <div className="flex justify-center mt-8">
           <div className="flex items-center space-x-2 text-purple-400">
             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-400"></div>
@@ -749,7 +706,7 @@ const NewsGrid = () => {
       )}
 
       {/* Load More Button */}
-      {!error && !loading && articles.length > 0 && (
+      {!error && !loading && displayedArticles.length > 0 && (allArticles.length > displayedArticles.length || hasMoreFromAPI) && (
         <div className="flex justify-center mt-8">
           <button
             onClick={loadMoreArticles}
@@ -762,7 +719,7 @@ const NewsGrid = () => {
         </div>
       )}
 
-      {!loading && !error && articles.length === 0 && (
+      {!loading && !error && displayedArticles.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-500 text-lg mb-2">📰</div>
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Nenhuma notícia encontrada</h3>
@@ -775,4 +732,7 @@ const NewsGrid = () => {
   );
 };
 
-export default memo(NewsGrid);
+// Add display name for React DevTools
+NewsGrid.displayName = 'NewsGrid';
+
+export default NewsGrid;

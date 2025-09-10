@@ -4,5 +4,104 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "nxConsole.generateAiAgentRules": true
+  "nxConsole.generateAiAgentRules": true,
+  
+  // Prevent JSON Language Server from processing large files
+  "json.maxItemsComputed": 5000,
+  "json.schemaDownload.enable": false,
+  
+  // Exclude large files from JSON processing
+  "files.associations": {
+    "package-lock.json": "plaintext",
+    "**/node_modules/**/*.json": "plaintext",
+    "**/.nx/**/*.json": "plaintext",
+    "**/dist/**/*.json": "plaintext",
+    "**/build/**/*.json": "plaintext",
+    "**/.next/**/*.json": "plaintext",
+    "**/coverage/**/*.json": "plaintext"
+  },
+  
+  // Exclude files from search and indexing
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.nx": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.next": true,
+    "**/coverage": true,
+    "package-lock.json": true
+  },
+  
+  // Exclude from file watcher
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.nx/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.next/**": true,
+    "**/coverage/**": true
+  },
+  
+  // Completely disable JSON Language Features to stop the hanging
+  "json.validate.enable": false,
+  "json.format.enable": false,
+  "json.suggest.enable": false,
+  "json.hover.enable": false,
+  
+  // Disable JSON schema validation entirely
+  "json.schemas": [],
+  
+  // Disable all JSON language server features
+  "redhat.telemetry.enabled": false,
+  
+  // Disable specific extensions that might cause issues
+  "extensions.autoUpdate": false,
+  
+  // Performance optimizations
+  "typescript.suggest.autoImports": false,
+  "typescript.updateImportsOnFileMove.enabled": "never",
+  "typescript.surveys.enabled": false,
+  
+  // AGGRESSIVE CPU REDUCTION SETTINGS
+  "editor.semanticHighlighting.enabled": false,
+  "editor.bracketPairColorization.enabled": false,
+  
+  // Disable heavy language features
+  "typescript.disableAutomaticTypeAcquisition": true,
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  "typescript.suggest.includeAutomaticOptionalChainCompletions": false,
+  "typescript.suggest.includeCompletionsForImportStatements": false,
+  
+  // Reduce file monitoring
+  "files.hotExit": "off",
+  "files.autoSave": "off",
+  "editor.formatOnSave": false,
+  "editor.formatOnPaste": false,
+  "editor.formatOnType": false,
+  
+  // Disable telemetry and analytics
+  "telemetry.telemetryLevel": "off",
+  "workbench.enableExperiments": false,
+  "workbench.settings.enableNaturalLanguageSearch": false,
+  
+  // Reduce visual effects
+  "workbench.reduceMotion": "on",
+  "editor.cursorBlinking": "solid",
+  "editor.cursorSmoothCaretAnimation": "off",
+  "workbench.tree.renderIndentGuides": "none",
+  
+  // Limit IntelliSense
+  "editor.quickSuggestions": {
+    "other": false,
+    "comments": false,
+    "strings": false
+  },
+  "editor.suggestOnTriggerCharacters": false,
+  "editor.acceptSuggestionOnEnter": "off",
+  
+  // Disable minimap and other heavy features
+  "editor.minimap.enabled": false,
+  "breadcrumbs.enabled": false,
+  "editor.occurrencesHighlight": "off",
+  "editor.selectionHighlight": false
 }

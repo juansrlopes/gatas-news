@@ -4,32 +4,46 @@ import Header from '../components/Header';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 
-// Dynamic imports for code splitting
-const NewsGrid = dynamic(() => import('../components/NewsGrid'), {
-  loading: () => (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {Array.from({ length: 10 }).map((_, index) => (
-          <div key={index} className="bg-purple-950 bg-opacity-50 rounded-lg shadow">
-            <LoadingSkeleton className="w-full h-48 rounded-t-lg" />
-            <div className="p-3 space-y-2">
-              <LoadingSkeleton className="h-4 w-full" />
-              <LoadingSkeleton className="h-4 w-3/4" />
-              <LoadingSkeleton className="h-3 w-full" />
-              <LoadingSkeleton className="h-3 w-2/3" />
+// Dynamic imports for code splitting with proper display names
+const NewsGrid = dynamic(
+  () => import('../components/NewsGrid').then((mod) => {
+    const Component = mod.default;
+    Component.displayName = 'NewsGrid';
+    return { default: Component };
+  }),
+  {
+    loading: () => (
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {Array.from({ length: 10 }).map((_, index) => (
+            <div key={index} className="bg-purple-950 bg-opacity-50 rounded-lg shadow">
+              <LoadingSkeleton className="w-full h-48 rounded-t-lg" />
+              <div className="p-3 space-y-2">
+                <LoadingSkeleton className="h-4 w-full" />
+                <LoadingSkeleton className="h-4 w-3/4" />
+                <LoadingSkeleton className="h-3 w-full" />
+                <LoadingSkeleton className="h-3 w-2/3" />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  ),
-  ssr: false, // Disable SSR for this component to improve initial load
-});
+    ),
+    ssr: false, // Disable SSR for this component to improve initial load
+  }
+);
 
-const BackToTopButton = dynamic(() => import('../components/BackToTopButton'), {
-  loading: () => null,
-  ssr: false,
-});
+const BackToTopButton = dynamic(
+  () => import('../components/BackToTopButton').then((mod) => {
+    const Component = mod.default;
+    Component.displayName = 'BackToTopButton';
+    return { default: Component };
+  }),
+  {
+    loading: () => null,
+    ssr: false,
+  }
+);
 
 const Home = () => {
   const config = getEnvConfig();

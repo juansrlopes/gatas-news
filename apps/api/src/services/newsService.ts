@@ -58,6 +58,7 @@ export class NewsService {
     dateFrom?: Date;
     dateTo?: Date;
     source?: 'database' | 'live';
+    noMixing?: boolean;
   }): Promise<NewsResponse> {
     const {
       page = 1,
@@ -69,6 +70,7 @@ export class NewsService {
       dateFrom,
       dateTo,
       source = 'database',
+      noMixing: _noMixing = false,
     } = params;
 
     // Handle live search - bypass database and cache, go directly to NewsAPI
@@ -76,8 +78,8 @@ export class NewsService {
       return await this.handleLiveSearch({ celebrity, limit, page });
     }
 
-    // Generate cache key based on all parameters (including mixing flag)
-    const willApplyMixing = !celebrity && !searchTerm && sortBy === 'publishedAt';
+    // DISABLED MIXING BY DEFAULT - users want ALL content
+    const willApplyMixing = false; // Never apply mixing by default
     const cacheKey = this.generateCacheKey({ ...params, mixing: willApplyMixing });
 
     try {
@@ -104,10 +106,12 @@ export class NewsService {
         filters.celebrity = foundCelebrity;
       }
 
-      // Pagination options
+      // Pagination options - no need for extra articles since we're not mixing
+      const adjustedLimit = limit; // Always use exact limit requested
+      
       const paginationOptions: PaginationOptions = {
         page,
-        limit,
+        limit: adjustedLimit,
         sortBy,
         sortOrder: 'desc', // Always newest first
       };
@@ -128,11 +132,24 @@ export class NewsService {
         `Phase 1 filtering: ${result.articles.length} → ${filteredArticles.length} articles`
       );
 
-      // Apply conservative mixing if no specific celebrity filter and not searching
+      // SIMPLIFIED: Show ALL articles without aggressive mixing
+      // Users want maximum content, not filtered/mixed content
       let articlesToReturn = filteredArticles;
-      if (!celebrity && !searchTerm && sortBy === 'publishedAt') {
+      
+      // Only apply mixing if explicitly requested (never by default)
+      if (willApplyMixing && !params.noMixing) {
         articlesToReturn = this.applyConservativeMixing(filteredArticles);
         logger.info(`Applied conservative mixing to ${filteredArticles.length} articles`);
+        
+        // Trim to requested limit after mixing (since we fetched extra articles)
+        if (articlesToReturn.length > limit) {
+          articlesToReturn = articlesToReturn.slice(0, limit);
+          logger.info(`Trimmed mixed articles to requested limit: ${limit}`);
+        }
+      } else {
+        // Default behavior: show ALL articles up to the limit
+        articlesToReturn = filteredArticles.slice(0, limit);
+        logger.info(`No mixing applied, showing ${articlesToReturn.length} articles (limit: ${limit})`);
       }
 
       // Convert to API response format
@@ -451,16 +468,18 @@ export class NewsService {
    * @returns Mixed articles maintaining recency while adding diversity
    */
   /**
-   * SIMPLIFIED: Minimal filtering - just ensure basic data quality
+   * MINIMAL FILTERING: Show ALL articles to users - maximum content visibility!
+   * Only filter out completely broken/invalid articles
    */
   private applyPhase1Filtering(articles: IArticle[]): IArticle[] {
     return articles.filter(article => {
-      // Only filter out articles with no celebrity assignment
-      if (!article.celebrity || article.celebrity === 'unknown') {
+      // Only filter out articles that are completely broken
+      if (!article.title || !article.url) {
         return false;
       }
 
-      // Keep everything else - let users see all content!
+      // KEEP EVERYTHING ELSE - including 'unknown' celebrity articles!
+      // Users want to see ALL content, not filtered content
       return true;
     });
   }
