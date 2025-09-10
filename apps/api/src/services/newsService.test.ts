@@ -1,14 +1,12 @@
 import { NewsService } from './newsService';
-import { CacheService } from '../utils/cache';
+import { enhancedCacheService } from './cacheService';
 
 describe('NewsService', () => {
   let newsService: NewsService;
-  let cacheService: CacheService;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     newsService = NewsService.getInstance();
-    cacheService = CacheService.getInstance();
-    cacheService.flush();
+    await enhancedCacheService.flush();
   });
 
   describe('generateCacheKey', () => {

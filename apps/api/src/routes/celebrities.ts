@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { CelebrityController } from '../controllers/celebrityController';
 import { generalLimiter } from '../middleware/rateLimiter';
+import { validatePagination, validateSearch, validateSorting } from '../middleware/validation';
 
 const router = Router();
 
@@ -13,7 +14,13 @@ const router = Router();
  * @access  Admin
  * @params  ?page=1&limit=20&category=singer&minPriority=5&maxPriority=10&isActive=true&sortBy=priority&sortOrder=desc
  */
-router.get('/', generalLimiter, CelebrityController.getCelebrities);
+router.get(
+  '/',
+  generalLimiter,
+  validatePagination,
+  validateSorting(['name', 'totalArticles', 'avgArticlesPerDay', 'createdAt']),
+  CelebrityController.getCelebrities
+);
 
 /**
  * @route   GET /api/v1/admin/celebrities/search
@@ -21,7 +28,13 @@ router.get('/', generalLimiter, CelebrityController.getCelebrities);
  * @access  Admin
  * @params  ?q=searchTerm&page=1&limit=20
  */
-router.get('/search', generalLimiter, CelebrityController.searchCelebrities);
+router.get(
+  '/search',
+  generalLimiter,
+  validatePagination,
+  validateSearch,
+  CelebrityController.searchCelebrities
+);
 
 /**
  * @route   GET /api/v1/admin/celebrities/stats
@@ -37,13 +50,6 @@ router.get('/stats', generalLimiter, CelebrityController.getCelebrityStats);
  * @params  ?limit=10
  */
 router.get('/top-performers', generalLimiter, CelebrityController.getTopPerformers);
-
-/**
- * @route   POST /api/v1/admin/celebrities/migrate-from-json
- * @desc    Migrate celebrities from JSON file to database
- * @access  Admin
- */
-router.post('/migrate-from-json', generalLimiter, CelebrityController.migrateFromJson);
 
 /**
  * @route   POST /api/v1/admin/celebrities/bulk-update-priority

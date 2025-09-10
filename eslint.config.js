@@ -19,6 +19,7 @@ module.exports = [
       '**/*.d.ts',
       'static/**',
       'apps/api/test-api-keys.js',
+      'check-duplicates.js',
       'eslint.config.js',
       'jest.preset.js',
     ],

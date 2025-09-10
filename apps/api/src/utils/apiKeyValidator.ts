@@ -20,7 +20,7 @@ export interface ApiKeyStatus {
  */
 export async function validateNewsApiKey(apiKey: string): Promise<ApiKeyStatus> {
   try {
-    logger.info(`🔑 Testing API key: ${apiKey.substring(0, 8)}...`);
+    // Test API key quietly
 
     // Make minimal test request to NewsAPI
     const response = await axios.get('https://newsapi.org/v2/everything', {
@@ -33,14 +33,12 @@ export async function validateNewsApiKey(apiKey: string): Promise<ApiKeyStatus> 
     });
 
     if (response.data.status === 'ok') {
-      logger.info(`✅ API key is valid and working`);
       return {
         isValid: true,
         isRateLimited: false,
         keyUsed: apiKey,
       };
     } else {
-      logger.error(`❌ API key returned unexpected status: ${response.data.status}`);
       return {
         isValid: false,
         isRateLimited: false,
@@ -53,7 +51,6 @@ export async function validateNewsApiKey(apiKey: string): Promise<ApiKeyStatus> 
     const errorData = axiosError.response?.data;
 
     if (errorData?.code === 'rateLimited') {
-      logger.error(`🚫 API key is RATE LIMITED: ${errorData.message}`);
       return {
         isValid: false,
         isRateLimited: true,
@@ -64,7 +61,6 @@ export async function validateNewsApiKey(apiKey: string): Promise<ApiKeyStatus> 
     }
 
     if (errorData?.code === 'apiKeyInvalid') {
-      logger.error(`🔑 API key is INVALID: ${errorData.message}`);
       return {
         isValid: false,
         isRateLimited: false,
@@ -76,7 +72,6 @@ export async function validateNewsApiKey(apiKey: string): Promise<ApiKeyStatus> 
 
     // Network or other errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown network error';
-    logger.error(`🌐 Network error testing API key:`, errorMessage);
     return {
       isValid: false,
       isRateLimited: false,
@@ -94,28 +89,18 @@ export async function validateNewsApiKey(apiKey: string): Promise<ApiKeyStatus> 
  * @returns Promise<ApiKeyStatus> - Status of the first working key or last error
  */
 export async function findWorkingApiKey(apiKeys: string[]): Promise<ApiKeyStatus> {
-  logger.info(`🔍 Testing ${apiKeys.length} API keys...`);
-
+  // Test keys quietly - only log important results
   for (let i = 0; i < apiKeys.length; i++) {
     const key = apiKeys[i];
-    logger.info(`📋 Testing key ${i + 1}/${apiKeys.length}: ${key.substring(0, 8)}...`);
-
     const status = await validateNewsApiKey(key);
 
     if (status.isValid) {
-      logger.info(`🎉 Found working API key: ${key.substring(0, 8)}...`);
+      // Only log success
       return status;
-    }
-
-    if (status.isRateLimited) {
-      logger.warn(`⏳ Key ${i + 1} is rate limited, trying next...`);
-    } else {
-      logger.warn(`❌ Key ${i + 1} failed: ${status.error}, trying next...`);
     }
   }
 
   // No working keys found
-  logger.error(`💥 NO WORKING API KEYS FOUND!`);
   return {
     isValid: false,
     isRateLimited: true, // Assume rate limited if all keys failed
@@ -134,8 +119,6 @@ export async function findWorkingApiKey(apiKeys: string[]): Promise<ApiKeyStatus
 export async function validateApiKeysOnStartup(
   config: ReturnType<typeof import('../../../../libs/shared/utils/src/index').getEnvConfig>
 ): Promise<void> {
-  logger.info('🚀 VALIDATING API KEYS ON STARTUP...');
-
   // Collect all available API keys
   const apiKeys: string[] = [];
 
@@ -144,23 +127,13 @@ export async function validateApiKeysOnStartup(
   if (config.newsApiKeyBackup2) apiKeys.push(config.newsApiKeyBackup2);
 
   if (apiKeys.length === 0) {
-    const errorMsg = `
-🚨 FATAL ERROR: NO API KEYS CONFIGURED!
-
-Please configure at least one NewsAPI key in your environment:
-- NEWS_API_KEY=your_primary_key
-- NEWS_API_KEY_BACKUP=your_backup_key  
-- NEWS_API_KEY_BACKUP_2=your_second_backup_key
-
-Get API keys from: https://newsapi.org/register
-`;
-    logger.error(errorMsg);
+    logger.error('🚨 FATAL ERROR: NO API KEYS CONFIGURED!');
+    logger.error('Please configure NewsAPI keys in your environment');
+    logger.error('Get API keys from: https://newsapi.org/register');
     throw new Error('NO_API_KEYS_CONFIGURED');
   }
 
-  logger.info(`📋 Found ${apiKeys.length} API keys to validate`);
-
-  // Test all keys and find a working one
+  // Test all keys and find a working one (quietly)
   const result = await findWorkingApiKey(apiKeys);
 
   if (!result.isValid) {
@@ -200,6 +173,5 @@ Get new keys from: https://newsapi.org/register
     throw new Error(result.error || 'API_KEYS_VALIDATION_FAILED');
   }
 
-  logger.info(`✅ API KEY VALIDATION SUCCESSFUL!`);
-  logger.info(`🔑 Using API key: ${result.keyUsed.substring(0, 8)}...`);
+  // Success - no need to log, handled by server.ts
 }

@@ -1,6 +1,7 @@
 import * as cron from 'node-cron';
 import { newsFetcher } from './newsFetcher';
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
+import { apiKeyManager } from '../services/apiKeyManager';
 import logger from '../utils/logger';
 import { Article } from '../database/models/Article';
 
@@ -8,6 +9,7 @@ export class JobScheduler {
   private static instance: JobScheduler;
   private jobs: Map<string, cron.ScheduledTask> = new Map();
   private isInitialized = false;
+  private static lastStartupTime: number = 0;
 
   private constructor() {}
 
@@ -37,6 +39,9 @@ export class JobScheduler {
       // Schedule health checks
       this.scheduleHealthChecks();
 
+      // Schedule API key health monitoring
+      this.scheduleKeyHealthMonitoring();
+
       this.isInitialized = true;
       logger.info('✅ Job scheduler initialized successfully');
       logger.info(`   📋 ${this.jobs.size} scheduled jobs configured:`);
@@ -63,10 +68,10 @@ export class JobScheduler {
     // Get config when method is called, not at module level
     const config = getEnvConfig();
 
-    // Run daily at 6:00 AM
+    // Smart scheduling based on environment
     const cronExpression = config.isDevelopment
-      ? '*/30 * * * *' // Every 30 minutes in development
-      : '0 6 * * *'; // Daily at 6 AM in production
+      ? '0 */6 * * *' // Every 6 hours in development (much more reasonable)
+      : '0 */2 * * *'; // Every 2 hours in production (more frequent than daily)
 
     const task = cron.schedule(
       cronExpression,
@@ -100,10 +105,19 @@ export class JobScheduler {
     this.jobs.set('daily-news-fetch', task);
     task.start();
 
-    logger.info(`📅 Daily news fetch scheduled: ${cronExpression}`, {
-      timezone: 'America/Sao_Paulo',
-      nextRun: this.getNextRunTime(cronExpression),
-    });
+    // Enhanced logging for development
+    if (config.isDevelopment) {
+      logger.info(`🛠️ Development mode: Reduced fetch frequency (${cronExpression})`, {
+        timezone: 'America/Sao_Paulo',
+        nextRun: this.getNextRunTime(cronExpression),
+        note: 'Use POST /api/v1/admin/fetch-now for manual testing',
+      });
+    } else {
+      logger.info(`📅 News fetch scheduled: ${cronExpression}`, {
+        timezone: 'America/Sao_Paulo',
+        nextRun: this.getNextRunTime(cronExpression),
+      });
+    }
   }
 
   /**
@@ -165,10 +179,81 @@ export class JobScheduler {
   }
 
   /**
+   * Schedule API key health monitoring
+   */
+  private scheduleKeyHealthMonitoring(): void {
+    const config = getEnvConfig();
+
+    // Monitor API keys more frequently in production, less in development
+    const cronExpression = config.isDevelopment
+      ? '0 */15 * * *' // Every 15 minutes in development
+      : '*/5 * * * *'; // Every 5 minutes in production
+
+    const keyHealthTask = cron.schedule(
+      cronExpression,
+      async () => {
+        try {
+          logger.debug('🔑 Running API key health monitoring...');
+
+          // Get current health summary
+          const healthSummary = apiKeyManager.getHealthSummary();
+
+          // Log health status if there are issues
+          if (healthSummary.healthyKeys === 0) {
+            logger.error('🚨 CRITICAL: No healthy API keys available!');
+          } else if (healthSummary.healthyKeys < healthSummary.totalKeys) {
+            logger.warn(
+              `⚠️ API Key Health Alert: ${healthSummary.healthyKeys}/${healthSummary.totalKeys} keys healthy`
+            );
+          }
+
+          // Force health check if average health is low
+          if (healthSummary.averageHealthScore < 50) {
+            logger.info('🏥 Low health score detected, forcing health check...');
+            await apiKeyManager.forceHealthCheck();
+          }
+
+          // Reset daily stats at midnight
+          const now = new Date();
+          if (now.getHours() === 0 && now.getMinutes() < 5) {
+            logger.info('🔄 Daily API key statistics reset');
+            apiKeyManager.resetDailyStatistics();
+          }
+        } catch (error) {
+          logger.error('❌ API key health monitoring failed:', error);
+        }
+      },
+      {
+        timezone: 'America/Sao_Paulo',
+      }
+    );
+
+    this.jobs.set('api-key-health', keyHealthTask);
+    keyHealthTask.start();
+
+    logger.info(`🔑 API key health monitoring scheduled: ${cronExpression}`);
+  }
+
+  /**
    * Run initial fetch if needed
    */
   private async runInitialFetchIfNeeded(): Promise<void> {
     try {
+      const config = getEnvConfig();
+      const now = Date.now();
+      const timeSinceLastStartup = now - JobScheduler.lastStartupTime;
+      JobScheduler.lastStartupTime = now;
+
+      // If restarted within 5 minutes in development, likely a nodemon restart
+      if (
+        timeSinceLastStartup < 5 * 60 * 1000 &&
+        config.isDevelopment &&
+        timeSinceLastStartup > 0
+      ) {
+        logger.info('🔄 Rapid restart detected - skipping initial fetch to preserve API quota');
+        return;
+      }
+
       // CRITICAL FIX: Always check article count, not just fetch logs
       const articleCount = await Article.countDocuments({ isActive: true });
 
@@ -289,15 +374,20 @@ export class JobScheduler {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // For now, we'll just mark old articles as inactive instead of deleting
-      // In a real app, you might want to actually delete very old articles
-      logger.info(`Marking articles older than ${thirtyDaysAgo.toISOString()} as inactive`);
+      logger.info(`🧹 Marking articles older than ${thirtyDaysAgo.toISOString()} as inactive`);
 
-      // This would be implemented with a repository method
-      // const result = await articleRepository.markOldArticlesInactive(thirtyDaysAgo);
-      // logger.info(`Marked ${result} articles as inactive`);
+      // Mark old articles as inactive instead of deleting (preserves data)
+      const result = await Article.updateMany(
+        {
+          publishedAt: { $lt: thirtyDaysAgo },
+          isActive: true,
+        },
+        { isActive: false }
+      );
+
+      logger.info(`✅ Marked ${result.modifiedCount} old articles as inactive`);
     } catch (error) {
-      logger.error('Error cleaning up old articles:', error);
+      logger.error('❌ Error cleaning up old articles:', error);
     }
   }
 

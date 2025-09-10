@@ -117,6 +117,13 @@ ArticleSchema.index({ isActive: 1, publishedAt: -1 });
 ArticleSchema.index({ sentiment: 1, publishedAt: -1 });
 ArticleSchema.index({ 'source.name': 1, publishedAt: -1 });
 
+// Additional compound indexes for common query patterns
+ArticleSchema.index({ isActive: 1, celebrity: 1, publishedAt: -1 }); // Celebrity filtering with active status
+ArticleSchema.index({ isActive: 1, sentiment: 1, publishedAt: -1 }); // Sentiment filtering with active status
+ArticleSchema.index({ isActive: 1, 'source.name': 1, publishedAt: -1 }); // Source filtering with active status
+ArticleSchema.index({ celebrity: 1, sentiment: 1, publishedAt: -1 }); // Celebrity + sentiment filtering
+ArticleSchema.index({ tags: 1, isActive: 1, publishedAt: -1 }); // Tag-based filtering
+
 // Text index for full-text search
 ArticleSchema.index({
   title: 'text',

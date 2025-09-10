@@ -31,7 +31,9 @@ import { ArticleSkeleton } from './LoadingSkeleton';
  */
 const NewsGrid = () => {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [query, setQuery] = useState('');
+  const [dbQuery, setDbQuery] = useState(''); // Database search query
+  const [liveQuery, setLiveQuery] = useState(''); // Live search query
+  const [showLiveSearch, setShowLiveSearch] = useState(false); // Show/hide live search
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
@@ -40,8 +42,14 @@ const NewsGrid = () => {
   const [lastFailedRequest, setLastFailedRequest] = useState<{
     page: number;
     celebrity: string;
+    isLive?: boolean;
   } | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  // Rate limiting for live search
+  const [dailySearchCount, setDailySearchCount] = useState(0);
+  const [maxDailySearches] = useState(5);
+  const [searchSource, setSearchSource] = useState<'database' | 'live'>('database');
 
   /**
    * Fetches articles from the API with comprehensive error handling
@@ -71,7 +79,7 @@ const NewsGrid = () => {
    * ```
    */
   const fetchArticles = useCallback(
-    async (pageNumber = 1, celebrityName = '', isRetry = false) => {
+    async (pageNumber = 1, celebrityName = '', isRetry = false, isLiveSearch = false) => {
       // Don't fetch if offline
       if (!isOnline && !isRetry) {
         setError('Você está offline. Verifique sua conexão com a internet.');
@@ -95,6 +103,7 @@ const NewsGrid = () => {
           page: pageNumber.toString(),
           limit: '20',
           ...(sanitizedCelebrityName && { celebrity: sanitizedCelebrityName }),
+          source: isLiveSearch ? 'live' : 'database',
         });
 
         // Create AbortController for timeout
@@ -180,7 +189,11 @@ const NewsGrid = () => {
         });
 
         // Store failed request for retry when back online
-        setLastFailedRequest({ page: pageNumber, celebrity: sanitizedCelebrityName });
+        setLastFailedRequest({
+          page: pageNumber,
+          celebrity: sanitizedCelebrityName,
+          isLive: isLiveSearch,
+        });
 
         let displayErrorMessage = 'Erro inesperado. Tente novamente.';
 
@@ -328,13 +341,47 @@ const NewsGrid = () => {
     }
   }, []);
 
+  // Rate limiting: Track daily search count in localStorage
+  useEffect(() => {
+    const today = new Date().toDateString();
+    const stored = localStorage.getItem('gatas-search-count');
+
+    try {
+      const data = stored ? JSON.parse(stored) : {};
+
+      if (data.date === today) {
+        setDailySearchCount(data.count || 0);
+      } else {
+        // Reset for new day
+        const newData = { date: today, count: 0 };
+        localStorage.setItem('gatas-search-count', JSON.stringify(newData));
+        setDailySearchCount(0);
+      }
+    } catch (error) {
+      console.error('Error reading search count from localStorage:', error);
+      setDailySearchCount(0);
+    }
+  }, []);
+
+  // Auto-hide live search after successful database search
+  useEffect(() => {
+    if (articles.length > 0 && !liveQuery && searchSource === 'database') {
+      setShowLiveSearch(false);
+    }
+  }, [articles, liveQuery, searchSource]);
+
   // Network connectivity detection
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       // Retry last failed request if we come back online
       if (lastFailedRequest) {
-        fetchArticles(lastFailedRequest.page, lastFailedRequest.celebrity);
+        fetchArticles(
+          lastFailedRequest.page,
+          lastFailedRequest.celebrity,
+          false,
+          lastFailedRequest.isLive || false
+        );
         setLastFailedRequest(null);
       }
     };
@@ -388,14 +435,20 @@ const NewsGrid = () => {
     if (lastFailedRequest) {
       const newRetryCount = retryCount + 1;
       setRetryCount(newRetryCount);
-      fetchArticles(lastFailedRequest.page, lastFailedRequest.celebrity, true);
+      fetchArticles(
+        lastFailedRequest.page,
+        lastFailedRequest.celebrity,
+        true,
+        lastFailedRequest.isLive || false
+      );
     } else {
-      // Retry current page
+      // Retry current page with current search source
       const newRetryCount = retryCount + 1;
       setRetryCount(newRetryCount);
-      fetchArticles(page, query, true);
+      const currentQuery = searchSource === 'live' ? liveQuery : dbQuery;
+      fetchArticles(page, currentQuery, true, searchSource === 'live');
     }
-  }, [lastFailedRequest, retryCount, page, query, fetchArticles]);
+  }, [lastFailedRequest, retryCount, page, dbQuery, liveQuery, searchSource, fetchArticles]);
 
   /**
    * Loads the next page of articles for infinite scroll pagination
@@ -406,73 +459,207 @@ const NewsGrid = () => {
   const loadMoreArticles = () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    fetchArticles(nextPage, query);
+    const currentQuery = searchSource === 'live' ? liveQuery : dbQuery;
+    fetchArticles(nextPage, currentQuery, false, searchSource === 'live');
   };
 
   /**
-   * Handles search form submission
+   * Handles database search form submission
    *
-   * Resets pagination to page 1 and fetches articles filtered by the search query.
+   * Resets pagination to page 1 and fetches articles from database.
    */
-  const handleSearch = useCallback(() => {
+  const handleDatabaseSearch = useCallback(() => {
     setPage(1);
-    fetchArticles(1, query);
-  }, [query, fetchArticles]);
+    setSearchSource('database');
+    fetchArticles(1, dbQuery, false, false);
+  }, [dbQuery, fetchArticles]);
 
   /**
-   * Clears the search input and resets to show all articles
+   * Handles live search form submission with rate limiting
    *
-   * Resets the query state and pagination, then fetches all articles.
+   * Checks rate limits, increments counter, and fetches from NewsAPI.
    */
-  const handleClearInput = useCallback(() => {
-    setQuery('');
+  const handleLiveSearch = useCallback(() => {
+    // Check rate limit
+    if (dailySearchCount >= maxDailySearches) {
+      setError(
+        `Limite diário de buscas atingido (${maxDailySearches}/dia). Tente novamente amanhã.`
+      );
+      return;
+    }
+
+    // Increment search count and save to localStorage
+    const newCount = dailySearchCount + 1;
+    setDailySearchCount(newCount);
+
+    const today = new Date().toDateString();
+    const searchData = { date: today, count: newCount };
+    localStorage.setItem('gatas-search-count', JSON.stringify(searchData));
+
+    // Perform live search
     setPage(1);
-    fetchArticles(1);
+    setSearchSource('live');
+    fetchArticles(1, liveQuery, false, true);
+  }, [liveQuery, dailySearchCount, maxDailySearches, fetchArticles]);
+
+  /**
+   * Clears the database search input and resets to show all articles
+   */
+  const handleClearDatabaseInput = useCallback(() => {
+    setDbQuery('');
+    setPage(1);
+    setSearchSource('database');
+    fetchArticles(1, '', false, false);
   }, [fetchArticles]);
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+  /**
+   * Shows the live search interface
+   */
+  const handleShowLiveSearch = useCallback(() => {
+    setShowLiveSearch(true);
   }, []);
 
-  const handleKeyPress = useCallback(
+  /**
+   * Hides the live search interface and clears live query
+   */
+  const handleCancelLiveSearch = useCallback(() => {
+    setShowLiveSearch(false);
+    setLiveQuery('');
+  }, []);
+
+  // Input change handlers
+  const handleDbInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setDbQuery(e.target.value);
+  }, []);
+
+  const handleLiveInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLiveQuery(e.target.value);
+  }, []);
+
+  // Key press handlers
+  const handleDbKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
-        handleSearch();
+        handleDatabaseSearch();
       }
     },
-    [handleSearch]
+    [handleDatabaseSearch]
+  );
+
+  const handleLiveKeyPress = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        handleLiveSearch();
+      }
+    },
+    [handleLiveSearch]
   );
 
   return (
     <section className="w-full p-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-4">
-        <input
-          type="text"
-          className="p-2 border border-gray-300 rounded w-full sm:w-96 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          placeholder="Filtre pelo nome"
-          value={query}
-          onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
-          aria-label="Filtrar notícias por nome"
-        />
-        <div className="flex gap-2">
-          <button
-            onClick={handleSearch}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-            disabled={loading}
-            aria-label="Buscar notícias"
-          >
-            {loading ? 'Buscando...' : 'Buscar'}
-          </button>
-          <button
-            onClick={handleClearInput}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            aria-label="Limpar filtro"
-          >
-            Limpar
-          </button>
+      {/* Database Search Section (Always Visible) */}
+      <div className="mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
+          <input
+            type="text"
+            className="p-2 border border-gray-300 rounded w-full sm:w-96 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder="Busque por Anitta, Bruna Marquezine, Paolla Oliveira..."
+            value={dbQuery}
+            onChange={handleDbInputChange}
+            onKeyPress={handleDbKeyPress}
+            aria-label="Buscar notícias na nossa base de dados"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleDatabaseSearch}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+              disabled={loading}
+              aria-label="Buscar notícias"
+            >
+              {loading && searchSource === 'database' ? 'Buscando...' : 'Buscar'}
+            </button>
+            <button
+              onClick={handleClearDatabaseInput}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label="Limpar filtro"
+            >
+              Limpar
+            </button>
+          </div>
         </div>
+        <p className="text-sm text-gray-600">
+          🗃️ Pesquise em mais de 50.000 notícias da nossa base de dados
+        </p>
       </div>
+
+      {/* "Can't Find" Prompt (Conditional) */}
+      {!showLiveSearch && (
+        <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="text-center">
+            <p className="text-gray-700 mb-2">💡 Não encontrou a gata que você quer?</p>
+            <button
+              onClick={handleShowLiveSearch}
+              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
+              aria-label="Abrir busca ao vivo"
+            >
+              Clique aqui para busca ao vivo
+            </button>
+            <p className="text-xs text-gray-500 mt-1">Busque qualquer celebridade em tempo real</p>
+          </div>
+        </div>
+      )}
+
+      {/* Live Search Section (Conditional) */}
+      {showLiveSearch && (
+        <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-red-800">🔴 Busca ao Vivo (Limitada)</h3>
+            <button
+              onClick={handleCancelLiveSearch}
+              className="text-red-600 hover:text-red-800 focus:outline-none"
+              aria-label="Cancelar busca ao vivo"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
+            <input
+              type="text"
+              className="p-2 border border-red-300 rounded w-full sm:w-96 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              placeholder="Digite o nome da celebridade..."
+              value={liveQuery}
+              onChange={handleLiveInputChange}
+              onKeyPress={handleLiveKeyPress}
+              aria-label="Buscar celebridade ao vivo"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleLiveSearch}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+                disabled={loading || dailySearchCount >= maxDailySearches}
+                aria-label="Buscar ao vivo"
+              >
+                {loading && searchSource === 'live' ? 'Buscando...' : 'Buscar ao Vivo'}
+              </button>
+              <button
+                onClick={handleCancelLiveSearch}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                aria-label="Cancelar"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-sm">
+            <p className="text-red-700">
+              ⚠️ {maxDailySearches - dailySearchCount}/{maxDailySearches} buscas restantes hoje
+            </p>
+            <p className="text-red-600">Cada busca consome uma cota diária limitada</p>
+          </div>
+        </div>
+      )}
       {loading && articles.length === 0 && <ArticleSkeleton count={8} />}
 
       {/* Network Status Indicator */}
@@ -516,9 +703,11 @@ const NewsGrid = () => {
                       : 'Tentar Novamente'}
                 </button>
 
-                {query && (
+                {(dbQuery || liveQuery) && (
                   <button
-                    onClick={handleClearInput}
+                    onClick={
+                      searchSource === 'live' ? handleCancelLiveSearch : handleClearDatabaseInput
+                    }
                     className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
                   >
                     Limpar Filtro

@@ -51,62 +51,74 @@ process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) =>
 const initializeServices = async (): Promise<void> => {
   try {
     // Print startup banner
-    console.log('\n' + '='.repeat(60));
-    console.log('🐱 GATAS NEWS API SERVER');
-    console.log('='.repeat(60));
-    logger.info('🔧 Initializing services...');
-    console.log('');
+    console.log('\n' + '='.repeat(50));
+    console.log('🐱 GATAS NEWS API');
+    console.log('='.repeat(50));
+    console.log('🔧 Starting services...\n');
 
     // Validate API keys - allow server to start even if rate limited
-    logger.info('🔑 Validating NewsAPI keys...');
+    process.stdout.write('🔑 Checking API keys... ');
     try {
       await validateApiKeysOnStartup(config);
-      logger.info('✅ NewsAPI keys validated successfully');
+      console.log('✅');
     } catch (error) {
       if (error instanceof Error && error.message === 'ALL_KEYS_FAILED') {
-        logger.warn('⚠️ All NewsAPI keys are rate limited - starting server in LIMITED MODE');
-        logger.warn('📋 Admin panel will work, but news fetching is disabled');
-        logger.warn('🔄 News fetching will resume when API keys reset');
+        console.log('⚠️  Rate limited');
+        console.log('   📋 Server will start in LIMITED MODE');
       } else {
-        logger.error('❌ Unexpected error during API key validation:', error);
+        console.log('❌');
+        logger.error('Unexpected error during API key validation:', error);
         throw error; // Re-throw unexpected errors
       }
     }
 
     // Connect to MongoDB
-    logger.info('📊 Connecting to MongoDB...');
+    process.stdout.write('📊 Connecting to MongoDB... ');
     await mongoConnection.connect();
+    console.log('✅');
 
     // CRITICAL: Celebrity protection safeguards
-    logger.info('👥 Validating celebrity data...');
+    process.stdout.write('👥 Validating celebrities... ');
     await validateCelebritiesOnStartup();
-    logger.info('💾 Creating celebrity backup...');
     await createAutomaticBackup();
-    logger.info('🔍 Verifying backup integrity...');
     const backupValid = await verifyBackupIntegrity();
-    if (!backupValid) {
-      logger.warn('⚠️ Backup integrity check failed, but continuing startup...');
+    if (backupValid) {
+      console.log('✅');
+    } else {
+      console.log('⚠️  Backup issue (continuing)');
     }
 
     // Connect to Redis (optional, will fallback to memory cache if fails)
-    logger.info('🚀 Connecting to Redis...');
+    process.stdout.write('🚀 Connecting to Redis... ');
     try {
       await redisConnection.connect();
+      console.log('✅');
     } catch {
-      logger.warn('⚠️  Redis connection failed, using memory cache only');
+      console.log('⚠️  Using memory cache');
     }
 
     // Initialize job scheduler
-    logger.info('⏰ Initializing job scheduler...');
+    process.stdout.write('⏰ Setting up scheduler... ');
     await jobScheduler.initialize();
+    console.log('✅');
 
-    // TEMPORARY: Disable automatic backups for debugging
-    // TODO: Re-enable after fixing startup issues
-    // logger.info('🔄 Starting automatic celebrity backup scheduler...');
+    // Schedule automatic backups
     scheduleAutomaticBackups();
 
-    console.log('');
-    logger.info('✅ All services initialized successfully');
+    console.log('\n✅ All services ready!');
+
+    // Development-specific information
+    if (config.isDevelopment) {
+      console.log('\n🛠️  Development Tools:');
+      console.log(
+        `   🔄 Manual fetch: POST http://localhost:${config.port}/api/v1/admin/fetch-now`
+      );
+      console.log(
+        `   📊 Fetch status: GET http://localhost:${config.port}/api/v1/admin/fetch/status`
+      );
+      console.log(`   🏥 Health check: GET http://localhost:${config.port}/health`);
+      console.log(`   📰 News API: GET http://localhost:${config.port}/api/v1/news`);
+    }
   } catch (error) {
     logger.error('❌ Failed to initialize services:', error);
     throw error;
@@ -156,35 +168,21 @@ const startServer = async (): Promise<void> => {
 
     // Start the HTTP server
     server = app.listen(config.port, () => {
-      console.log('\n' + '='.repeat(60));
-      console.log('🚀 SERVER STARTED SUCCESSFULLY!');
-      console.log('='.repeat(60));
+      console.log('\n' + '='.repeat(50));
+      console.log('🚀 SERVER RUNNING');
+      console.log('='.repeat(50));
 
-      logger.info(`📍 Server running on port ${config.port}`);
-      logger.info(`🌍 Environment: ${config.isDevelopment ? 'development' : 'production'}`);
+      console.log(`📍 Port: ${config.port}`);
+      console.log(`🌍 Mode: ${config.isDevelopment ? 'development' : 'production'}`);
 
-      console.log('\n📋 Available Endpoints:');
-      console.log('─'.repeat(40));
-      logger.info(`📊 Health check:  http://localhost:${config.port}/health`);
-      logger.info(`📰 News API:      http://localhost:${config.port}/api/v1/news`);
-      logger.info(`🔧 Admin panel:   http://localhost:${config.port}/api/v1/admin`);
+      console.log('\n📋 Endpoints:');
+      console.log(`   📊 Health: http://localhost:${config.port}/health`);
+      console.log(`   📰 News:   http://localhost:${config.port}/api/v1/news`);
+      console.log(`   🔧 Admin:  http://localhost:${config.port}/api/v1/admin`);
 
-      if (config.isDevelopment) {
-        console.log('\n🛠️  Development Features:');
-        console.log('─'.repeat(40));
-        logger.info(`🔧 Enhanced logging enabled`);
-        logger.info(`🚦 Relaxed rate limits`);
-        logger.info(`🔄 Auto-reload on file changes`);
-      }
-
-      console.log('\n💡 Quick Start:');
-      console.log('─'.repeat(40));
-      console.log(`   curl http://localhost:${config.port}/health`);
-      console.log(`   curl http://localhost:${config.port}/api/v1/news`);
-
-      console.log('\n' + '='.repeat(60));
-      console.log('🎉 Ready to serve requests!');
-      console.log('='.repeat(60) + '\n');
+      console.log('\n' + '='.repeat(50));
+      console.log('🎉 Ready for requests!');
+      console.log('='.repeat(50) + '\n');
     });
 
     // Handle graceful shutdown

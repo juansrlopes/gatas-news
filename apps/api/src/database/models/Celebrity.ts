@@ -76,6 +76,7 @@ const CelebritySchema = new Schema<ICelebrity>(
 
 // Compound indexes for better query performance
 CelebritySchema.index({ isActive: 1, totalArticles: -1 });
+CelebritySchema.index({ isActive: 1, lastFetchedAt: -1 }); // For fetching optimization
 
 // Text index for search
 CelebritySchema.index({

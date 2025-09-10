@@ -11,6 +11,7 @@ import { NewsResponse } from '../../../../libs/shared/types/src/index';
 import { ValidationError } from '../types/errors';
 import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
 import { isImageUrlDomainValid } from '../utils/imageValidation';
+import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 import logger from '../utils/logger';
 
 export class NewsService {
@@ -56,6 +57,7 @@ export class NewsService {
     sentiment?: 'positive' | 'negative' | 'neutral';
     dateFrom?: Date;
     dateTo?: Date;
+    source?: 'database' | 'live';
   }): Promise<NewsResponse> {
     const {
       page = 1,
@@ -66,7 +68,13 @@ export class NewsService {
       sentiment,
       dateFrom,
       dateTo,
+      source = 'database',
     } = params;
+
+    // Handle live search - bypass database and cache, go directly to NewsAPI
+    if (source === 'live') {
+      return await this.handleLiveSearch({ celebrity, limit, page });
+    }
 
     // Generate cache key based on all parameters (including mixing flag)
     const willApplyMixing = !celebrity && !searchTerm && sortBy === 'publishedAt';
@@ -702,6 +710,90 @@ export class NewsService {
     }
 
     return key;
+  }
+
+  /**
+   * Convert live search results (ArticleWithCelebrity) to API format
+   * This is separate from convertToApiFormat which handles IArticle (database model)
+   */
+  private convertLiveSearchToApiFormat(article: {
+    url: string;
+    title: string;
+    description?: string;
+    urlToImage?: string;
+    publishedAt?: string;
+    source?: { id: string | null; name: string };
+    celebrity: string;
+  }) {
+    return {
+      id: article.url, // Use URL as unique ID for live results
+      title: article.title,
+      description: article.description || '',
+      url: article.url,
+      urlToImage: article.urlToImage || '',
+      publishedAt: article.publishedAt || new Date().toISOString(),
+      source: article.source || { id: null, name: 'Unknown' },
+      celebrity: article.celebrity,
+      isActive: true, // Live results are always considered active
+    };
+  }
+
+  /**
+   * Handle live search by calling NewsAPI directly
+   * This bypasses the database and cache for real-time results
+   */
+  private async handleLiveSearch(params: {
+    celebrity?: string;
+    limit?: number;
+    page?: number;
+  }): Promise<NewsResponse> {
+    const { celebrity, limit: _limit = 20, page = 1 } = params;
+
+    if (!celebrity) {
+      throw new ValidationError('Celebrity name is required for live search');
+    }
+
+    logger.info(`Live search requested for celebrity: ${celebrity}`);
+
+    try {
+      // Get environment config for API keys
+      const config = getEnvConfig();
+
+      // Use newsFetcher to get live results from NewsAPI
+      const result = await newsFetcher.fetchArticlesForCelebrity(celebrity, config);
+      const articles = result.articles;
+
+      // Apply basic content filtering
+      const filteredArticles = articles.filter(article => {
+        const contentScore = analyzePortugueseContent(
+          article.title,
+          article.description || '',
+          article.url,
+          celebrity
+        );
+        return shouldKeepArticle(contentScore, 30); // Use lower threshold for live search
+      });
+
+      logger.info(
+        `Live search results: ${articles.length} → ${filteredArticles.length} articles after filtering`
+      );
+
+      // Convert to API response format
+      const response: NewsResponse = {
+        articles: filteredArticles.map(this.convertLiveSearchToApiFormat),
+        totalResults: filteredArticles.length,
+        page: page,
+        totalPages: 1, // Live search returns single page
+        hasMore: false, // Live search returns single page
+      };
+
+      return response;
+    } catch (error) {
+      logger.error('Live search failed', { celebrity, error });
+      throw new Error(
+        `Live search failed for ${celebrity}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
   }
 }
 

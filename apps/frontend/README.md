@@ -26,13 +26,14 @@
 The Gatas News frontend is a modern, responsive web application built with Next.js that provides:
 
 - **📰 News Browsing**: Elegant grid layout for celebrity news articles
-- **🔍 Smart Search**: Real-time filtering by celebrity names
+- **🔍 Dual Search System**: Database search + live NewsAPI search with rate limiting
 - **📱 Mobile-First**: Responsive design that works on all devices
-- **⚡ Performance**: Optimized images, caching, and loading states
+- **⚡ Performance**: Code splitting, optimized images, and smart caching
 - **🛡️ Reliability**: Comprehensive error handling and offline support
 - **♿ Accessibility**: WCAG compliant with proper ARIA labels
 - **👥 Admin Interface**: Full celebrity management with CRUD operations
 - **🎯 Quality Control**: Zero-tolerance linting with Git hooks
+- **📦 Bundle Optimization**: Dynamic imports and chunk splitting for faster loads
 
 ## 🏗️ Architecture
 
@@ -241,6 +242,7 @@ GET /api/image-proxy?url=https://example.com/image.jpg
 **Monitoring:**
 
 Check browser console for domain validation logs:
+
 - `[IMAGE-PROXY] New domain auto-validated`
 - `[IMAGE-PROXY] Domain blocked`
 - `[IMAGE-FAILURE] Domain may need whitelisting`

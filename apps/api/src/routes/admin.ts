@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { AdminController } from '../controllers/adminController';
+import { NewsController } from '../controllers/newsController';
 import { generalLimiter } from '../middleware/rateLimiter';
+import { validatePagination } from '../middleware/validation';
 import celebrityRoutes from './celebrities';
 
 const router = Router();
@@ -20,6 +22,13 @@ const router = Router();
 router.post('/fetch/trigger', generalLimiter, AdminController.triggerNewsFetch);
 
 /**
+ * @route   POST /api/v1/admin/fetch-now
+ * @desc    Simple manual fetch trigger (development only)
+ * @access  Development
+ */
+router.post('/fetch-now', generalLimiter, NewsController.triggerFetch);
+
+/**
  * @route   GET /api/v1/admin/fetch/status
  * @desc    Get fetch job status and history
  * @access  Admin
@@ -32,7 +41,7 @@ router.get('/fetch/status', generalLimiter, AdminController.getFetchStatus);
  * @access  Admin
  * @params  ?page=1&limit=20&status=success|failed|partial
  */
-router.get('/fetch/logs', generalLimiter, AdminController.getFetchLogs);
+router.get('/fetch/logs', generalLimiter, validatePagination, AdminController.getFetchLogs);
 
 /**
  * @route   GET /api/v1/admin/fetch/statistics
@@ -119,6 +128,38 @@ router.delete('/articles/:id', generalLimiter, AdminController.deleteArticle);
  * @access  Admin
  */
 router.post('/scheduler/jobs/:jobName/stop', generalLimiter, AdminController.stopScheduledJob);
+
+/**
+ * API Key Management Routes
+ */
+
+/**
+ * @route   GET /api/v1/admin/keys/status
+ * @desc    Get comprehensive API key health status
+ * @access  Admin
+ */
+router.get('/keys/status', generalLimiter, AdminController.getKeyStatus);
+
+/**
+ * @route   POST /api/v1/admin/keys/health-check
+ * @desc    Force health check on all API keys
+ * @access  Admin
+ */
+router.post('/keys/health-check', generalLimiter, AdminController.forceKeyHealthCheck);
+
+/**
+ * @route   POST /api/v1/admin/keys/reset-stats
+ * @desc    Reset daily API key statistics
+ * @access  Admin
+ */
+router.post('/keys/reset-stats', generalLimiter, AdminController.resetKeyStats);
+
+/**
+ * @route   GET /api/v1/admin/keys/best
+ * @desc    Get the current best API key recommendation
+ * @access  Admin
+ */
+router.get('/keys/best', generalLimiter, AdminController.getBestKey);
 
 /**
  * Celebrity Management Routes

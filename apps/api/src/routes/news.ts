@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import { NewsController } from '../controllers/newsController';
-import { validateNewsRequest } from '../middleware/validation';
+import {
+  validatePagination,
+  validateDateRange,
+  validateSearch,
+  validateSorting,
+  validateCelebrityName,
+  validateSentiment,
+} from '../middleware/validation';
 import { newsLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
@@ -11,7 +18,16 @@ const router = Router();
  * @access  Public
  * @params  ?page=1&celebrity=name&limit=20&sortBy=publishedAt
  */
-router.get('/', newsLimiter, validateNewsRequest, NewsController.getNews);
+router.get(
+  '/',
+  newsLimiter,
+  validatePagination,
+  validateDateRange,
+  validateCelebrityName,
+  validateSentiment,
+  validateSorting(['publishedAt', 'relevancy', 'popularity']),
+  NewsController.getNews
+);
 
 /**
  * @route   GET /api/v1/news/trending
@@ -29,7 +45,9 @@ router.get('/trending', newsLimiter, NewsController.getTrending);
 router.get(
   '/search',
   newsLimiter,
-  validateNewsRequest,
+  validatePagination,
+  validateSearch,
+  validateSorting(['publishedAt', 'relevancy', 'popularity']),
   NewsController.getNews // Uses same controller, handles searchTerm param
 );
 
@@ -42,6 +60,7 @@ router.get(
 router.get(
   '/recent',
   newsLimiter,
+  validatePagination,
   NewsController.getNews // Uses same controller with recent logic
 );
 
@@ -54,6 +73,7 @@ router.get(
 router.get(
   '/popular',
   newsLimiter,
+  validatePagination,
   NewsController.getNews // Uses same controller with popular logic
 );
 

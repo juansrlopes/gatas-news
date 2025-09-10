@@ -31,11 +31,21 @@ const format = winston.format.combine(
   winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
 );
 
+// Simpler format for development console
+const consoleFormat = winston.format.combine(
+  winston.format.colorize(),
+  winston.format.printf(info => {
+    // Clean format without timestamp for better readability
+    return `${info.level}: ${info.message}`;
+  })
+);
+
 // Define which transports the logger must use to print out messages
 const transports = [
   // Allow console logging only in development
   new winston.transports.Console({
-    format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
+    format: consoleFormat,
+    level: config.isDevelopment ? 'info' : 'warn', // Less verbose in development
   }),
   // Always log errors to file
   new winston.transports.File({
@@ -52,7 +62,7 @@ const transports = [
 
 // Create the logger instance
 const logger = winston.createLogger({
-  level: config.isDevelopment ? 'debug' : 'info',
+  level: config.isDevelopment ? 'info' : 'warn', // Reduced verbosity
   levels,
   format,
   transports,

@@ -242,51 +242,6 @@ export class CelebrityController {
   );
 
   /**
-   * POST /api/v1/admin/celebrities/migrate-from-json
-   * Migrate celebrities from JSON file to database (DEPRECATED - JSON file removed)
-   */
-  public static migrateFromJson = asyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-      logger.info('Celebrity migration from JSON requested', { ip: req.ip });
-
-      // Check if celebrities data is provided in request body
-      const { celebrities } = req.body;
-
-      if (!celebrities || !Array.isArray(celebrities)) {
-        res.status(400).json({
-          success: false,
-          error:
-            'Migration no longer available - JSON file has been removed. Celebrities are now managed via database.',
-          message:
-            'The celebrities.json file has been removed as part of the database migration. Use the admin panel to manage celebrities.',
-          alternatives: [
-            'POST /api/v1/admin/celebrities - Create individual celebrities',
-            'GET /api/v1/admin/celebrities - View existing celebrities',
-            'PUT /api/v1/admin/celebrities/:id - Update celebrities',
-          ],
-          timestamp: new Date().toISOString(),
-        });
-        return;
-      }
-
-      try {
-        // Allow migration from request body data (for manual migrations)
-        const result = await celebrityService.migrateFromJson(celebrities);
-
-        res.json({
-          success: true,
-          data: result,
-          message: `Migration completed: ${result.created} created, ${result.skipped} skipped`,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (error) {
-        logger.error('Error during manual migration:', error);
-        throw new Error('Failed to migrate celebrities from provided data');
-      }
-    }
-  );
-
-  /**
    * POST /api/v1/admin/celebrities/bulk-update-priority
    * Bulk update celebrity priorities
    */

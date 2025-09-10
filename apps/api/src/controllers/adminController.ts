@@ -7,6 +7,7 @@ import { articleRepository } from '../database/repositories/ArticleRepository';
 import { FetchLog } from '../database/models/FetchLog';
 import { mongoConnection } from '../database/connections/mongodb';
 import { redisConnection } from '../database/connections/redis';
+import { apiKeyManager } from '../services/apiKeyManager';
 import { asyncHandler } from '../middleware/errorHandler';
 import logger from '../utils/logger';
 
@@ -400,5 +401,105 @@ export class AdminController {
         timestamp: new Date().toISOString(),
       });
     }
+  });
+
+  /**
+   * GET /api/v1/admin/keys/status
+   * Get comprehensive API key health status
+   */
+  public static getKeyStatus = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('API key status request received', { ip: req.ip });
+
+    const keyStatuses = apiKeyManager.getKeyStatuses();
+    const usageStats = apiKeyManager.getUsageStatistics();
+    const healthSummary = apiKeyManager.getHealthSummary();
+
+    res.json({
+      success: true,
+      data: {
+        summary: healthSummary,
+        keys: keyStatuses.map(status => ({
+          keyId: status.keyId,
+          keyIndex: status.keyIndex,
+          isValid: status.isValid,
+          isRateLimited: status.isRateLimited,
+          healthScore: status.healthScore,
+          lastChecked: status.lastChecked,
+          lastUsed: status.lastUsed,
+          consecutiveFailures: status.consecutiveFailures,
+          totalRequests: status.totalRequests,
+          successfulRequests: status.successfulRequests,
+          rateLimitedCount: status.rateLimitedCount,
+          estimatedResetTime: status.estimatedResetTime,
+          isPreferred: status.isPreferred,
+          usage: usageStats[status.keyId],
+        })),
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * POST /api/v1/admin/keys/health-check
+   * Force health check on all API keys
+   */
+  public static forceKeyHealthCheck = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Forced API key health check triggered', { ip: req.ip });
+
+    await apiKeyManager.forceHealthCheck();
+    const healthSummary = apiKeyManager.getHealthSummary();
+
+    res.json({
+      success: true,
+      message: 'Health check completed successfully',
+      data: healthSummary,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * POST /api/v1/admin/keys/reset-stats
+   * Reset daily API key statistics
+   */
+  public static resetKeyStats = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('API key statistics reset triggered', { ip: req.ip });
+
+    apiKeyManager.resetDailyStatistics();
+
+    res.json({
+      success: true,
+      message: 'API key statistics reset successfully',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * GET /api/v1/admin/keys/best
+   * Get the current best API key recommendation
+   */
+  public static getBestKey = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Best API key request received', { ip: req.ip });
+
+    const bestKey = await apiKeyManager.getBestApiKey();
+    const keyStatuses = apiKeyManager.getKeyStatuses();
+
+    const bestKeyStatus = bestKey ? keyStatuses.find(status => status.keyUsed === bestKey) : null;
+
+    res.json({
+      success: true,
+      data: {
+        hasBestKey: !!bestKey,
+        bestKey: bestKeyStatus
+          ? {
+              keyId: bestKeyStatus.keyId,
+              healthScore: bestKeyStatus.healthScore,
+              isRateLimited: bestKeyStatus.isRateLimited,
+              lastUsed: bestKeyStatus.lastUsed,
+            }
+          : null,
+        totalHealthyKeys: keyStatuses.filter(s => s.isValid && !s.isRateLimited).length,
+      },
+      timestamp: new Date().toISOString(),
+    });
   });
 }

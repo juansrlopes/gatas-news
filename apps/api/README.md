@@ -40,6 +40,7 @@ apps/api/
 │   ├── middleware/      # Express middleware
 │   │   ├── errorHandler.ts
 │   │   ├── rateLimiter.ts
+│   │   ├── validation.ts    # NEW: Input validation
 │   │   └── security.ts
 │   ├── routes/          # API route definitions
 │   │   ├── news.ts
