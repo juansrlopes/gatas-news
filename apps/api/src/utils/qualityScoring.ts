@@ -350,48 +350,56 @@ export async function isAggressiveTrash(article: IArticle): Promise<boolean> {
     // Generic trends not about specific people
     /^(rostos ovais|clique nostálgico|tendência entre)/i,
     /^(o que está na moda|nova tendência)/i,
-    
+
     // Event coverage without personal focus
     /transforma.*frio.*festa/i, // "J Balvin transforma o frio paulistano em festa"
     /show suspenso.*custo/i,    // "Leonardo pode ter show suspenso"
-    
+
     // Generic lifestyle/beauty content
     /^(\d+\s*(dicas|segredos|truques|formas|maneiras))/i,
     /que funcionam de verdade/i,
-    
+
     // TV/Entertainment industry news (not personal)
     /programação.*filmes/i,
     /resumo.*novela/i,
     /reta final.*novela/i,
-    
+
     // SMART AGGRESSIVE PATTERNS - Remove obvious non-celebrity content
     // Health/Medical content (never about celebrities personally)
     /^(\d+\s*(mitos|verdades|benefícios|riscos|sinais|sintomas))/i,
     /doação de órgãos|transplante|medicina|saúde pública|vacina/i,
     /mitos e verdades|benefícios e riscos|cuidados médicos/i,
-    
+
     // Reality TV show content (not personal celebrity news)
     /^(a fazenda|big brother|reality|programa de tv)/i,
     /relembre.*tretas|histórias do reality|participantes do/i,
     /tretas históricas|reality show|temporada de/i,
-    
+
     // Business/Venue/Establishment news (not celebrity personal)
     /estreia em são paulo|nova casa|estabelecimento|inauguração/i,
     /music hall|teatro|casa de shows|venue|espaço cultural/i,
     /proposta única|conceito inovador|experiência gastronômica/i,
-    
+
     // Generic numbered content (tips, lists, guides)
     /^(\d+\s*(ativos|produtos|formas|maneiras|truques|segredos))/i,
     /^(confira|veja|saiba|descubra|conheça)\s+\d+/i,
     /que funcionam de verdade|mais eficazes|realmente funcionam/i,
-    
+
     // Event announcements without celebrity focus
     /anuncia.*datas|programação completa|ingressos à venda/i,
     /festival confirma|evento terá|show acontece/i,
+
+    // SPECIFIC TRASH PATTERNS - Based on user reports
+    /^resumo da novela/i,                    // "Resumo da novela 'Vale Tudo'"
+    /^rostos ovais.*tendência/i,             // "Rostos ovais: a tendência entre celebridades"
+    /^\d+\s*mitos e verdades sobre/i,        // "6 mitos e verdades sobre a doação de órgãos"
+    /leonardo.*pode ter show suspenso.*custo.*milhão/i, // Leonardo show cancellation
+    /^não é só.*leonardo pode ter show suspenso/i,      // "Não é só Ana Castela... Leonardo pode ter show suspenso"
   ];
   
   if (aggressiveTrashPatterns.some(pattern => pattern.test(text))) {
     logger.debug(`Filtering generic content: ${article.title.substring(0, 50)}...`);
+    return true; // ← CRITICAL FIX: Added missing return statement!
   }
   
   // 4. BUSINESS/EVENT FOCUS (not personal celebrity news)
