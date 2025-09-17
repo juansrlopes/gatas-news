@@ -1,4 +1,5 @@
 import { IArticle } from '../database/models/Article';
+import { celebrityService } from '../services/celebrityService';
 import logger from './logger';
 
 /**
@@ -311,6 +312,87 @@ export function isDefinitelyTrash(article: IArticle): boolean {
     (text.match(new RegExp(celebrityName.split(' ')[0], 'g')) || []).length < 1;
   
   return isObviousTrash && hasLowCelebrityMentions;
+}
+
+/**
+ * AGGRESSIVE TRASH DETECTION - Celebrity List Validation
+ * Returns true for articles that should be filtered out aggressively
+ */
+export async function isAggressiveTrash(article: IArticle): Promise<boolean> {
+  const text = `${article.title} ${article.description || ''}`.toLowerCase();
+  const celebrityName = article.celebrity?.toLowerCase() || '';
+  
+  // Get our actual celebrity list
+  const validCelebrities = await celebrityService.getCelebrities();
+  const validCelebrityNames = validCelebrities.map(name => name.toLowerCase());
+  
+  // 1. CELEBRITY LIST VALIDATION - Most important filter
+  if (celebrityName && celebrityName !== 'unknown') {
+    // Check if the assigned celebrity is in our actual list
+    const isValidCelebrity = validCelebrityNames.some(validName => 
+      validName.includes(celebrityName) || celebrityName.includes(validName)
+    );
+    
+    if (!isValidCelebrity) {
+      logger.debug(`Filtering article about non-list celebrity: ${celebrityName}`);
+      return true; // AGGRESSIVE: Remove articles about celebrities not in our list
+    }
+  }
+  
+  // 2. UNKNOWN CELEBRITY + LOW QUALITY
+  if (celebrityName === 'unknown') {
+    const qualityMetrics = calculateQualityScore(article);
+    if (qualityMetrics.totalScore < 50) {
+      return true; // AGGRESSIVE: Remove low-quality unknown articles
+    }
+  }
+  
+  // 3. GENERIC CONTENT PATTERNS (more aggressive)
+  const aggressiveTrashPatterns = [
+    // Generic trends not about specific people
+    /^(rostos ovais|clique nostálgico|tendência entre)/i,
+    /^(o que está na moda|nova tendência)/i,
+    
+    // Event coverage without personal focus
+    /transforma.*frio.*festa/i, // "J Balvin transforma o frio paulistano em festa"
+    /show suspenso.*custo/i,    // "Leonardo pode ter show suspenso"
+    
+    // Generic lifestyle/beauty content
+    /^(\d+\s*(dicas|segredos|truques|formas|maneiras))/i,
+    /que funcionam de verdade/i,
+    
+    // TV/Entertainment industry news (not personal)
+    /programação.*filmes/i,
+    /resumo.*novela/i,
+    /reta final.*novela/i,
+  ];
+  
+  if (aggressiveTrashPatterns.some(pattern => pattern.test(text))) {
+    logger.debug(`Filtering generic content: ${article.title.substring(0, 50)}...`);
+    return true;
+  }
+  
+  // 4. BUSINESS/EVENT FOCUS (not personal celebrity news)
+  const businessEventPatterns = [
+    /pode ter show suspenso/i,
+    /custo.*milhão/i,
+    /festival|the town|rock in rio/i,
+    /programação|horário.*assistir/i,
+  ];
+  
+  if (businessEventPatterns.some(pattern => pattern.test(text))) {
+    // Only filter if celebrity is not prominently featured in title
+    const titleWords = article.title.toLowerCase().split(' ');
+    const celebrityInTitle = celebrityName !== 'unknown' && 
+      titleWords.slice(0, 5).some(word => celebrityName.includes(word));
+    
+    if (!celebrityInTitle) {
+      logger.debug(`Filtering business/event content: ${article.title.substring(0, 50)}...`);
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 /**

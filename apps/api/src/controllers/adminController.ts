@@ -10,7 +10,7 @@ import { mongoConnection } from '../database/connections/mongodb';
 import { redisConnection } from '../database/connections/redis';
 import { apiKeyManager } from '../services/apiKeyManager';
 import { asyncHandler } from '../middleware/errorHandler';
-import { calculateQualityScore, isDefinitelyTrash, ArticleCategory } from '../utils/qualityScoring';
+import { calculateQualityScore, isDefinitelyTrash, isAggressiveTrash, ArticleCategory } from '../utils/qualityScoring';
 import logger from '../utils/logger';
 
 export class AdminController {
@@ -364,8 +364,8 @@ export class AdminController {
     let articlesToRemove = [];
     
     for (const article of allActiveArticles) {
-      // Use our existing isDefinitelyTrash function
-      if (isDefinitelyTrash(article)) {
+      // Use aggressive trash detection for better filtering
+      if (await isAggressiveTrash(article)) {
         articlesToRemove.push(article);
         if (articlesToRemove.length >= maxRemovalCount) break;
       }

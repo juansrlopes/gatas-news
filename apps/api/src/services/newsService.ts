@@ -12,7 +12,7 @@ import { ValidationError } from '../types/errors';
 import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
 import { 
   sortByQuality, 
-  isDefinitelyTrash
+  isAggressiveTrash
 } from '../utils/qualityScoring';
 // Removed unused import - simplified filtering approach
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
@@ -132,8 +132,8 @@ export class NewsService {
         result = await articleRepository.findWithFilters(filters, paginationOptions);
       }
 
-      // QUALITY SCORING: Apply quality scoring and ultra-conservative filtering
-      let processedArticles = this.applyQualityScoring(result.articles);
+      // AGGRESSIVE QUALITY SCORING: Apply celebrity list validation and aggressive filtering
+      let processedArticles = await this.applyQualityScoring(result.articles);
       logger.info(
         `Quality processing: ${result.articles.length} → ${processedArticles.length} articles (${result.articles.length - processedArticles.length} trash filtered)`
       );
@@ -158,7 +158,7 @@ export class NewsService {
           fallbackResult = await articleRepository.findWithFilters(filters, fallbackPagination);
         }
         
-        const fallbackProcessed = this.applyQualityScoring(fallbackResult.articles);
+        const fallbackProcessed = await this.applyQualityScoring(fallbackResult.articles);
         processedArticles = [...processedArticles, ...fallbackProcessed];
         logger.info(`Fallback fetch added ${fallbackProcessed.length} more articles, total: ${processedArticles.length}`);
       }
@@ -500,10 +500,10 @@ export class NewsService {
    * @returns Mixed articles maintaining recency while adding diversity
    */
   /**
-   * QUALITY SCORING: Apply quality scoring and ultra-conservative filtering
-   * Volume-first approach: only filter obvious trash (<5%), sort the rest by quality
+   * AGGRESSIVE QUALITY SCORING: Apply celebrity list validation and aggressive filtering
+   * New approach: Filter out non-list celebrities and obvious trash aggressively
    */
-  private applyQualityScoring(articles: IArticle[]): IArticle[] {
+  private async applyQualityScoring(articles: IArticle[]): Promise<IArticle[]> {
     // Step 1: Filter out completely broken articles (basic validation)
     const validArticles = articles.filter(article => {
       if (!article.title || !article.url) {
@@ -512,27 +512,29 @@ export class NewsService {
       return true;
     });
 
-    // Step 2: Ultra-conservative trash filtering (only obvious trash)
-    const nonTrashArticles = validArticles.filter(article => {
-      const isTrash = isDefinitelyTrash(article);
+    // Step 2: AGGRESSIVE filtering - celebrity list validation + trash patterns
+    const filteredArticles = [];
+    for (const article of validArticles) {
+      const isTrash = await isAggressiveTrash(article);
       if (isTrash) {
-        logger.debug(`Filtered obvious trash: "${article.title}"`);
+        logger.debug(`Aggressively filtered: "${article.title.substring(0, 50)}..."`);
+      } else {
+        filteredArticles.push(article);
       }
-      return !isTrash;
-    });
+    }
 
     // Step 3: Sort by quality score (best articles first)
-    const qualitySorted = sortByQuality(nonTrashArticles);
+    const qualitySorted = sortByQuality(filteredArticles);
     
     // Log quality metrics for monitoring
-    const trashFiltered = validArticles.length - nonTrashArticles.length;
+    const trashFiltered = validArticles.length - filteredArticles.length;
     const filterRate = validArticles.length > 0 ? (trashFiltered / validArticles.length) * 100 : 0;
     
-    logger.info(`Quality metrics: ${trashFiltered} trash filtered (${filterRate.toFixed(1)}% filter rate)`);
+    logger.info(`Aggressive filtering: ${trashFiltered} articles removed (${filterRate.toFixed(1)}% filter rate)`);
     
-    // Ensure we never filter more than 5% (safety check)
-    if (filterRate > 5) {
-      logger.warn(`⚠️ Filter rate ${filterRate.toFixed(1)}% exceeds 5% threshold - review filtering logic`);
+    // Warning if we filter too much (but allow more aggressive filtering now)
+    if (filterRate > 50) {
+      logger.warn(`⚠️ Very aggressive filtering: ${filterRate.toFixed(1)}% removed - monitor celebrity distribution`);
     }
 
     return qualitySorted;
