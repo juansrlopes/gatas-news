@@ -739,13 +739,14 @@ const AdminPage = () => {
           </div>
 
           {/* Right Column: Cache Management */}
-          <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
+          <div className="space-y-6">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
               🗄️ Cache Management
             </h2>
             
             {/* Cache Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-blue-900 p-4 rounded-lg border border-blue-700">
                 <h3 className="font-semibold text-blue-300">News Cache</h3>
                 <p className="text-blue-100">
@@ -764,48 +765,51 @@ const AdminPage = () => {
                   {cacheStats?.memory?.used || 'N/A'}
                 </p>
               </div>
+              </div>
             </div>
 
             {/* Cache Actions */}
-            <div className="flex flex-wrap gap-4 mb-4">
-              <button
-                onClick={() => clearCache('news')}
-                disabled={cacheLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-              >
-                {cacheLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
-                  '🗑️'
-                )}
-                Clear News Cache
-              </button>
-              
-              <button
-                onClick={() => clearCache('all')}
-                disabled={cacheLoading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-              >
-                {cacheLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
-                  '💥'
-                )}
-                Clear All Cache
-              </button>
-              
-              <button
-                onClick={fetchCacheStats}
-                disabled={cacheLoading}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-              >
-                {cacheLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
-                  '🔄'
-                )}
-                Refresh Stats
-              </button>
+            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <div className="flex flex-wrap gap-4">
+                <button
+                  onClick={() => clearCache('news')}
+                  disabled={cacheLoading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                >
+                  {cacheLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    '🗑️'
+                  )}
+                  Clear News Cache
+                </button>
+                
+                <button
+                  onClick={() => clearCache('all')}
+                  disabled={cacheLoading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                >
+                  {cacheLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    '💥'
+                  )}
+                  Clear All Cache
+                </button>
+                
+                <button
+                  onClick={fetchCacheStats}
+                  disabled={cacheLoading}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                >
+                  {cacheLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    '🔄'
+                  )}
+                  Refresh Stats
+                </button>
+              </div>
             </div>
 
             {/* Cache Message */}
