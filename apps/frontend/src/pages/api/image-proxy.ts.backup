@@ -100,18 +100,6 @@ const ALLOWED_DOMAINS = [
   'img.terra.com.br',
   'img-s-msn-com.akamaized.net',
   'media.zenfs.com',
-
-  // PHASE 3: Production domains found in logs (2025-09-17)
-  'tecoapple.com',
-  'www.revistabula.com',
-  'revistabula.com',
-  'wm.observador.pt',
-  'bordalo.observador.pt',
-  's3.observador.pt',
-  'observador.pt',
-  'images.terra.com',
-  'p2.trrsf.com',
-  'trrsf.com',
 ];
 
 /**
