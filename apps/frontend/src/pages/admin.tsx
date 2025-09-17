@@ -95,13 +95,22 @@ const AdminPage = () => {
     try {
       setCacheLoading(true);
       const response = await fetch(createApiUrl(API_ENDPOINTS.ADMIN_CACHE_STATS));
+      
+      if (response.status === 429) {
+        console.warn('Rate limited when fetching cache stats, will retry later');
+        setCacheMessage('⚠️ Rate limited - cache stats will load shortly');
+        return;
+      }
+      
       const data = await response.json();
       
       if (data.success) {
         setCacheStats(data.data);
+        setCacheMessage(''); // Clear any previous rate limit message
       }
     } catch (error) {
       console.error('Error fetching cache stats:', error);
+      setCacheMessage('❌ Failed to load cache stats');
     } finally {
       setCacheLoading(false);
     }
@@ -158,13 +167,21 @@ const AdminPage = () => {
         headers: { 'Content-Type': 'application/json' }
       });
       
-      if (!healthResponse.ok) {
+      if (healthResponse.status === 429) {
+        console.warn('⚠️ [DEBUG] API health check rate limited, continuing anyway...');
+        // Don't throw error for rate limits, just continue
+      } else if (!healthResponse.ok) {
         throw new Error(`API health check failed: ${healthResponse.status}`);
+      } else {
+        console.log('✅ [DEBUG] API health check passed');
       }
-      console.log('✅ [DEBUG] API health check passed');
     } catch (healthError) {
       console.error('❌ [DEBUG] API health check failed:', healthError);
-      throw new Error(`Cannot connect to API server. Please ensure the API is running on port 8000.`);
+      // Only throw error if it's not a rate limit issue
+      const errorMessage = healthError instanceof Error ? healthError.message : String(healthError);
+      if (!errorMessage.includes('429')) {
+        throw new Error(`Cannot connect to API server. Please ensure the API is running on port 8000.`);
+      }
     }
 
     try {
@@ -324,7 +341,7 @@ const AdminPage = () => {
     } else {
       console.log('🎯 [DEBUG] useEffect triggered (server-side), skipping fetch...');
     }
-  }, [fetchAllCelebrities, fetchCacheStats]); // Added dependencies
+  }, []); // Empty dependency array to run only once on mount
 
   // Filter celebrities when search term changes
   useEffect(() => {

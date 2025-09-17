@@ -44,3 +44,18 @@ export const healthLimiter = rateLimit({
     throw new RateLimitError('Too many health check requests.');
   },
 });
+
+// Very permissive rate limiter for admin endpoints (development-friendly)
+export const adminLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: config.isDevelopment ? 200 : 30, // 200 requests per minute in dev, 30 in prod
+  message: {
+    error: 'Too many admin requests from this IP, please try again later.',
+    retryAfter: '1 minute',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: () => {
+    throw new RateLimitError('Too many admin requests from this IP, please try again later.');
+  },
+});

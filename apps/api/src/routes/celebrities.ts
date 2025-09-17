@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CelebrityController } from '../controllers/celebrityController';
-import { generalLimiter } from '../middleware/rateLimiter';
+import { adminLimiter } from '../middleware/rateLimiter';
 import { validatePagination, validateSearch, validateSorting } from '../middleware/validation';
 
 const router = Router();
@@ -16,7 +16,7 @@ const router = Router();
  */
 router.get(
   '/',
-  generalLimiter,
+  adminLimiter,
   validatePagination,
   validateSorting(['name', 'totalArticles', 'avgArticlesPerDay', 'createdAt']),
   CelebrityController.getCelebrities
@@ -30,7 +30,7 @@ router.get(
  */
 router.get(
   '/search',
-  generalLimiter,
+  adminLimiter,
   validatePagination,
   validateSearch,
   CelebrityController.searchCelebrities
@@ -41,7 +41,7 @@ router.get(
  * @desc    Get celebrity statistics
  * @access  Admin
  */
-router.get('/stats', generalLimiter, CelebrityController.getCelebrityStats);
+router.get('/stats', adminLimiter, CelebrityController.getCelebrityStats);
 
 /**
  * @route   GET /api/v1/admin/celebrities/top-performers
@@ -49,7 +49,7 @@ router.get('/stats', generalLimiter, CelebrityController.getCelebrityStats);
  * @access  Admin
  * @params  ?limit=10
  */
-router.get('/top-performers', generalLimiter, CelebrityController.getTopPerformers);
+router.get('/top-performers', adminLimiter, CelebrityController.getTopPerformers);
 
 /**
  * @route   POST /api/v1/admin/celebrities/bulk-update-priority
@@ -57,7 +57,7 @@ router.get('/top-performers', generalLimiter, CelebrityController.getTopPerforme
  * @access  Admin
  * @body    { updates: [{ id: string, priority: number }] }
  */
-router.post('/bulk-update-priority', generalLimiter, CelebrityController.bulkUpdatePriority);
+router.post('/bulk-update-priority', adminLimiter, CelebrityController.bulkUpdatePriority);
 
 /**
  * @route   POST /api/v1/admin/celebrities
@@ -65,14 +65,14 @@ router.post('/bulk-update-priority', generalLimiter, CelebrityController.bulkUpd
  * @access  Admin
  * @body    { name, category, priority?, aliases?, searchTerms?, socialMedia?, description? }
  */
-router.post('/', generalLimiter, CelebrityController.createCelebrity);
+router.post('/', adminLimiter, CelebrityController.createCelebrity);
 
 /**
  * @route   GET /api/v1/admin/celebrities/:id
  * @desc    Get celebrity by ID
  * @access  Admin
  */
-router.get('/:id', generalLimiter, CelebrityController.getCelebrityById);
+router.get('/:id', adminLimiter, CelebrityController.getCelebrityById);
 
 /**
  * @route   PUT /api/v1/admin/celebrities/:id
@@ -80,20 +80,20 @@ router.get('/:id', generalLimiter, CelebrityController.getCelebrityById);
  * @access  Admin
  * @body    { name?, category?, priority?, aliases?, searchTerms?, socialMedia?, description?, isActive? }
  */
-router.put('/:id', generalLimiter, CelebrityController.updateCelebrity);
+router.put('/:id', adminLimiter, CelebrityController.updateCelebrity);
 
 /**
  * @route   DELETE /api/v1/admin/celebrities/:id
  * @desc    Soft delete celebrity (mark as inactive)
  * @access  Admin
  */
-router.delete('/:id', generalLimiter, CelebrityController.deleteCelebrity);
+router.delete('/:id', adminLimiter, CelebrityController.deleteCelebrity);
 
 /**
  * @route   POST /api/v1/admin/celebrities/:id/toggle-status
  * @desc    Toggle celebrity active status
  * @access  Admin
  */
-router.post('/:id/toggle-status', generalLimiter, CelebrityController.toggleStatus);
+router.post('/:id/toggle-status', adminLimiter, CelebrityController.toggleStatus);
 
 export default router;
