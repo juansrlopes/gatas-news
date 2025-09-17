@@ -69,26 +69,24 @@ const SocialMedia = () => {
           {displayedUsernames.map(username => (
             <article
               key={username}
-              className="bg-purple-950 bg-opacity-50 rounded-lg shadow hover:shadow-lg transition-all duration-200 hover:scale-105 flex flex-col h-[500px] sm:h-[550px] lg:h-[600px]"
+              className="bg-purple-950 bg-opacity-50 rounded-lg shadow hover:shadow-lg transition-all duration-200 hover:scale-105 overflow-hidden"
             >
-              <div className="rounded-t-lg overflow-hidden flex-1 min-h-0">
-                <div className="h-full relative">
-                  <div className="absolute inset-0">
-                    <InstagramEmbed 
-                      url={`https://www.instagram.com/${username}/`} 
-                      width="100%" 
-                      height="100%"
-                    />
-                  </div>
+              <div className="rounded-t-lg overflow-hidden h-[400px]">
+                <div className="w-full h-full">
+                  <InstagramEmbed 
+                    url={`https://www.instagram.com/${username}/`} 
+                    width="100%" 
+                    height={400}
+                  />
                 </div>
               </div>
-              <div className="text-center py-3 px-2 flex-shrink-0">
-                <h3 className="font-bold text-sm text-white mb-2">@{username}</h3>
+              <div className="text-center py-4 px-3">
+                <h3 className="font-bold text-sm text-white mb-3">@{username}</h3>
                 <a
                   href={`https://www.instagram.com/${username}/`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block px-3 py-1 bg-purple-600 text-white text-xs rounded-full hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors"
+                  className="inline-block px-4 py-2 bg-purple-600 text-white text-xs rounded-full hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors font-medium"
                   aria-label={`Ver perfil do Instagram de ${username}`}
                 >
                   Ver Perfil
