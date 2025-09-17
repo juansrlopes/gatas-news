@@ -16,6 +16,18 @@ interface Celebrity {
   updatedAt: string;
 }
 
+interface CacheStats {
+  news?: {
+    keys: number;
+  };
+  celebrities?: {
+    keys: number;
+  };
+  memory?: {
+    used: string;
+  };
+}
+
 interface _CelebritiesResponse {
   success: boolean;
   data: {
@@ -55,6 +67,11 @@ const AdminPage = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 
+  // Cache management state
+  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
+  const [cacheLoading, setCacheLoading] = useState(false);
+  const [cacheMessage, setCacheMessage] = useState('');
+
   // Helper function to show messages
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -72,6 +89,51 @@ const AdminPage = () => {
     setTotalPages(totalPagesCount);
     setTotalResults(totalItems);
   }, []);
+
+  // Cache management functions
+  const fetchCacheStats = useCallback(async () => {
+    try {
+      setCacheLoading(true);
+      const response = await fetch(createApiUrl(API_ENDPOINTS.ADMIN_CACHE_STATS));
+      const data = await response.json();
+      
+      if (data.success) {
+        setCacheStats(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching cache stats:', error);
+    } finally {
+      setCacheLoading(false);
+    }
+  }, []);
+
+  const clearCache = useCallback(async (type: 'all' | 'news') => {
+    try {
+      setCacheLoading(true);
+      setCacheMessage('');
+      
+      const endpoint = type === 'all' 
+        ? API_ENDPOINTS.ADMIN_CACHE_CLEAR 
+        : API_ENDPOINTS.ADMIN_CACHE_CLEAR_NEWS;
+      
+      const response = await fetch(createApiUrl(endpoint), {
+        method: 'POST',
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setCacheMessage(`✅ ${type === 'all' ? 'All cache' : 'News cache'} cleared successfully!`);
+        await fetchCacheStats(); // Refresh stats
+      } else {
+        setCacheMessage(`❌ Failed to clear cache: ${data.error}`);
+      }
+    } catch (error) {
+      setCacheMessage(`❌ Error clearing cache: ${error}`);
+    } finally {
+      setCacheLoading(false);
+    }
+  }, [fetchCacheStats]);
 
   // ROBUST: Load ALL celebrities with proper error handling
   const fetchAllCelebrities = useCallback(async () => {
@@ -258,10 +320,11 @@ const AdminPage = () => {
     if (typeof window !== 'undefined') {
       console.log('🎯 [DEBUG] useEffect triggered (client-side), calling fetchAllCelebrities...');
       fetchAllCelebrities();
+      fetchCacheStats(); // Load cache stats on page load
     } else {
       console.log('🎯 [DEBUG] useEffect triggered (server-side), skipping fetch...');
     }
-  }, []); // Empty dependency array - run once on mount
+  }, [fetchAllCelebrities, fetchCacheStats]); // Added dependencies
 
   // Filter celebrities when search term changes
   useEffect(() => {
@@ -651,6 +714,88 @@ const AdminPage = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Cache Management Section */}
+        <div className="bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-700">
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+            🗄️ Cache Management
+          </h2>
+          
+          {/* Cache Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-blue-900 p-4 rounded-lg border border-blue-700">
+              <h3 className="font-semibold text-blue-300">News Cache</h3>
+              <p className="text-blue-100">
+                {cacheStats?.news?.keys || 0} keys stored
+              </p>
+            </div>
+            <div className="bg-green-900 p-4 rounded-lg border border-green-700">
+              <h3 className="font-semibold text-green-300">Celebrity Cache</h3>
+              <p className="text-green-100">
+                {cacheStats?.celebrities?.keys || 0} keys stored
+              </p>
+            </div>
+            <div className="bg-purple-900 p-4 rounded-lg border border-purple-700">
+              <h3 className="font-semibold text-purple-300">Total Memory</h3>
+              <p className="text-purple-100">
+                {cacheStats?.memory?.used || 'N/A'}
+              </p>
+            </div>
+          </div>
+
+          {/* Cache Actions */}
+          <div className="flex flex-wrap gap-4 mb-4">
+            <button
+              onClick={() => clearCache('news')}
+              disabled={cacheLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+            >
+              {cacheLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                '🗑️'
+              )}
+              Clear News Cache
+            </button>
+            
+            <button
+              onClick={() => clearCache('all')}
+              disabled={cacheLoading}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+            >
+              {cacheLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                '💥'
+              )}
+              Clear All Cache
+            </button>
+            
+            <button
+              onClick={fetchCacheStats}
+              disabled={cacheLoading}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+            >
+              {cacheLoading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                '🔄'
+              )}
+              Refresh Stats
+            </button>
+          </div>
+
+          {/* Cache Message */}
+          {cacheMessage && (
+            <div className={`p-3 rounded-lg ${
+              cacheMessage.includes('✅') 
+                ? 'bg-green-900 text-green-100 border border-green-700' 
+                : 'bg-red-900 text-red-100 border border-red-700'
+            }`}>
+              {cacheMessage}
             </div>
           )}
         </div>

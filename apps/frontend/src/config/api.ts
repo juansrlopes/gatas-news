@@ -51,6 +51,11 @@ export const API_ENDPOINTS = {
   // Admin - Fetch
   ADMIN_FETCH_TRIGGER: '/api/v1/admin/fetch/trigger',
   ADMIN_FETCH_STATUS: '/api/v1/admin/fetch/status',
+
+  // Admin - Cache Management
+  ADMIN_CACHE_CLEAR: '/api/v1/admin/cache/clear',
+  ADMIN_CACHE_CLEAR_NEWS: '/api/v1/admin/cache/clear/news',
+  ADMIN_CACHE_STATS: '/api/v1/admin/cache/stats',
 } as const;
 
 /**
