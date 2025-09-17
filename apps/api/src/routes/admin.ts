@@ -22,6 +22,13 @@ const router = Router();
 router.post('/fetch/trigger', adminLimiter, AdminController.triggerNewsFetch);
 
 /**
+ * @route   POST /api/v1/admin/fetch/multi-source
+ * @desc    Manually trigger multi-source news fetch (NewsAPI + RSS)
+ * @access  Admin
+ */
+router.post("/fetch/multi-source", adminLimiter, AdminController.triggerMultiSourceFetch);
+
+/**
  * @route   POST /api/v1/admin/fetch-now
  * @desc    Simple manual fetch trigger (development only)
  * @access  Development

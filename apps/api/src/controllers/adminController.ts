@@ -935,4 +935,22 @@ export class AdminController {
       timestamp: new Date().toISOString(),
     });
   });
+
+  /**
+   * POST /api/v1/admin/fetch/multi-source
+   * Manually trigger multi-source news fetch (NewsAPI + RSS)
+   */
+  public static triggerMultiSourceFetch = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Multi-source news fetch triggered by admin', { ip: req.ip });
+
+    const { multiSourceNewsFetcher } = await import('../jobs/multiSourceNewsFetcher');
+    const result = await multiSourceNewsFetcher.fetchAndStoreNews();
+
+    res.json({
+      success: true,
+      message: 'Multi-source news fetch completed',
+      data: result,
+      timestamp: new Date().toISOString(),
+    });
+  });
 }
