@@ -339,10 +339,12 @@ export async function isAggressiveTrash(article: IArticle): Promise<boolean> {
     }
   }
   
-  // 2. BLOCK ALL UNKNOWN CELEBRITY ARTICLES
+  // 2. UNKNOWN CELEBRITY + LOW QUALITY
   if (celebrityName === 'unknown') {
-    logger.debug(`Filtering unknown celebrity article: "${article.title.substring(0, 50)}..."`);
-    return true; // BLOCK: Remove ALL unknown celebrity articles
+    const qualityMetrics = calculateQualityScore(article);
+    if (qualityMetrics.totalScore < 50) {
+      return true; // AGGRESSIVE: Remove low-quality unknown articles
+    }
   }
   
   // 3. GENERIC CONTENT PATTERNS (more aggressive)
@@ -391,7 +393,20 @@ export async function isAggressiveTrash(article: IArticle): Promise<boolean> {
   ];
   
   if (aggressiveTrashPatterns.some(pattern => pattern.test(text))) {
+    // SMART EXCEPTION: Keep if celebrity name is prominently featured in title
+    const titleWords = article.title.toLowerCase().split(' ');
+    const celebrityInTitle = celebrityName !== 'unknown' && 
+      titleWords.slice(0, 3).some(word => 
+        validCelebrityNames.some(celeb => celeb.toLowerCase().includes(word) || word.includes(celeb.toLowerCase()))
+      );
+    
+    if (celebrityInTitle) {
+      logger.debug(`Keeping article despite pattern match - celebrity in title: ${article.title.substring(0, 50)}...`);
+      return false; // Keep articles where celebrity is prominently featured
+    }
+    
     logger.debug(`Filtering generic content: ${article.title.substring(0, 50)}...`);
+    return true;
   }
   
   // 4. BUSINESS/EVENT FOCUS (not personal celebrity news)
