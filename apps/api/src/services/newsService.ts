@@ -108,7 +108,8 @@ export class NewsService {
 
       // Pagination options - fetch extra articles to account for filtering
       // Since we filter out 'unknown' articles, we need to fetch more to ensure we return the requested amount
-      const adjustedLimit = Math.ceil(limit * 1.5); // Fetch 50% more to account for filtering
+      // Increased buffer to 100% more to ensure we always have enough articles after filtering
+      const adjustedLimit = limit * 2; // Fetch double to account for filtering
       
       const paginationOptions: PaginationOptions = {
         page,
@@ -128,10 +129,35 @@ export class NewsService {
       }
 
       // PHASE 1: Apply content quality filtering at serve time
-      const filteredArticles = this.applyPhase1Filtering(result.articles);
+      let filteredArticles = this.applyPhase1Filtering(result.articles);
       logger.info(
         `Phase 1 filtering: ${result.articles.length} → ${filteredArticles.length} articles`
       );
+
+      // FALLBACK: If we don't have enough articles after filtering, fetch more
+      // Always try to get at least 25% more than requested to ensure full grids
+      const targetCount = Math.ceil(limit * 1.25);
+      if (filteredArticles.length < targetCount && result.hasMore) {
+        logger.info(`Need more articles (${filteredArticles.length}/${limit}), fetching additional batch...`);
+        
+        // Fetch next page to get more articles
+        const fallbackPagination: PaginationOptions = {
+          ...paginationOptions,
+          page: page + 1,
+          limit: limit * 2, // Fetch even more for fallback
+        };
+        
+        let fallbackResult;
+        if (searchTerm) {
+          fallbackResult = await articleRepository.search(searchTerm, filters, fallbackPagination);
+        } else {
+          fallbackResult = await articleRepository.findWithFilters(filters, fallbackPagination);
+        }
+        
+        const fallbackFiltered = this.applyPhase1Filtering(fallbackResult.articles);
+        filteredArticles = [...filteredArticles, ...fallbackFiltered];
+        logger.info(`Fallback fetch added ${fallbackFiltered.length} more articles, total: ${filteredArticles.length}`);
+      }
 
       // SIMPLIFIED: Show ALL articles without aggressive mixing
       // Users want maximum content, not filtered/mixed content
@@ -480,11 +506,12 @@ export class NewsService {
         return false;
       }
 
-      // PHASE 2 IMPROVEMENT: Filter out "unknown" celebrity articles
-      // Diagnostic analysis showed these are 14% trash (events, generic news, etc.)
-      if (article.celebrity === 'unknown') {
-        return false;
-      }
+      // TEMPORARILY DISABLED: Filter out "unknown" celebrity articles
+      // This was causing grid layout issues by reducing article count
+      // TODO: Re-enable with better logic to ensure minimum article count
+      // if (article.celebrity === 'unknown') {
+      //   return false;
+      // }
 
       // Keep all articles with identified celebrities
       return true;
