@@ -1,6 +1,7 @@
 import Parser from 'rss-parser';
 import { isArticleAboutCelebrity } from '../../../../../libs/shared/utils/src/index';
 import logger from '../../utils/logger';
+import axios from 'axios';
 
 export interface RSSFeed {
   name: string;
@@ -141,6 +142,14 @@ export class RSSService {
       for (const item of parsedFeed.items || []) {
         if (!item.title || !item.link) continue;
 
+        // Try to get image from RSS first, then scrape from article page
+        let imageUrl = this.extractImageUrl(item);
+        
+        // If no image in RSS, try to scrape from article page
+        if (!imageUrl && item.link) {
+          imageUrl = await this.scrapeImageFromArticle(item.link);
+        }
+
         const article: RSSArticle = {
           title: this.cleanText(item.title),
           description: this.cleanText(item.contentSnippet || item.content || item.description || ''),
@@ -151,7 +160,7 @@ export class RSSService {
             name: feed.name,
           },
           content: this.cleanText(item.content || ''),
-          urlToImage: this.extractImageUrl(item),
+          urlToImage: imageUrl,
         };
 
         // Only include articles from the last 30 days
@@ -208,6 +217,61 @@ export class RSSService {
     }
 
     return undefined;
+  }
+
+  /**
+   * Scrape image from article page when RSS doesn't provide one
+   */
+  private async scrapeImageFromArticle(articleUrl: string): Promise<string | undefined> {
+    try {
+      const response = await axios.get(articleUrl, {
+        timeout: 5000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; GatasNews/1.0; +https://gatas-news.vercel.app)',
+        },
+      });
+
+      const html = response.data;
+      
+      // Try different meta tags for images
+      const metaImagePatterns = [
+        /<meta\s+property="og:image"\s+content="([^"]+)"/i,
+        /<meta\s+name="twitter:image"\s+content="([^"]+)"/i,
+        /<meta\s+property="og:image:url"\s+content="([^"]+)"/i,
+        /<img[^>]+src="([^"]+)"[^>]*class="[^"]*featured[^"]*"/i,
+        /<img[^>]+class="[^"]*featured[^"]*"[^>]+src="([^"]+)"/i,
+        /<img[^>]+src="([^"]+)"[^>]*>/i, // Fallback to first image
+      ];
+
+      for (const pattern of metaImagePatterns) {
+        const match = html.match(pattern);
+        if (match && match[1]) {
+          let imageUrl = match[1];
+          
+          // Convert relative URLs to absolute
+          if (imageUrl.startsWith('//')) {
+            imageUrl = 'https:' + imageUrl;
+          } else if (imageUrl.startsWith('/')) {
+            const urlObj = new URL(articleUrl);
+            imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`;
+          }
+          
+          // Validate image URL
+          if (imageUrl.includes('.jpg') || imageUrl.includes('.jpeg') || 
+              imageUrl.includes('.png') || imageUrl.includes('.webp')) {
+            logger.debug(`🖼️ Scraped image from ${articleUrl}: ${imageUrl.substring(0, 50)}...`);
+            return imageUrl;
+          }
+        }
+      }
+
+      logger.debug(`🚫 No image found for ${articleUrl}`);
+      return undefined;
+
+    } catch (error) {
+      logger.debug(`❌ Failed to scrape image from ${articleUrl}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return undefined;
+    }
   }
 
   /**

@@ -29,6 +29,13 @@ router.post('/fetch/trigger', adminLimiter, AdminController.triggerNewsFetch);
 router.post("/fetch/multi-source", adminLimiter, AdminController.triggerMultiSourceFetch);
 
 /**
+ * @route   POST /api/v1/admin/articles/update-rss-images
+ * @desc    Update existing RSS articles with scraped images
+ * @access  Admin
+ */
+router.post("/articles/update-rss-images", adminLimiter, AdminController.updateRSSImages);
+
+/**
  * @route   POST /api/v1/admin/fetch-now
  * @desc    Simple manual fetch trigger (development only)
  * @access  Development

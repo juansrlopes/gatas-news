@@ -953,4 +953,22 @@ export class AdminController {
       timestamp: new Date().toISOString(),
     });
   });
+
+  /**
+   * POST /api/v1/admin/articles/update-rss-images
+   * Update existing RSS articles with scraped images
+   */
+  public static updateRSSImages = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('RSS image update triggered by admin', { ip: req.ip });
+
+    const { updateRSSArticlesWithImages } = await import('../scripts/updateRSSImages');
+    const result = await updateRSSArticlesWithImages();
+
+    res.json({
+      success: true,
+      message: 'RSS images update completed',
+      data: result,
+      timestamp: new Date().toISOString(),
+    });
+  });
 }

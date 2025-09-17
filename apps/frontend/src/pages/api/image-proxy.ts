@@ -112,6 +112,19 @@ const ALLOWED_DOMAINS = [
   'images.terra.com',
   'p2.trrsf.com',
   'trrsf.com',
+  
+  // PHASE 4: RSS and scraped image domains (2025-09-17)
+  's2-g1.glbimg.com',
+  's1-g1.glbimg.com',
+  'i.s3.glbimg.com',
+  'glbimg.com',
+  'istoe.com.br',
+  'img.istoe.com.br',
+  'assets.istoe.com.br',
+  'farofafa.com.br',
+  'wp-content',
+  'assets.b9.com.br',
+  'b9.com.br',
 ];
 
 /**
