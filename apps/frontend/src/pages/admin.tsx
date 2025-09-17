@@ -639,255 +639,185 @@ const AdminPage = () => {
         </div>
 
         {/* Celebrity List */}
-        <div className="bg-gray-800 rounded-lg border border-gray-700">
-          {loading ? (
-            <div className="p-8 text-center text-gray-400">Loading celebrities...</div>
-          ) : getCurrentPageCelebrities().length === 0 ? (
-            <div className="p-8 text-center">
-              <div className="text-gray-400 mb-2">No celebrities found</div>
-              <p className="text-gray-500 text-sm">
-                {searchTerm
-                  ? 'Try adjusting your search criteria'
-                  : 'Add your first celebrity to get started'}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {getCurrentPageCelebrities().map(celebrity => (
-                    <tr key={celebrity._id} className="hover:bg-gray-750">
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium text-white">{celebrity.name}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end space-x-2">
-                          <button
-                            onClick={() => handleEditCelebrity(celebrity)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCelebrity(celebrity._id, celebrity.name)}
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-400">
-                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
-                  {Math.min(currentPage * ITEMS_PER_PAGE, totalResults)} of {totalResults} results
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      const newPage = Math.max(1, currentPage - 1);
-                      setCurrentPage(newPage);
-                      updatePagination(filteredCelebrities, newPage);
-                    }}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
-                  >
-                    Previous
-                  </button>
-                  <span className="px-3 py-1 text-gray-400">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() => {
-                      const newPage = Math.min(totalPages, currentPage + 1);
-                      setCurrentPage(newPage);
-                      updatePagination(filteredCelebrities, newPage);
-                    }}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Two-column responsive layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Cache Management Section */}
-          <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
-          <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-            🗄️ Cache Management
-          </h2>
-          
-          {/* Cache Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-blue-900 p-4 rounded-lg border border-blue-700">
-              <h3 className="font-semibold text-blue-300">News Cache</h3>
-              <p className="text-blue-100">
-                {cacheStats?.news?.keys || 0} keys stored
-              </p>
-            </div>
-            <div className="bg-green-900 p-4 rounded-lg border border-green-700">
-              <h3 className="font-semibold text-green-300">Celebrity Cache</h3>
-              <p className="text-green-100">
-                {cacheStats?.celebrities?.keys || 0} keys stored
-              </p>
-            </div>
-            <div className="bg-purple-900 p-4 rounded-lg border border-purple-700">
-              <h3 className="font-semibold text-purple-300">Total Memory</h3>
-              <p className="text-purple-100">
-                {cacheStats?.memory?.used || 'N/A'}
-              </p>
-            </div>
+          {/* Left Column: Celebrity List */}
+          <div className="bg-gray-800 rounded-lg border border-gray-700">
+            {loading ? (
+              <div className="p-8 text-center text-gray-400">Loading celebrities...</div>
+            ) : getCurrentPageCelebrities().length === 0 ? (
+              <div className="p-8 text-center">
+                <div className="text-gray-400 mb-2">No celebrities found</div>
+                <p className="text-gray-500 text-sm">
+                  {searchTerm
+                    ? 'Try adjusting your search criteria'
+                    : 'Add your first celebrity to get started'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {getCurrentPageCelebrities().map(celebrity => (
+                      <tr key={celebrity._id} className="hover:bg-gray-750">
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="text-sm font-medium text-white">{celebrity.name}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end space-x-2">
+                            <button
+                              onClick={() => handleEditCelebrity(celebrity)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCelebrity(celebrity._id, celebrity.name)}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-400">
+                    Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{' '}
+                    {Math.min(currentPage * ITEMS_PER_PAGE, totalResults)} of {totalResults} results
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => {
+                        const newPage = Math.max(1, currentPage - 1);
+                        setCurrentPage(newPage);
+                        updatePagination(filteredCelebrities, newPage);
+                      }}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+                    >
+                      Previous
+                    </button>
+                    <span className="px-3 py-1 text-gray-400">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const newPage = Math.min(totalPages, currentPage + 1);
+                        setCurrentPage(newPage);
+                        updatePagination(filteredCelebrities, newPage);
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Cache Actions */}
-          <div className="flex flex-wrap gap-4 mb-4">
-            <button
-              onClick={() => clearCache('news')}
-              disabled={cacheLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-            >
-              {cacheLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                '🗑️'
-              )}
-              Clear News Cache
-            </button>
-            
-            <button
-              onClick={() => clearCache('all')}
-              disabled={cacheLoading}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-            >
-              {cacheLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                '💥'
-              )}
-              Clear All Cache
-            </button>
-            
-            <button
-              onClick={fetchCacheStats}
-              disabled={cacheLoading}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-            >
-              {cacheLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                '🔄'
-              )}
-              Refresh Stats
-            </button>
-          </div>
-
-          {/* Cache Message */}
-          {cacheMessage && (
-            <div className={`p-3 rounded-lg ${
-              cacheMessage.includes('✅') 
-                ? 'bg-green-900 text-green-100 border border-green-700' 
-                : 'bg-red-900 text-red-100 border border-red-700'
-            }`}>
-              {cacheMessage}
-            </div>
-          )}
-          </div>
-
-          {/* Additional Admin Tools Section */}
+          {/* Right Column: Cache Management */}
           <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
-              🛠️ Admin Tools
+              🗄️ Cache Management
             </h2>
             
-            {/* System Stats */}
-            <div className="space-y-4 mb-6">
-              <div className="bg-gray-700 p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-300 mb-2">System Status</h3>
-                <div className="text-sm text-gray-400">
-                  <div className="flex justify-between">
-                    <span>API Status:</span>
-                    <span className="text-green-400">✅ Online</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Database:</span>
-                    <span className="text-green-400">✅ Connected</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Cache:</span>
-                    <span className="text-green-400">✅ Redis Active</span>
-                  </div>
-                </div>
+            {/* Cache Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-blue-900 p-4 rounded-lg border border-blue-700">
+                <h3 className="font-semibold text-blue-300">News Cache</h3>
+                <p className="text-blue-100">
+                  {cacheStats?.news?.keys || 0} keys stored
+                </p>
               </div>
-              
-              <div className="bg-gray-700 p-4 rounded-lg">
-                <h3 className="font-semibold text-gray-300 mb-2">Quick Stats</h3>
-                <div className="text-sm text-gray-400">
-                  <div className="flex justify-between">
-                    <span>Total Celebrities:</span>
-                    <span className="text-blue-400">{allCelebrities.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Active Celebrities:</span>
-                    <span className="text-green-400">{allCelebrities.filter(c => c.isActive).length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Total Articles:</span>
-                    <span className="text-purple-400">{allCelebrities.reduce((sum, c) => sum + c.totalArticles, 0)}</span>
-                  </div>
-                </div>
+              <div className="bg-green-900 p-4 rounded-lg border border-green-700">
+                <h3 className="font-semibold text-green-300">Celebrity Cache</h3>
+                <p className="text-green-100">
+                  {cacheStats?.celebrities?.keys || 0} keys stored
+                </p>
+              </div>
+              <div className="bg-purple-900 p-4 rounded-lg border border-purple-700">
+                <h3 className="font-semibold text-purple-300">Total Memory</h3>
+                <p className="text-purple-100">
+                  {cacheStats?.memory?.used || 'N/A'}
+                </p>
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-gray-300">Quick Actions</h3>
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  onClick={() => window.open('/api/v1/admin/system/health', '_blank')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
-                >
-                  🏥 System Health Check
-                </button>
-                <button
-                  onClick={() => window.open('/', '_blank')}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
-                >
-                  🌐 View Frontend
-                </button>
-                <button
-                  onClick={() => window.open('/api/v1/news', '_blank')}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm flex items-center gap-2"
-                >
-                  📰 Test News API
-                </button>
-              </div>
+            {/* Cache Actions */}
+            <div className="flex flex-wrap gap-4 mb-4">
+              <button
+                onClick={() => clearCache('news')}
+                disabled={cacheLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+              >
+                {cacheLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  '🗑️'
+                )}
+                Clear News Cache
+              </button>
+              
+              <button
+                onClick={() => clearCache('all')}
+                disabled={cacheLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+              >
+                {cacheLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  '💥'
+                )}
+                Clear All Cache
+              </button>
+              
+              <button
+                onClick={fetchCacheStats}
+                disabled={cacheLoading}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+              >
+                {cacheLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  '🔄'
+                )}
+                Refresh Stats
+              </button>
             </div>
+
+            {/* Cache Message */}
+            {cacheMessage && (
+              <div className={`p-3 rounded-lg ${
+                cacheMessage.includes('✅') 
+                  ? 'bg-green-900 text-green-100 border border-green-700' 
+                  : 'bg-red-900 text-red-100 border border-red-700'
+              }`}>
+                {cacheMessage}
+              </div>
+            )}
           </div>
         </div>
       </main>
