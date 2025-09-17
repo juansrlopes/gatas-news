@@ -365,9 +365,46 @@ export async function isAggressiveTrash(article: IArticle): Promise<boolean> {
     /programação.*filmes/i,
     /resumo.*novela/i,
     /reta final.*novela/i,
+    
+    // SMART AGGRESSIVE PATTERNS - Remove obvious non-celebrity content
+    // Health/Medical content (never about celebrities personally)
+    /^(\d+\s*(mitos|verdades|benefícios|riscos|sinais|sintomas))/i,
+    /doação de órgãos|transplante|medicina|saúde pública|vacina/i,
+    /mitos e verdades|benefícios e riscos|cuidados médicos/i,
+    
+    // Reality TV show content (not personal celebrity news)
+    /^(a fazenda|big brother|reality|programa de tv)/i,
+    /relembre.*tretas|histórias do reality|participantes do/i,
+    /tretas históricas|reality show|temporada de/i,
+    
+    // Business/Venue/Establishment news (not celebrity personal)
+    /estreia em são paulo|nova casa|estabelecimento|inauguração/i,
+    /music hall|teatro|casa de shows|venue|espaço cultural/i,
+    /proposta única|conceito inovador|experiência gastronômica/i,
+    
+    // Generic numbered content (tips, lists, guides)
+    /^(\d+\s*(ativos|produtos|formas|maneiras|truques|segredos))/i,
+    /^(confira|veja|saiba|descubra|conheça)\s+\d+/i,
+    /que funcionam de verdade|mais eficazes|realmente funcionam/i,
+    
+    // Event announcements without celebrity focus
+    /anuncia.*datas|programação completa|ingressos à venda/i,
+    /festival confirma|evento terá|show acontece/i,
   ];
   
   if (aggressiveTrashPatterns.some(pattern => pattern.test(text))) {
+    // SMART EXCEPTION: Keep if celebrity name is prominently featured in title
+    const titleWords = article.title.toLowerCase().split(' ');
+    const celebrityInTitle = celebrityName !== 'unknown' && 
+      titleWords.slice(0, 3).some(word => 
+        validCelebrityNames.some(celeb => celeb.toLowerCase().includes(word) || word.includes(celeb.toLowerCase()))
+      );
+    
+    if (celebrityInTitle) {
+      logger.debug(`Keeping article despite pattern match - celebrity in title: ${article.title.substring(0, 50)}...`);
+      return false; // Keep articles where celebrity is prominently featured
+    }
+    
     logger.debug(`Filtering generic content: ${article.title.substring(0, 50)}...`);
     return true;
   }
