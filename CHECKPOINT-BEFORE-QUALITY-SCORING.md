@@ -1,7 +1,7 @@
 # 📍 CHECKPOINT: Before Quality Scoring Implementation
 
 **Date**: September 17, 2025  
-**Commit Hash**: (to be added after commit)  
+**Commit Hash**: `80a7847`  
 **Status**: WORKING BASELINE - Grid Layout Fixed
 
 ## 🎯 Current System State
@@ -96,7 +96,7 @@ If the new quality scoring approach fails:
 
 1. **Git Rollback**:
    ```bash
-   git checkout [COMMIT_HASH_FROM_THIS_CHECKPOINT]
+   git checkout 80a7847
    ```
 
 2. **Clear Cache**:
