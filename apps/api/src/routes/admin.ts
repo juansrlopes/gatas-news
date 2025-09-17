@@ -154,6 +154,22 @@ router.post('/articles/backup', generalLimiter, AdminController.backupArticles);
 router.get('/articles/quality-analysis', generalLimiter, AdminController.analyzeArticleQuality);
 
 /**
+ * @route   GET /api/v1/admin/articles/quality-analysis-enhanced
+ * @desc    Enhanced quality analysis using quality scoring system
+ * @access  Admin
+ * @params  ?sample=100&scores=true
+ */
+router.get('/articles/quality-analysis-enhanced', generalLimiter, AdminController.analyzeArticleQualityEnhanced);
+
+/**
+ * @route   POST /api/v1/admin/articles/cleanup-phase1
+ * @desc    Phase 1 cleanup: Remove obvious non-celebrity trash (<5% target)
+ * @access  Admin
+ * @params  ?dryRun=true (optional - preview without removing)
+ */
+router.post('/articles/cleanup-phase1', generalLimiter, AdminController.cleanupPhase1);
+
+/**
  * Scheduler Management Routes
  */
 

@@ -10,6 +10,7 @@ import { mongoConnection } from '../database/connections/mongodb';
 import { redisConnection } from '../database/connections/redis';
 import { apiKeyManager } from '../services/apiKeyManager';
 import { asyncHandler } from '../middleware/errorHandler';
+import { calculateQualityScore, isDefinitelyTrash, ArticleCategory } from '../utils/qualityScoring';
 import logger from '../utils/logger';
 
 export class AdminController {
@@ -234,6 +235,231 @@ export class AdminController {
       },
       timestamp: new Date().toISOString(),
     });
+  });
+
+  /**
+   * GET /api/v1/admin/articles/quality-analysis-enhanced
+   * Enhanced quality analysis using the new quality scoring system
+   */
+  public static analyzeArticleQualityEnhanced = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Enhanced article quality analysis requested', { ip: req.ip });
+
+    const sampleSize = parseInt(req.query.sample as string) || 100;
+    const includeScores = req.query.scores === 'true';
+
+    // Get random sample of active articles
+    const articles = await Article.aggregate([
+      { $match: { isActive: true } },
+      { $sample: { size: sampleSize } }
+    ]);
+
+    // Apply quality scoring to each article
+    const scoredArticles = articles.map(article => {
+      const qualityMetrics = calculateQualityScore(article);
+      const isTrash = isDefinitelyTrash(article);
+      
+      return {
+        id: article._id,
+        title: article.title,
+        celebrity: article.celebrity,
+        source: article.source?.name,
+        qualityScore: qualityMetrics.totalScore,
+        category: qualityMetrics.category,
+        trashProbability: qualityMetrics.trashProbability,
+        isDefinitelyTrash: isTrash,
+        ...(includeScores && { detailedScores: qualityMetrics })
+      };
+    });
+
+    // Analyze quality distribution
+    const qualityDistribution = {
+      excellent: scoredArticles.filter(a => a.qualityScore >= 80).length,
+      good: scoredArticles.filter(a => a.qualityScore >= 60 && a.qualityScore < 80).length,
+      fair: scoredArticles.filter(a => a.qualityScore >= 40 && a.qualityScore < 60).length,
+      poor: scoredArticles.filter(a => a.qualityScore >= 20 && a.qualityScore < 40).length,
+      trash: scoredArticles.filter(a => a.qualityScore < 20).length,
+    };
+
+    // Category distribution
+    const categoryDistribution = Object.values(ArticleCategory).reduce((acc, category) => {
+      acc[category] = scoredArticles.filter(a => a.category === category).length;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Trash analysis
+    const trashAnalysis = {
+      definitelyTrash: scoredArticles.filter(a => a.isDefinitelyTrash).length,
+      highTrashProbability: scoredArticles.filter(a => a.trashProbability >= 70).length,
+      mediumTrashProbability: scoredArticles.filter(a => a.trashProbability >= 40 && a.trashProbability < 70).length,
+      lowTrashProbability: scoredArticles.filter(a => a.trashProbability < 40).length,
+    };
+
+    // Celebrity distribution
+    const celebrityDistribution = scoredArticles.reduce((acc, article) => {
+      const celeb = article.celebrity || 'unknown';
+      if (!acc[celeb]) acc[celeb] = { count: 0, avgQuality: 0, totalQuality: 0 };
+      acc[celeb].count++;
+      acc[celeb].totalQuality += article.qualityScore;
+      acc[celeb].avgQuality = acc[celeb].totalQuality / acc[celeb].count;
+      return acc;
+    }, {} as Record<string, { count: number; avgQuality: number; totalQuality: number }>);
+
+    // Cleanup recommendations
+    const cleanupRecommendations = {
+      phase1_definiteTrash: scoredArticles.filter(a => a.isDefinitelyTrash),
+      phase2_lowQuality: scoredArticles.filter(a => a.qualityScore < 30 && !a.isDefinitelyTrash),
+      phase3_unknownCelebrity: scoredArticles.filter(a => a.celebrity === 'unknown' && a.qualityScore < 50),
+      totalRecommendedForRemoval: 0
+    };
+
+    cleanupRecommendations.totalRecommendedForRemoval = 
+      cleanupRecommendations.phase1_definiteTrash.length +
+      cleanupRecommendations.phase2_lowQuality.length +
+      cleanupRecommendations.phase3_unknownCelebrity.length;
+
+    const removalPercentage = (cleanupRecommendations.totalRecommendedForRemoval / articles.length) * 100;
+
+    res.json({
+      success: true,
+      data: {
+        sampleSize: articles.length,
+        qualityDistribution,
+        categoryDistribution,
+        trashAnalysis,
+        celebrityDistribution: Object.entries(celebrityDistribution)
+          .sort(([,a], [,b]) => b.avgQuality - a.avgQuality)
+          .slice(0, 10), // Top 10 celebrities by quality
+        cleanupRecommendations: {
+          ...cleanupRecommendations,
+          removalPercentage: Math.round(removalPercentage * 10) / 10,
+          safetyCheck: removalPercentage < 30 ? 'SAFE' : 'WARNING'
+        },
+        ...(includeScores && { 
+          sampleArticles: scoredArticles.slice(0, 20) // First 20 with scores
+        })
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * POST /api/v1/admin/articles/cleanup-phase1
+   * Phase 1 Cleanup: Remove only obvious non-celebrity trash (<5% target)
+   */
+  public static cleanupPhase1 = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    logger.info('Phase 1 cleanup requested', { ip: req.ip });
+
+    const dryRun = req.query.dryRun === 'true';
+    const maxRemovalPercentage = 5; // Never remove more than 5%
+
+    // Get total active articles count for safety check
+    const totalActiveArticles = await Article.countDocuments({ isActive: true });
+    const maxRemovalCount = Math.floor((totalActiveArticles * maxRemovalPercentage) / 100);
+
+    logger.info(`Phase 1 cleanup: ${totalActiveArticles} total articles, max removal: ${maxRemovalCount} (${maxRemovalPercentage}%)`);
+
+    // Phase 1: Ultra-conservative - use quality scoring to find definite trash
+    const allActiveArticles = await Article.find({ isActive: true }).limit(200); // Sample for safety
+    
+    let articlesToRemove = [];
+    
+    for (const article of allActiveArticles) {
+      // Use our existing isDefinitelyTrash function
+      if (isDefinitelyTrash(article)) {
+        articlesToRemove.push(article);
+        if (articlesToRemove.length >= maxRemovalCount) break;
+      }
+    }
+
+    // Remove duplicates and limit to max removal count
+    const uniqueArticlesToRemove = Array.from(
+      new Map(articlesToRemove.map(article => [article._id?.toString() || '', article])).values()
+    ).slice(0, maxRemovalCount);
+
+    const removalCount = uniqueArticlesToRemove.length;
+    const removalPercentage = (removalCount / totalActiveArticles) * 100;
+
+    // Safety check: abort if removal percentage exceeds threshold
+    if (removalPercentage > maxRemovalPercentage) {
+      logger.warn(`⚠️ Phase 1 cleanup aborted: ${removalPercentage.toFixed(1)}% exceeds ${maxRemovalPercentage}% threshold`);
+      res.status(400).json({
+        success: false,
+        error: `Cleanup would remove ${removalPercentage.toFixed(1)}% of articles, exceeding ${maxRemovalPercentage}% safety limit`,
+        data: {
+          totalArticles: totalActiveArticles,
+          articlesToRemove: removalCount,
+          removalPercentage: removalPercentage.toFixed(1),
+          safetyThreshold: maxRemovalPercentage
+        }
+      });
+      return;
+    }
+
+    if (dryRun) {
+      // Dry run: just show what would be removed
+      const previewArticles = uniqueArticlesToRemove.slice(0, 10).map(article => ({
+        id: article._id,
+        title: article.title,
+        celebrity: article.celebrity,
+        source: article.source?.name,
+        reason: 'Phase 1 pattern match'
+      }));
+
+      res.json({
+        success: true,
+        message: 'Dry run completed - no articles were removed',
+        data: {
+          totalArticles: totalActiveArticles,
+          articlesToRemove: removalCount,
+          removalPercentage: removalPercentage.toFixed(1),
+          safetyCheck: removalPercentage <= maxRemovalPercentage ? 'SAFE' : 'UNSAFE',
+          previewArticles,
+          totalPreview: Math.min(10, removalCount)
+        }
+      });
+    } else {
+      // Actual cleanup: mark articles as inactive (soft delete)
+      if (removalCount === 0) {
+        res.json({
+          success: true,
+          message: 'No articles found matching Phase 1 cleanup criteria',
+          data: {
+            totalArticles: totalActiveArticles,
+            articlesToRemove: 0,
+            removalPercentage: 0
+          }
+        });
+        return;
+      }
+
+      const articleIds = uniqueArticlesToRemove.map(article => article._id);
+      
+      const result = await Article.updateMany(
+        { _id: { $in: articleIds } },
+        { 
+          isActive: false,
+          updatedAt: new Date(),
+          deactivationReason: 'Phase 1 cleanup - obvious non-celebrity content'
+        }
+      );
+
+      logger.info(`✅ Phase 1 cleanup completed: ${result.modifiedCount} articles deactivated (${removalPercentage.toFixed(1)}%)`);
+
+      // Clear cache after cleanup
+      await enhancedCacheService.invalidateNewsCache();
+
+      res.json({
+        success: true,
+        message: `Phase 1 cleanup completed successfully`,
+        data: {
+          totalArticles: totalActiveArticles,
+          articlesRemoved: result.modifiedCount,
+          removalPercentage: removalPercentage.toFixed(1),
+          remainingArticles: totalActiveArticles - result.modifiedCount,
+          safetyCheck: 'SAFE'
+        }
+      });
+    }
   });
 
   /**
