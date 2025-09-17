@@ -10,6 +10,10 @@ import { newsFetcher } from '../jobs/newsFetcher';
 import { NewsResponse } from '../../../../libs/shared/types/src/index';
 import { ValidationError } from '../types/errors';
 import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
+import { 
+  sortByQuality, 
+  isDefinitelyTrash
+} from '../utils/qualityScoring';
 // Removed unused import - simplified filtering approach
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 import logger from '../utils/logger';
@@ -128,17 +132,17 @@ export class NewsService {
         result = await articleRepository.findWithFilters(filters, paginationOptions);
       }
 
-      // PHASE 1: Apply content quality filtering at serve time
-      let filteredArticles = this.applyPhase1Filtering(result.articles);
+      // QUALITY SCORING: Apply quality scoring and ultra-conservative filtering
+      let processedArticles = this.applyQualityScoring(result.articles);
       logger.info(
-        `Phase 1 filtering: ${result.articles.length} → ${filteredArticles.length} articles`
+        `Quality processing: ${result.articles.length} → ${processedArticles.length} articles (${result.articles.length - processedArticles.length} trash filtered)`
       );
 
       // FALLBACK: If we don't have enough articles after filtering, fetch more
       // Always try to get at least 25% more than requested to ensure full grids
       const targetCount = Math.ceil(limit * 1.25);
-      if (filteredArticles.length < targetCount && result.hasMore) {
-        logger.info(`Need more articles (${filteredArticles.length}/${limit}), fetching additional batch...`);
+      if (processedArticles.length < targetCount && result.hasMore) {
+        logger.info(`Need more articles (${processedArticles.length}/${limit}), fetching additional batch...`);
         
         // Fetch next page to get more articles
         const fallbackPagination: PaginationOptions = {
@@ -154,20 +158,20 @@ export class NewsService {
           fallbackResult = await articleRepository.findWithFilters(filters, fallbackPagination);
         }
         
-        const fallbackFiltered = this.applyPhase1Filtering(fallbackResult.articles);
-        filteredArticles = [...filteredArticles, ...fallbackFiltered];
-        logger.info(`Fallback fetch added ${fallbackFiltered.length} more articles, total: ${filteredArticles.length}`);
+        const fallbackProcessed = this.applyQualityScoring(fallbackResult.articles);
+        processedArticles = [...processedArticles, ...fallbackProcessed];
+        logger.info(`Fallback fetch added ${fallbackProcessed.length} more articles, total: ${processedArticles.length}`);
       }
 
       // SIMPLIFIED: Show ALL articles without aggressive mixing
       // Users want maximum content, not filtered/mixed content
-      // Trim to requested limit after filtering
-      let articlesToReturn = filteredArticles.slice(0, limit);
+      // Articles are now sorted by quality score (best first)
+      let articlesToReturn = processedArticles.slice(0, limit);
       
       // Only apply mixing if explicitly requested (never by default)
       if (willApplyMixing && !params.noMixing) {
-        articlesToReturn = this.applyConservativeMixing(filteredArticles);
-        logger.info(`Applied conservative mixing to ${filteredArticles.length} articles`);
+        articlesToReturn = this.applyConservativeMixing(processedArticles);
+        logger.info(`Applied conservative mixing to ${processedArticles.length} articles`);
         
         // Trim to requested limit after mixing (since we fetched extra articles)
         if (articlesToReturn.length > limit) {
@@ -175,9 +179,9 @@ export class NewsService {
           logger.info(`Trimmed mixed articles to requested limit: ${limit}`);
         }
       } else {
-        // Default behavior: show ALL articles up to the limit
-        articlesToReturn = filteredArticles.slice(0, limit);
-        logger.info(`No mixing applied, showing ${articlesToReturn.length} articles (limit: ${limit})`);
+        // Default behavior: show quality-sorted articles up to the limit
+        articlesToReturn = processedArticles.slice(0, limit);
+        logger.info(`Quality-sorted articles: showing ${articlesToReturn.length} articles (limit: ${limit})`);
       }
 
       // Convert to API response format
@@ -496,26 +500,42 @@ export class NewsService {
    * @returns Mixed articles maintaining recency while adding diversity
    */
   /**
-   * PHASE 2 FILTERING: Remove obvious trash while preserving volume
-   * Based on diagnostic analysis showing 14% "unknown" articles are trash
+   * QUALITY SCORING: Apply quality scoring and ultra-conservative filtering
+   * Volume-first approach: only filter obvious trash (<5%), sort the rest by quality
    */
-  private applyPhase1Filtering(articles: IArticle[]): IArticle[] {
-    return articles.filter(article => {
-      // Filter out completely broken articles
+  private applyQualityScoring(articles: IArticle[]): IArticle[] {
+    // Step 1: Filter out completely broken articles (basic validation)
+    const validArticles = articles.filter(article => {
       if (!article.title || !article.url) {
         return false;
       }
-
-      // TEMPORARILY DISABLED: Filter out "unknown" celebrity articles
-      // This was causing grid layout issues by reducing article count
-      // TODO: Re-enable with better logic to ensure minimum article count
-      // if (article.celebrity === 'unknown') {
-      //   return false;
-      // }
-
-      // Keep all articles with identified celebrities
       return true;
     });
+
+    // Step 2: Ultra-conservative trash filtering (only obvious trash)
+    const nonTrashArticles = validArticles.filter(article => {
+      const isTrash = isDefinitelyTrash(article);
+      if (isTrash) {
+        logger.debug(`Filtered obvious trash: "${article.title}"`);
+      }
+      return !isTrash;
+    });
+
+    // Step 3: Sort by quality score (best articles first)
+    const qualitySorted = sortByQuality(nonTrashArticles);
+    
+    // Log quality metrics for monitoring
+    const trashFiltered = validArticles.length - nonTrashArticles.length;
+    const filterRate = validArticles.length > 0 ? (trashFiltered / validArticles.length) * 100 : 0;
+    
+    logger.info(`Quality metrics: ${trashFiltered} trash filtered (${filterRate.toFixed(1)}% filter rate)`);
+    
+    // Ensure we never filter more than 5% (safety check)
+    if (filterRate > 5) {
+      logger.warn(`⚠️ Filter rate ${filterRate.toFixed(1)}% exceeds 5% threshold - review filtering logic`);
+    }
+
+    return qualitySorted;
   }
 
   private applyConservativeMixing(articles: IArticle[]): IArticle[] {
