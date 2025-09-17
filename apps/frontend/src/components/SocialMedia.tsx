@@ -71,13 +71,17 @@ const SocialMedia = () => {
               key={username}
               className="bg-purple-950 bg-opacity-50 rounded-lg shadow hover:shadow-lg transition-all duration-200 hover:scale-105 overflow-hidden"
             >
-              <div className="rounded-t-lg overflow-hidden h-[400px]">
-                <div className="w-full h-full">
-                  <InstagramEmbed 
-                    url={`https://www.instagram.com/${username}/`} 
-                    width="100%" 
-                    height={400}
-                  />
+              <div className="rounded-t-lg overflow-hidden h-[480px] relative bg-white">
+                <div className="w-full h-full relative">
+                  {/* Instagram embed container with fixed visible area */}
+                  <div className="absolute inset-0 overflow-hidden">
+                    <InstagramEmbed 
+                      url={`https://www.instagram.com/${username}/`} 
+                      width="100%" 
+                    />
+                  </div>
+                  {/* Gradient overlay to fade out bottom content if it extends beyond */}
+                  <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none"></div>
                 </div>
               </div>
               <div className="text-center py-4 px-3">
