@@ -640,7 +640,7 @@ const AdminPage = () => {
 
         {/* Celebrity List */}
         {/* Two-column responsive layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[70%_30%] gap-8 mb-8">
           {/* Left Column: Celebrity List */}
           <div className="bg-gray-800 rounded-lg border border-gray-700">
             {loading ? (
@@ -747,7 +747,7 @@ const AdminPage = () => {
             {/* Cache Statistics & Actions */}
             <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
               {/* Cache Statistics */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 gap-4 mb-6">
                 <div className="bg-blue-900 p-4 rounded-lg border border-blue-700">
                   <h3 className="font-semibold text-blue-300">News Cache</h3>
                   <p className="text-blue-100">
@@ -769,7 +769,7 @@ const AdminPage = () => {
               </div>
 
               {/* Cache Actions */}
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-col gap-3">
                 <button
                   onClick={() => clearCache('news')}
                   disabled={cacheLoading}
