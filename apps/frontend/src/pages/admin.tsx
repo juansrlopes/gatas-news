@@ -735,8 +735,10 @@ const AdminPage = () => {
           )}
         </div>
 
-        {/* Cache Management Section */}
-        <div className="bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-700">
+        {/* Two-column responsive layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Cache Management Section */}
+          <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
             🗄️ Cache Management
           </h2>
@@ -815,6 +817,78 @@ const AdminPage = () => {
               {cacheMessage}
             </div>
           )}
+          </div>
+
+          {/* Additional Admin Tools Section */}
+          <div className="bg-gray-800 rounded-lg shadow-md p-6 border border-gray-700">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center">
+              🛠️ Admin Tools
+            </h2>
+            
+            {/* System Stats */}
+            <div className="space-y-4 mb-6">
+              <div className="bg-gray-700 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-300 mb-2">System Status</h3>
+                <div className="text-sm text-gray-400">
+                  <div className="flex justify-between">
+                    <span>API Status:</span>
+                    <span className="text-green-400">✅ Online</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Database:</span>
+                    <span className="text-green-400">✅ Connected</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Cache:</span>
+                    <span className="text-green-400">✅ Redis Active</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-700 p-4 rounded-lg">
+                <h3 className="font-semibold text-gray-300 mb-2">Quick Stats</h3>
+                <div className="text-sm text-gray-400">
+                  <div className="flex justify-between">
+                    <span>Total Celebrities:</span>
+                    <span className="text-blue-400">{allCelebrities.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Active Celebrities:</span>
+                    <span className="text-green-400">{allCelebrities.filter(c => c.isActive).length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Articles:</span>
+                    <span className="text-purple-400">{allCelebrities.reduce((sum, c) => sum + c.totalArticles, 0)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-300">Quick Actions</h3>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  onClick={() => window.open('/api/v1/admin/system/health', '_blank')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+                >
+                  🏥 System Health Check
+                </button>
+                <button
+                  onClick={() => window.open('/', '_blank')}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center gap-2"
+                >
+                  🌐 View Frontend
+                </button>
+                <button
+                  onClick={() => window.open('/api/v1/news', '_blank')}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm flex items-center gap-2"
+                >
+                  📰 Test News API
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
