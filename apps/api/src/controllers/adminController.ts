@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { newsService } from '../services/newsService';
 import { enhancedCacheService } from '../services/cacheService';
 import { jobScheduler } from '../jobs/scheduler';
-import { newsFetcher } from '../jobs/newsFetcher';
+// Removed newsFetcher import - now using multiSourceNewsFetcher
 import { articleRepository } from '../database/repositories/ArticleRepository';
 import { Article } from '../database/models/Article';
 import { FetchLog } from '../database/models/FetchLog';
@@ -11,6 +11,7 @@ import { redisConnection } from '../database/connections/redis';
 import { apiKeyManager } from '../services/apiKeyManager';
 import { asyncHandler } from '../middleware/errorHandler';
 import { calculateQualityScore, isDefinitelyTrash, isAggressiveTrash, ArticleCategory } from '../utils/qualityScoring';
+import { serperUsageTracker } from '../services/serper/serperUsageTracker';
 import logger from '../utils/logger';
 
 export class AdminController {
@@ -467,14 +468,15 @@ export class AdminController {
    * Get fetch job status and history
    */
   public static getFetchStatus = asyncHandler(async (req: Request, res: Response) => {
-    const [lastFetch, recentLogs, failedFetches, jobsStatus] = await Promise.all([
-      newsFetcher.getLastFetchInfo(),
+    const [recentLogs, failedFetches, jobsStatus] = await Promise.all([
       FetchLog.getRecentLogs(10),
       FetchLog.getFailedFetches(5),
       Promise.resolve(jobScheduler.getJobsStatus()),
     ]);
 
-    const isDue = await newsFetcher.isFetchDue();
+    // Get last fetch info from logs instead of newsFetcher
+    const lastFetch = recentLogs.length > 0 ? recentLogs[0] : null;
+    const isDue = true; // Always allow manual triggers for multi-source fetcher
 
     res.json({
       success: true,
@@ -938,10 +940,10 @@ export class AdminController {
 
   /**
    * POST /api/v1/admin/fetch/multi-source
-   * Manually trigger multi-source news fetch (NewsAPI + RSS)
+   * Manually trigger multi-source news fetch (Serper + RSS)
    */
   public static triggerMultiSourceFetch = asyncHandler(async (req: Request, res: Response) => {
-    logger.info('Multi-source news fetch triggered by admin', { ip: req.ip });
+    logger.info('Multi-source news fetch triggered by admin (Serper + RSS)', { ip: req.ip });
 
     const { multiSourceNewsFetcher } = await import('../jobs/multiSourceNewsFetcher');
     const result = await multiSourceNewsFetcher.fetchAndStoreNews();
@@ -968,6 +970,52 @@ export class AdminController {
       success: true,
       message: 'RSS images update completed',
       data: result,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * GET /api/v1/admin/serper/usage
+   * Get Serper API usage statistics
+   */
+  public static getSerperUsage = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Serper usage stats requested', { ip: req.ip });
+
+    const usageStats = serperUsageTracker.getUsageStats();
+
+    res.json({
+      success: true,
+      message: 'Serper usage statistics',
+      data: {
+        usage: usageStats,
+        limits: {
+          daily: 100,
+          monthly: 2000,
+        },
+        recommendations: {
+          dailyUsagePercentage: Math.round((usageStats.dailyCount / 100) * 100),
+          monthlyUsagePercentage: Math.round((usageStats.monthlyCount / 2000) * 100),
+          estimatedMonthlyUsage: Math.round(usageStats.dailyCount * 30),
+          withinLimits: !usageStats.dailyLimitReached && !usageStats.monthlyLimitReached,
+        },
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * POST /api/v1/admin/serper/reset-usage
+   * Reset Serper usage counters (for testing/emergency)
+   */
+  public static resetSerperUsage = asyncHandler(async (req: Request, res: Response) => {
+    logger.info('Serper usage reset requested', { ip: req.ip });
+
+    serperUsageTracker.resetCounters();
+
+    res.json({
+      success: true,
+      message: 'Serper usage counters reset successfully',
+      data: serperUsageTracker.getUsageStats(),
       timestamp: new Date().toISOString(),
     });
   });

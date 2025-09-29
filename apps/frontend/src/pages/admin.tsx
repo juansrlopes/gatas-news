@@ -580,7 +580,7 @@ const AdminPage = () => {
                 console.log('🔥 [DEBUG] Manual fetch button clicked!');
                 try {
                   console.log('🧪 [DEBUG] Testing direct API call...');
-                  const testUrl = 'http://localhost:8000/api/v1/admin/celebrities?page=1&limit=1';
+                  const testUrl = `${createApiUrl(API_ENDPOINTS.ADMIN_CELEBRITIES)}?page=1&limit=1`;
                   console.log('🌐 [DEBUG] Test URL:', testUrl);
                   const response = await fetch(testUrl);
                   console.log('📡 [DEBUG] Test response status:', response.status);

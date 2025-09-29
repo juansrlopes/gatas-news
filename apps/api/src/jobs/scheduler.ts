@@ -1,5 +1,5 @@
 import * as cron from 'node-cron';
-import { newsFetcher } from './newsFetcher';
+import { multiSourceNewsFetcher } from './multiSourceNewsFetcher';
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 import { apiKeyManager } from '../services/apiKeyManager';
 import logger from '../utils/logger';
@@ -79,7 +79,7 @@ export class JobScheduler {
         logger.info('🔄 Scheduled news fetch job starting...');
 
         try {
-          const result = await newsFetcher.fetchAndStoreNews();
+          const result = await multiSourceNewsFetcher.fetchAndStoreNews();
 
           if (result.success) {
             logger.info('✅ Scheduled news fetch completed successfully', {
@@ -257,7 +257,7 @@ export class JobScheduler {
       // CRITICAL FIX: Always check article count, not just fetch logs
       const articleCount = await Article.countDocuments({ isActive: true });
 
-      const isFetchDue = await newsFetcher.isFetchDue();
+      const isFetchDue = true; // Multi-source fetcher can always run
       const shouldFetch = isFetchDue || articleCount === 0;
 
       if (shouldFetch) {
@@ -270,7 +270,7 @@ export class JobScheduler {
         // Run in background to not block server startup
         setImmediate(async () => {
           try {
-            const result = await newsFetcher.fetchAndStoreNews();
+            const result = await multiSourceNewsFetcher.fetchAndStoreNews();
 
             if (result.success) {
               logger.info('✅ Initial news fetch completed', {
@@ -306,7 +306,7 @@ export class JobScheduler {
     duration: number;
   }> {
     logger.info('🔄 Manual news fetch triggered...');
-    return await newsFetcher.fetchAndStoreNews();
+    return await multiSourceNewsFetcher.fetchAndStoreNews();
   }
 
   /**

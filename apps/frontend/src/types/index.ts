@@ -1,7 +1,7 @@
 // Article types
 export interface Article {
   url: string;
-  urlToImage: string;
+  imageUrl: string;
   title: string;
   description: string;
   publishedAt?: string;
@@ -14,7 +14,7 @@ export interface Article {
 }
 
 // API Response types
-export interface NewsApiResponse {
+export interface ApiResponse {
   articles: Article[];
   totalResults?: number;
   status?: string;

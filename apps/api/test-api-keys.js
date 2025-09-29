@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * API Key Testing Script
+ * Serper API Key Testing Script
  *
- * Tests all configured NewsAPI keys to check their status and rate limits.
+ * Tests all configured Serper API keys to check their status and rate limits.
  * Run this script to verify which keys are working before starting the API.
  *
  * Usage:
@@ -38,17 +38,18 @@ async function testApiKey(apiKey, keyNumber, totalKeys) {
   const maskedKey = `${apiKey.substring(0, 8)}...`;
 
   try {
-    log(colors.blue, `\n🔍 Testing key ${keyNumber}/${totalKeys}: ${maskedKey}`);
+    log(colors.blue, `\n🔍 Testing Serper key ${keyNumber}/${totalKeys}: ${maskedKey}`);
 
     const startTime = Date.now();
-    const response = await axios.get('https://newsapi.org/v2/everything', {
-      params: {
-        q: 'test',
-        pageSize: 1,
-        language: 'pt',
-      },
+    const response = await axios.post('https://google.serper.dev/search', {
+      q: 'test',
+      gl: 'br',
+      hl: 'pt',
+      num: 1,
+    }, {
       headers: {
-        'X-API-Key': apiKey,
+        'X-API-KEY': apiKey,
+        'Content-Type': 'application/json',
         'User-Agent': 'Gatas-News-KeyTester/1.0',
       },
       timeout: 10000,
@@ -58,29 +59,24 @@ async function testApiKey(apiKey, keyNumber, totalKeys) {
 
     if (response.status === 200) {
       const data = response.data;
-      log(colors.green, `✅ Key ${keyNumber} is WORKING`);
+      log(colors.green, `✅ Serper key ${keyNumber} is WORKING`);
       log(colors.cyan, `   📊 Response time: ${responseTime}ms`);
-      log(colors.cyan, `   📰 Total articles available: ${data.totalResults || 'Unknown'}`);
+      log(colors.cyan, `   🔍 Search results: ${data.organic?.length || 0} organic results`);
+      log(colors.cyan, `   📰 News results: ${data.news?.length || 0} news results`);
 
-      // Check rate limit headers if available
-      const remaining = response.headers['x-ratelimit-remaining'];
-      const resetTime = response.headers['x-ratelimit-reset'];
-
-      if (remaining !== undefined) {
-        log(colors.cyan, `   🔄 Requests remaining: ${remaining}`);
-      }
-
-      if (resetTime) {
-        const resetDate = new Date(parseInt(resetTime) * 1000);
-        log(colors.cyan, `   ⏰ Rate limit resets: ${resetDate.toLocaleString()}`);
+      // Serper doesn't provide rate limit headers in the same way
+      // But we can check if the response looks healthy
+      if (data.organic || data.news) {
+        log(colors.cyan, `   ✅ API responding with valid data`);
       }
 
       return {
         working: true,
         key: maskedKey,
         responseTime,
-        remaining: remaining ? parseInt(remaining) : null,
-        resetTime: resetTime ? new Date(parseInt(resetTime) * 1000) : null,
+        hasData: !!(data.organic || data.news),
+        organicResults: data.organic?.length || 0,
+        newsResults: data.news?.length || 0,
       };
     }
   } catch (error) {
@@ -89,22 +85,15 @@ async function testApiKey(apiKey, keyNumber, totalKeys) {
       const message = error.response.data?.message || error.response.statusText;
 
       if (status === 429) {
-        log(colors.red, `❌ Key ${keyNumber} is RATE LIMITED`);
-        log(colors.yellow, `   💡 ${message}`);
-
-        // Try to extract reset time from error message
-        const resetMatch = message.match(/(\d+)\s*hours?/i);
-        if (resetMatch) {
-          const hours = parseInt(resetMatch[1]);
-          const resetTime = new Date(Date.now() + hours * 60 * 60 * 1000);
-          log(colors.yellow, `   ⏰ Estimated reset: ${resetTime.toLocaleString()}`);
-        }
-      } else if (status === 401) {
-        log(colors.red, `❌ Key ${keyNumber} is INVALID`);
-        log(colors.yellow, `   💡 ${message}`);
+        log(colors.red, `❌ Serper key ${keyNumber} is RATE LIMITED`);
+        log(colors.yellow, `   💡 ${message || 'Too many requests'}`);
+        log(colors.yellow, `   ⏰ Rate limits typically reset within an hour`);
+      } else if (status === 401 || status === 403) {
+        log(colors.red, `❌ Serper key ${keyNumber} is INVALID`);
+        log(colors.yellow, `   💡 ${message || 'Invalid API key'}`);
       } else {
-        log(colors.red, `❌ Key ${keyNumber} failed with HTTP ${status}`);
-        log(colors.yellow, `   💡 ${message}`);
+        log(colors.red, `❌ Serper key ${keyNumber} failed with HTTP ${status}`);
+        log(colors.yellow, `   💡 ${message || 'Unknown error'}`);
       }
 
       return {
@@ -115,7 +104,7 @@ async function testApiKey(apiKey, keyNumber, totalKeys) {
         invalid: status === 401,
       };
     } else {
-      log(colors.red, `❌ Key ${keyNumber} failed: ${error.message}`);
+      log(colors.red, `❌ Serper key ${keyNumber} failed: ${error.message}`);
       return {
         working: false,
         key: maskedKey,
@@ -126,22 +115,20 @@ async function testApiKey(apiKey, keyNumber, totalKeys) {
 }
 
 async function main() {
-  log(colors.bold + colors.cyan, '\n🔑 GATAS NEWS - API KEY TESTER');
+  log(colors.bold + colors.cyan, '\n🔑 GATAS NEWS - SERPER API KEY TESTER');
   log(colors.cyan, '='.repeat(50));
 
-  // Collect all API keys
+  // Collect all Serper API keys
   const apiKeys = [
-    process.env.NEWS_API_KEY,
-    process.env.NEWS_API_KEY_BACKUP,
-    process.env.NEWS_API_KEY_BACKUP_2,
+    process.env.SERPER_API_KEY,
+    process.env.SERPER_API_KEY_BACKUP,
   ].filter(Boolean);
 
   if (apiKeys.length === 0) {
-    log(colors.red, '❌ No API keys found in environment variables');
+    log(colors.red, '❌ No Serper API keys found in environment variables');
     log(colors.yellow, '💡 Make sure these are set in your .env file:');
-    log(colors.yellow, '   - NEWS_API_KEY');
-    log(colors.yellow, '   - NEWS_API_KEY_BACKUP');
-    log(colors.yellow, '   - NEWS_API_KEY_BACKUP_2');
+    log(colors.yellow, '   - SERPER_API_KEY');
+    log(colors.yellow, '   - SERPER_API_KEY_BACKUP');
     process.exit(1);
   }
 
@@ -173,7 +160,7 @@ async function main() {
   log(colors.red, `🚫 Invalid keys: ${invalidKeys.length}/${results.length}`);
 
   if (workingKeys.length > 0) {
-    log(colors.green, '\n🎉 GOOD NEWS: You have working API keys!');
+    log(colors.green, '\n🎉 GOOD NEWS: You have working Serper API keys!');
     log(colors.cyan, '💡 The API server should start successfully.');
 
     // Show fastest key
@@ -181,25 +168,31 @@ async function main() {
       current.responseTime < fastest.responseTime ? current : fastest
     );
     log(colors.cyan, `⚡ Fastest key: ${fastestKey.key} (${fastestKey.responseTime}ms)`);
+    
+    // Show data availability
+    const keysWithData = workingKeys.filter(k => k.hasData);
+    if (keysWithData.length > 0) {
+      log(colors.cyan, `📊 Keys returning data: ${keysWithData.length}/${workingKeys.length}`);
+    }
   } else {
-    log(colors.red, '\n🚨 BAD NEWS: No working API keys found!');
+    log(colors.red, '\n🚨 BAD NEWS: No working Serper API keys found!');
     log(colors.yellow, '💡 Solutions:');
 
     if (rateLimitedKeys.length > 0) {
-      log(colors.yellow, '   1. ⏰ Wait for rate limits to reset (~24 hours)');
-      log(colors.yellow, '   2. 🔑 Get additional API keys from https://newsapi.org/register');
+      log(colors.yellow, '   1. ⏰ Wait for rate limits to reset (~1 hour)');
+      log(colors.yellow, '   2. 🔑 Get additional API keys from https://serper.dev/');
     }
 
     if (invalidKeys.length > 0) {
       log(colors.yellow, '   3. 🔄 Replace invalid keys with new ones');
     }
 
-    log(colors.yellow, '   4. 💰 Upgrade to a paid NewsAPI plan for higher limits');
+    log(colors.yellow, '   4. 💰 Upgrade to a paid Serper plan for higher limits');
     log(colors.red, '\n❌ The API server will NOT start until you have working keys.');
   }
 
-  log(colors.cyan, '\n🔗 Get more keys: https://newsapi.org/register');
-  log(colors.cyan, '📚 Rate limits: https://newsapi.org/pricing');
+  log(colors.cyan, '\n🔗 Get more keys: https://serper.dev/');
+  log(colors.cyan, '📚 Rate limits: https://serper.dev/pricing');
 
   // Exit with appropriate code
   process.exit(workingKeys.length > 0 ? 0 : 1);

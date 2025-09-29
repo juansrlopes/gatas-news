@@ -6,16 +6,15 @@ import {
 import { IArticle } from '../database/models/Article';
 import { enhancedCacheService } from './cacheService';
 import { celebrityService } from './celebrityService';
-import { newsFetcher } from '../jobs/newsFetcher';
-import { NewsResponse } from '../../../../libs/shared/types/src/index';
+import { serperService } from './serper/serperService';
+import { multiSourceNewsFetcher } from '../jobs/multiSourceNewsFetcher';
+import { NewsResponse, Article } from '../../../../libs/shared/types/src/index';
 import { ValidationError } from '../types/errors';
 import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
 import { 
   sortByQuality, 
   isAggressiveTrash
 } from '../utils/qualityScoring';
-// Removed unused import - simplified filtering approach
-import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 import logger from '../utils/logger';
 
 export class NewsService {
@@ -460,7 +459,7 @@ export class NewsService {
   }> {
     try {
       logger.info('Manual news fetch triggered via API');
-      const result = await newsFetcher.fetchAndStoreNews();
+      const result = await multiSourceNewsFetcher.fetchAndStoreNews();
 
       // Clear cache after successful fetch
       if (result.success) {
@@ -669,31 +668,16 @@ export class NewsService {
   /**
    * Convert database article to API format
    */
-  private convertToApiFormat(article: IArticle): {
-    id: string;
-    title: string;
-    description: string;
-    url: string;
-    urlToImage: string;
-    publishedAt: string;
-    source: { id: string | null; name: string };
-    celebrity: string;
-    sentiment?: string;
-    category?: string;
-    isActive: boolean;
-  } {
+  private convertToApiFormat(article: IArticle): Article {
     return {
-      id: article._id?.toString() || '',
       url: article.url,
       title: article.title,
       description: article.description,
-      urlToImage: article.urlToImage || '',
+      imageUrl: article.urlToImage || '',
       publishedAt: article.publishedAt?.toISOString(),
       source: article.source,
-      // Additional fields from our database
-      celebrity: article.celebrity,
-      sentiment: article.sentiment,
-      isActive: article.isActive,
+      author: article.author,
+      content: article.content,
     };
   }
 
@@ -754,23 +738,22 @@ export class NewsService {
     urlToImage?: string;
     publishedAt?: string;
     source?: { id: string | null; name: string };
-    celebrity: string;
-  }) {
+    celebrity?: string;
+  }): Article {
     return {
-      id: article.url, // Use URL as unique ID for live results
+      url: article.url,
       title: article.title,
       description: article.description || '',
-      url: article.url,
-      urlToImage: article.urlToImage || '',
+      imageUrl: article.urlToImage || '',
       publishedAt: article.publishedAt || new Date().toISOString(),
       source: article.source || { id: null, name: 'Unknown' },
-      celebrity: article.celebrity,
-      isActive: true, // Live results are always considered active
+      author: undefined,
+      content: undefined,
     };
   }
 
   /**
-   * Handle live search by calling NewsAPI directly
+   * Handle live search by calling Serper API directly
    * This bypasses the database and cache for real-time results
    */
   private async handleLiveSearch(params: {
@@ -778,24 +761,25 @@ export class NewsService {
     limit?: number;
     page?: number;
   }): Promise<NewsResponse> {
-    const { celebrity, limit: _limit = 20, page = 1 } = params;
+    const { celebrity, limit = 20, page = 1 } = params;
 
     if (!celebrity) {
       throw new ValidationError('Celebrity name is required for live search');
     }
 
-    logger.info(`Live search requested for celebrity: ${celebrity}`);
+    logger.info(`🔍 Live search requested for celebrity: ${celebrity} (via Serper)`);
 
     try {
-      // Get environment config for API keys
-      const config = getEnvConfig();
+      // Use Serper to get live results from Google News
+      const serperArticles = await serperService.searchCelebrity(celebrity, { 
+        limit: limit * 2, // Get more articles to allow for filtering
+        searchType: 'comprehensive' 
+      });
 
-      // Use newsFetcher to get live results from NewsAPI
-      const result = await newsFetcher.fetchArticlesForCelebrity(celebrity, config);
-      const articles = result.articles;
+      logger.info(`📰 Serper returned ${serperArticles.length} articles for ${celebrity}`);
 
-      // Apply basic content filtering
-      const filteredArticles = articles.filter(article => {
+      // Apply content filtering to improve quality
+      const filteredArticles = serperArticles.filter(article => {
         const contentScore = analyzePortugueseContent(
           article.title,
           article.description || '',
@@ -805,14 +789,17 @@ export class NewsService {
         return shouldKeepArticle(contentScore, 30); // Use lower threshold for live search
       });
 
+      // Limit to requested number
+      const limitedArticles = filteredArticles.slice(0, limit);
+
       logger.info(
-        `Live search results: ${articles.length} → ${filteredArticles.length} articles after filtering`
+        `🎯 Live search results: ${serperArticles.length} → ${filteredArticles.length} → ${limitedArticles.length} articles after filtering and limiting`
       );
 
       // Convert to API response format
       const response: NewsResponse = {
-        articles: filteredArticles.map(this.convertLiveSearchToApiFormat),
-        totalResults: filteredArticles.length,
+        articles: limitedArticles.map(this.convertLiveSearchToApiFormat),
+        totalResults: limitedArticles.length,
         page: page,
         totalPages: 1, // Live search returns single page
         hasMore: false, // Live search returns single page

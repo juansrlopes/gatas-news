@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Article } from '../../../../libs/shared/types/src/index';
 import { ArticleSkeleton } from './LoadingSkeleton';
+import { createApiUrl, API_ENDPOINTS } from '../config/api';
 
 /**
  * ArticleCard Component - Individual article display
@@ -9,7 +10,7 @@ import { ArticleSkeleton } from './LoadingSkeleton';
 interface ArticleCardProps {
   article: Article;
   onImageError: (_imageUrl: string | null | undefined) => void;
-  getImageSrc: (_urlToImage: string | null | undefined, _article: Article) => string;
+  getImageSrc: (_imageUrl: string | null | undefined, _article: Article) => string;
 }
 
 const ArticleCard: React.FC<ArticleCardProps> = ({ article, onImageError, getImageSrc }) => (
@@ -23,14 +24,14 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, onImageError, getIma
     >
       <div className="relative flex-shrink-0">
         <Image
-          src={getImageSrc(article.urlToImage, article)}
+          src={getImageSrc(article.imageUrl, article)}
           alt={article.title || 'Notícia'}
           width={500}
           height={300}
           className="w-full h-48 object-cover rounded-t-lg"
           placeholder="blur"
           blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-          onError={() => onImageError(article.urlToImage)}
+          onError={() => onImageError(article.imageUrl)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-t-lg"></div>
       </div>
@@ -167,7 +168,7 @@ const NewsGrid = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-        const response = await fetch(`http://localhost:8000/api/v1/news?${params}`, {
+        const response = await fetch(`${createApiUrl(API_ENDPOINTS.NEWS)}?${params}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -288,10 +289,19 @@ const NewsGrid = () => {
    * Simple image source selection with fallback placeholder
    */
   const getImageSrc = useCallback(
-    (imageUrl: string | null | undefined, _article?: Article): string => {
+    (imageUrl: string | null | undefined, article?: Article): string => {
       // No image URL provided or failed to load - use simple placeholder
       if (!imageUrl || failedImages.has(imageUrl)) {
         return '/placeholder-news.svg';
+      }
+
+      // For Serper base64 thumbnails, try to extract a high-quality image from the article URL
+      if (imageUrl.startsWith('data:')) {
+        if (article?.url) {
+          return `/api/image-proxy?url=${encodeURIComponent(article.url)}&extract=true`;
+        }
+        // Fallback to provided base64 if no article URL available
+        return imageUrl;
       }
 
       // Use image proxy for external images
@@ -455,7 +465,7 @@ const NewsGrid = () => {
   /**
    * Handles live search form submission with rate limiting
    *
-   * Checks rate limits, increments counter, and fetches from NewsAPI.
+   * Checks rate limits, increments counter, and fetches from API.
    */
   const handleLiveSearch = useCallback(() => {
     // Check rate limit

@@ -19,7 +19,7 @@ import NewsGrid from '../NewsGrid';
 const mockArticles = [
   {
     url: 'https://example.com/article1',
-    urlToImage: 'https://example.com/image1.jpg',
+    imageUrl: 'https://example.com/image1.jpg',
     title: 'Test Article 1',
     description: 'Test description 1',
     publishedAt: '2024-01-01T00:00:00Z',
@@ -27,7 +27,7 @@ const mockArticles = [
   },
   {
     url: 'https://example.com/article2',
-    urlToImage: 'https://example.com/image2.jpg',
+    imageUrl: 'https://example.com/image2.jpg',
     title: 'Test Article 2',
     description: 'Test description 2',
     publishedAt: '2024-01-02T00:00:00Z',

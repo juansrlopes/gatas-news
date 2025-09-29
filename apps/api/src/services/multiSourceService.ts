@@ -1,151 +1,87 @@
-import { rssService, RSSArticle } from './rss/rssService';
+import { newsService } from './newsService';
+import { rssService } from './rss/rssService';
 import { Article } from '../../../../libs/shared/types/src/index';
 import logger from '../utils/logger';
 
-export interface MultiSourceResult {
-  articles: Article[];
-  sources: {
-    newsapi: number;
-    rss: number;
-    total: number;
-  };
-  duplicatesRemoved: number;
-}
-
 export class MultiSourceService {
-  private static instance: MultiSourceService;
+  public async aggregateNews(celebrityName?: string): Promise<Article[]> {
+    logger.info(`Aggregating news for celebrity: ${celebrityName || 'all'}`);
 
-  private constructor() {}
-
-  public static getInstance(): MultiSourceService {
-    if (!MultiSourceService.instance) {
-      MultiSourceService.instance = new MultiSourceService();
-    }
-    return MultiSourceService.instance;
-  }
-
-  /**
-   * Fetch articles from multiple sources for a specific celebrity
-   */
-  async fetchArticlesForCelebrity(celebrityName: string): Promise<MultiSourceResult> {
-    logger.info(`🔍 Multi-source search for: "${celebrityName}"`);
-
-    const results = await Promise.allSettled([
-      this.fetchFromNewsAPI(celebrityName),
-      this.fetchFromRSS(celebrityName),
+    const [newsApiArticles, rssArticles] = await Promise.all([
+      newsService.getNews({ celebrity: celebrityName, limit: 50, noMixing: true }).then(res => res.articles),
+      celebrityName ? rssService.fetchArticlesAboutCelebrity(celebrityName) : rssService.fetchAllArticles(),
     ]);
 
-    // Extract successful results
-    const newsApiArticles = results[0].status === 'fulfilled' ? results[0].value : [];
-    const rssArticles = results[1].status === 'fulfilled' ? results[1].value : [];
-
-    // Log any errors
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        const source = index === 0 ? 'NewsAPI' : 'RSS';
-        logger.error(`${source} fetch failed: ${result.reason}`);
-      }
-    });
-
     // Convert RSS articles to Article format
-    const convertedRssArticles = rssArticles.map(this.convertRSSToArticle);
-
-    // Combine all articles
-    const allArticles = [...newsApiArticles, ...convertedRssArticles];
-
-    // Remove duplicates
-    const { articles: deduplicatedArticles, duplicatesRemoved } = this.removeDuplicates(allArticles);
-
-    // Sort by publication date (newest first)
-    const sortedArticles = deduplicatedArticles.sort((a, b) => 
-      new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime()
-    );
-
-    const result: MultiSourceResult = {
-      articles: sortedArticles,
-      sources: {
-        newsapi: newsApiArticles.length,
-        rss: rssArticles.length,
-        total: sortedArticles.length,
-      },
-      duplicatesRemoved,
-    };
-
-    logger.info(`📊 Multi-source results for "${celebrityName}":`, {
-      newsapi: result.sources.newsapi,
-      rss: result.sources.rss,
-      total: result.sources.total,
-      duplicatesRemoved: result.duplicatesRemoved,
-    });
-
-    return result;
-  }
-
-  /**
-   * Fetch articles from RSS feeds for a specific celebrity
-   */
-  private async fetchFromRSS(celebrityName: string): Promise<RSSArticle[]> {
-    try {
-      logger.info(`📡 Fetching from RSS feeds for: ${celebrityName}`);
-      return await rssService.fetchArticlesAboutCelebrity(celebrityName);
-    } catch (error) {
-      logger.error(`RSS fetch error: ${error.message}`);
-      return [];
-    }
-  }
-
-  /**
-   * Fetch articles from NewsAPI for a specific celebrity
-   */
-  private async fetchFromNewsAPI(celebrityName: string): Promise<Article[]> {
-    try {
-      logger.info(`📰 Fetching from NewsAPI for: ${celebrityName}`);
-      // For now, return empty array - we'll integrate with existing NewsAPI logic later
-      return [];
-    } catch (error) {
-      logger.error(`NewsAPI fetch error: ${error.message}`);
-      return [];
-    }
-  }
-
-  /**
-   * Convert RSS article to Article format
-   */
-  private convertRSSToArticle(rssArticle: RSSArticle): Article {
-    return {
-      source: rssArticle.source,
-      author: rssArticle.source.name,
+    const convertedRssArticles: Article[] = rssArticles.map(rssArticle => ({
+      url: rssArticle.url,
+      imageUrl: rssArticle.urlToImage || '', // Convert undefined to empty string
       title: rssArticle.title,
       description: rssArticle.description,
-      url: rssArticle.url,
-      urlToImage: rssArticle.urlToImage || '',
       publishedAt: rssArticle.publishedAt.toISOString(),
+      source: rssArticle.source,
+      author: rssArticle.author,
       content: rssArticle.content || undefined,
-    };
+    }));
+
+    const combinedArticles = [...newsApiArticles, ...convertedRssArticles];
+    logger.info(`Combined ${newsApiArticles.length} from NewsAPI and ${convertedRssArticles.length} from RSS.`);
+
+    const deduplicatedArticles = this.deduplicateArticles(combinedArticles);
+    logger.info(`Deduplicated to ${deduplicatedArticles.length} articles.`);
+
+    // TODO: Apply quality scoring and sorting here if not already done by individual services
+    return deduplicatedArticles;
   }
 
   /**
-   * Remove duplicate articles based on URL and title similarity
+   * Fetch articles for a specific celebrity from all sources
    */
-  private removeDuplicates(articles: Article[]): { articles: Article[]; duplicatesRemoved: number } {
-    const seen = new Set<string>();
+  public async fetchArticlesForCelebrity(celebrityName: string): Promise<Article[]> {
+    return this.aggregateNews(celebrityName);
+  }
+
+  private deduplicateArticles(articles: Article[]): Article[] {
+    const seenUrls = new Set<string>();
     const uniqueArticles: Article[] = [];
-    let duplicatesRemoved = 0;
 
     for (const article of articles) {
-      // Create a unique key based on URL and normalized title
-      const normalizedTitle = article.title?.toLowerCase().replace(/[^\w\s]/g, '').trim() || '';
-      const key = `${article.url}|${normalizedTitle}`;
-
-      if (!seen.has(key)) {
-        seen.add(key);
+      if (!seenUrls.has(article.url)) {
         uniqueArticles.push(article);
-      } else {
-        duplicatesRemoved++;
+        seenUrls.add(article.url);
       }
     }
+    return uniqueArticles;
+  }
 
-    return { articles: uniqueArticles, duplicatesRemoved };
+  /**
+   * Get health status of all sources
+   */
+  async getSourceHealth(): Promise<{
+    rss: { enabled: number; total: number; healthy: boolean };
+    serper: { available: boolean; healthy: boolean };
+  }> {
+    try {
+      const rssStats = rssService.getFeedStats();
+      
+      return {
+        rss: {
+          enabled: rssStats.enabled,
+          total: rssStats.total,
+          healthy: rssStats.enabled > 0,
+        },
+        serper: {
+          available: true, // TODO: Check Serper availability
+          healthy: true, // TODO: Check Serper health
+        },
+      };
+    } catch (error) {
+      logger.error(`Error getting source health: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return {
+        rss: { enabled: 0, total: 0, healthy: false },
+        serper: { available: false, healthy: false },
+      };
+    }
   }
 
   /**
@@ -153,17 +89,59 @@ export class MultiSourceService {
    */
   async getSourceStats(): Promise<{ [source: string]: number }> {
     try {
-      const rssStats = await rssService.getFeedStats();
+      const rssStats = rssService.getFeedStats();
       
       return {
-        'NewsAPI': 0, // TODO: Get actual NewsAPI stats
-        ...rssStats,
+        'RSS_Total': rssStats.total,
+        'RSS_Enabled': rssStats.enabled,
+        'RSS_Disabled': rssStats.disabled,
+        'Serper_Available': 1, // TODO: Get actual Serper stats
       };
     } catch (error) {
-      logger.error(`Error getting source stats: ${error.message}`);
+      logger.error(`Error getting source stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return {};
     }
   }
+
+  /**
+   * Test all sources and return their status
+   */
+  async testAllSources(): Promise<{
+    rss: { working: string[]; broken: string[] };
+    serper: { working: boolean; error?: string };
+  }> {
+    const results = {
+      rss: { working: [] as string[], broken: [] as string[] },
+      serper: { working: false, error: undefined as string | undefined },
+    };
+
+    try {
+      // Test RSS feeds
+      const rssStats = rssService.getFeedStats();
+      const enabledFeeds = rssStats.feeds.filter(f => f.enabled);
+      
+      for (const feed of enabledFeeds) {
+        try {
+          const testResult = await rssService.testFeed(feed.name);
+          if (testResult.success) {
+            results.rss.working.push(feed.name);
+          } else {
+            results.rss.broken.push(feed.name);
+          }
+        } catch {
+          results.rss.broken.push(feed.name);
+        }
+      }
+
+      // TODO: Test Serper
+      results.serper.working = true;
+
+    } catch (error) {
+      logger.error(`Error testing sources: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+
+    return results;
+  }
 }
 
-export const multiSourceService = MultiSourceService.getInstance();
+export const multiSourceService = new MultiSourceService();

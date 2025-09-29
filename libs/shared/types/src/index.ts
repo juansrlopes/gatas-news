@@ -1,7 +1,7 @@
 // Article types
 export interface Article {
   url: string;
-  urlToImage: string;
+  imageUrl: string;
   title: string;
   description: string;
   publishedAt?: string;

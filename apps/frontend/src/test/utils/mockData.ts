@@ -15,7 +15,7 @@ import { Article } from '../../../../../libs/shared/types/src/index';
  */
 export const createMockArticle = (overrides: Partial<Article> = {}): Article => ({
   url: 'https://example.com/article',
-  urlToImage: 'https://images.unsplash.com/photo-1234567890',
+  imageUrl: 'https://images.unsplash.com/photo-1234567890',
   title: 'Mock Article Title',
   description: 'This is a mock article description for testing purposes.',
   publishedAt: '2024-01-01T00:00:00Z',
@@ -44,7 +44,7 @@ export const createMockArticles = (
       ...baseOverrides,
       url: `https://example.com/article-${index + 1}`,
       title: `Mock Article ${index + 1}`,
-      urlToImage: `https://images.unsplash.com/photo-${index + 1}`,
+      imageUrl: `https://images.unsplash.com/photo-${index + 1}`,
     })
   );
 };

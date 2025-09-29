@@ -56,18 +56,27 @@ const initializeServices = async (): Promise<void> => {
     console.log('='.repeat(50));
     console.log('🔧 Starting services...\n');
 
-    // Validate API keys - allow server to start even if rate limited
-    process.stdout.write('🔑 Checking API keys... ');
+    // Validate Serper API keys - allow server to start even if rate limited
+    process.stdout.write('🔑 Checking Serper API keys... ');
     try {
       await validateApiKeysOnStartup(config);
       console.log('✅');
     } catch (error) {
-      if (error instanceof Error && error.message === 'ALL_KEYS_FAILED') {
-        console.log('⚠️  Rate limited');
+      if (error instanceof Error && (
+        error.message === 'ALL_KEYS_FAILED' || 
+        error.message === 'SERPER_KEYS_VALIDATION_FAILED' ||
+        error.message === 'RATE_LIMITED'
+      )) {
+        console.log('⚠️  Rate limited or failed');
         console.log('   📋 Server will start in LIMITED MODE');
+        console.log('   💡 Some features may not work without valid Serper keys');
+      } else if (error instanceof Error && error.message === 'NO_SERPER_KEYS_CONFIGURED') {
+        console.log('⚠️  No Serper keys configured');
+        console.log('   📋 Server will start in LIMITED MODE');
+        console.log('   💡 Configure SERPER_API_KEY in your .env file');
       } else {
         console.log('❌');
-        logger.error('Unexpected error during API key validation:', error);
+        logger.error('Unexpected error during Serper API key validation:', error);
         throw error; // Re-throw unexpected errors
       }
     }

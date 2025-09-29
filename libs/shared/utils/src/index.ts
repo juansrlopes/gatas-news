@@ -13,6 +13,12 @@ export const getEnvConfig = () => {
     newsApiKeyBackup: process.env['NEWS_API_KEY_BACKUP'],
     newsApiKeyBackup2: process.env['NEWS_API_KEY_BACKUP_2'],
     guardianApiKey: process.env['GUARDIAN_API_KEY'],
+    
+    // Serper (Google Search API) - Multiple keys for rotation
+    serperApiKey: process.env['SERPER_API_KEY'],
+    serperApiKeyBackup: process.env['SERPER_API_KEY_BACKUP'],
+    serperApiKey2: process.env['SERPER_API_KEY_2'],
+    serperApiKey3: process.env['SERPER_API_KEY_3'],
 
     // App Configuration
     appName: process.env['NEXT_PUBLIC_APP_NAME'] || 'Gatas News',
@@ -60,11 +66,11 @@ export const filterDuplicates = <T>(
 
 // String utilities
 export const normalizeString = (str: string): string => {
-  return str.toLowerCase().trim();
+  return (str || '').toLowerCase().trim();
 };
 
 export const containsKeyword = (text: string, keyword: string): boolean => {
-  return normalizeString(text).includes(normalizeString(keyword));
+  return normalizeString(text || '').includes(normalizeString(keyword || ''));
 };
 
 // Date utilities

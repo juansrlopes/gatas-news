@@ -1,5 +1,5 @@
 /**
- * Image Proxy API Route
+ * Image Proxy API Route - IMPROVED VERSION
  *
  * Secure image proxy that fetches images from trusted news sources
  * while protecting against SSRF attacks and providing caching.
@@ -9,25 +9,17 @@
  * - HTTPS-only enforcement
  * - Content-Type validation
  * - File size limits (5MB max)
- * - Request timeout (10 seconds)
+ * - Request timeout (20 seconds - increased for slow sites)
  *
  * Performance Features:
  * - 24-hour caching headers
  * - Proper content-length headers
  * - Gzip/Brotli compression support
+ * - Better fallback handling
  *
  * @route GET /api/image-proxy?url={imageUrl}
  * @param {string} url - The image URL to proxy (must be from allowed domains)
  * @returns {Buffer} The proxied image data
- *
- * @example
- * ```tsx
- * // In a Next.js Image component
- * <Image
- *   src="/api/image-proxy?url=https://images.unsplash.com/photo-123.jpg"
- *   alt="News image"
- * />
- * ```
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -49,6 +41,7 @@ const ALLOWED_DOMAINS = [
   'www.reuters.com',
   'cloudfront-us-east-1.images.arcpublishing.com',
   'img.estadao.com.br',
+  
   // Brazilian news domains
   'veja.abril.com.br',
   'uploads.metroimg.com',
@@ -64,6 +57,7 @@ const ALLOWED_DOMAINS = [
   'www.uol.com.br',
   'f.i.uol.com.br',
   'imagens.ebc.com.br',
+  
   // CRITICAL: Missing domains found in actual articles
   'assets.papelpop.com',
   'blogger.googleusercontent.com',
@@ -125,16 +119,38 @@ const ALLOWED_DOMAINS = [
   'wp-content',
   'assets.b9.com.br',
   'b9.com.br',
+  
+  // PHASE 5: Google/Serper image domains (2025-09-19)
+  'encrypted-tbn0.gstatic.com',
+  'encrypted-tbn1.gstatic.com',
+  'encrypted-tbn2.gstatic.com',
+  'encrypted-tbn3.gstatic.com',
+  'lh3.googleusercontent.com',
+  'lh4.googleusercontent.com',
+  'lh5.googleusercontent.com',
+  'lh6.googleusercontent.com',
+  'lh7.googleusercontent.com',
+  'www.gstatic.com',
+  'ssl.gstatic.com',
+  'gstatic.com',
+  'googleusercontent.com',
+  'yt3.ggpht.com',
+  'yt3.googleusercontent.com',
+  
+  // PHASE 6: NEW DOMAINS - Fixing blocked domains from terminal output
+  'i0.wp.com',
+  'i1.wp.com',
+  'i2.wp.com',
+  'i3.wp.com',
+  'wp.com',
+  'folhadecuritiba.com.br',
+  'ajn1.com.br',
+  'www.folhadecuritiba.com.br',
+  'www.ajn1.com.br',
 ];
 
 /**
  * Validates if a URL is safe to proxy
- *
- * Checks if the URL uses HTTPS and is from an allowed domain.
- * This prevents SSRF attacks and ensures we only proxy trusted sources.
- *
- * @param {string} urlString - The URL to validate
- * @returns {boolean} True if the URL is safe to proxy
  */
 function isValidUrl(urlString: string): boolean {
   try {
@@ -165,9 +181,6 @@ function isValidUrl(urlString: string): boolean {
 
 /**
  * Dynamic domain validation for news-related domains
- *
- * @param hostname - The domain to validate
- * @returns {boolean} True if domain appears safe for news images
  */
 function isDomainSafeForNews(hostname: string): boolean {
   // News domain patterns (Brazilian and international)
@@ -186,6 +199,7 @@ function isDomainSafeForNews(hostname: string): boolean {
     /googleusercontent\.com$/, // Google hosted content
     /\.medium\.com$/, // Medium articles
     /\.wordpress\.com$/, // WordPress blogs
+    /\.wp\.com$/, // WordPress.com hosted images
   ];
 
   // Check if domain matches news patterns
@@ -224,9 +238,6 @@ function isDomainSafeForNews(hostname: string): boolean {
 
 /**
  * Logs new domains for future whitelisting consideration
- *
- * @param hostname - The domain that was encountered
- * @param status - The validation status
  */
 function logNewDomain(hostname: string, status: 'auto-validated' | 'needs-review'): void {
   const timestamp = new Date().toISOString();
@@ -239,16 +250,10 @@ function logNewDomain(hostname: string, status: 'auto-validated' | 'needs-review
 
   // Log to console for now (future: database/file logging)
   console.log(`[IMAGE-PROXY] New domain ${status}:`, logEntry);
-
-  // TODO: Future enhancement - store in database for admin dashboard
-  // await storeDomainLog(logEntry);
 }
 
 /**
  * Logs blocked domains for security monitoring
- *
- * @param hostname - The domain that was blocked
- * @param reason - Why it was blocked
  */
 function logBlockedDomain(hostname: string, reason: string): void {
   const timestamp = new Date().toISOString();
@@ -260,9 +265,6 @@ function logBlockedDomain(hostname: string, reason: string): void {
   };
 
   console.warn(`[IMAGE-PROXY] Domain blocked:`, logEntry);
-
-  // TODO: Future enhancement - security alerts for suspicious domains
-  // await alertSecurityTeam(logEntry);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -271,13 +273,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { url } = req.query;
+  const { url, extract } = req.query as { url?: string; extract?: string };
 
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ error: 'URL parameter is required' });
   }
 
-  // Validate URL
+  // Validate URL (article or image URL)
   if (!isValidUrl(url)) {
     return res.status(400).json({ error: 'Invalid or unauthorized URL' });
   }
@@ -286,11 +288,67 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Set cache headers
     res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400'); // 24 hours
 
+    // If extract=true, fetch the page HTML and extract a high-quality image
+    if (extract === 'true') {
+      try {
+        const pageResponse = await axios.get(url, {
+          responseType: 'text',
+          timeout: 20000, // INCREASED: 20 seconds for slow websites
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; Gatas-News-Image-Proxy/2.0; +https://gatas-news.com)',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+          },
+          maxContentLength: 5 * 1024 * 1024,
+        });
+
+        const html = typeof pageResponse.data === 'string' ? pageResponse.data : pageResponse.data?.toString?.() ?? '';
+        const candidate = extractBestImageFromHtml(html, url);
+
+        if (!candidate) {
+          console.log(`[IMAGE-PROXY] No high-quality image found for ${url}, falling back to placeholder`);
+          return res.status(404).json({ error: 'High-quality image not found' });
+        }
+
+        if (!isValidUrl(candidate)) {
+          console.warn(`[IMAGE-PROXY] Extracted image URL not allowed: ${candidate}`);
+          return res.status(400).json({ error: 'Extracted image URL is not allowed' });
+        }
+
+        const imageResp = await axios.get(candidate, {
+          responseType: 'arraybuffer',
+          timeout: 15000, // INCREASED: 15 seconds for image downloads
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; Gatas-News-Image-Proxy/2.0; +https://gatas-news.com)',
+            'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+          },
+          maxContentLength: 5 * 1024 * 1024,
+        });
+
+        const imgType = imageResp.headers['content-type'];
+        if (!imgType || !imgType.startsWith('image/')) {
+          return res.status(400).json({ error: 'Extracted resource is not an image' });
+        }
+
+        res.setHeader('Content-Type', imgType);
+        res.setHeader('Content-Length', imageResp.data.length);
+        return res.send(imageResp.data);
+      } catch (extractError) {
+        console.error(`[IMAGE-PROXY] Extract mode failed for ${url}:`, extractError);
+        return res.status(404).json({ error: 'High-quality image extraction failed' });
+      }
+    }
+
+    // Default: proxy a direct image URL
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
-      timeout: 10000, // 10 second timeout
+      timeout: 15000, // INCREASED: 15 seconds for direct image URLs
       headers: {
-        'User-Agent': 'Gatas-News-Image-Proxy/1.0',
+        'User-Agent': 'Mozilla/5.0 (compatible; Gatas-News-Image-Proxy/2.0; +https://gatas-news.com)',
+        'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
       },
       maxContentLength: 5 * 1024 * 1024, // 5MB max
     });
@@ -304,7 +362,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', response.data.length);
-    res.send(response.data);
+    return res.send(response.data);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -331,8 +389,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       status: errorStatus,
     });
 
+    // IMPROVED ERROR HANDLING
     if (errorCode === 'ECONNABORTED' || errorCode === 'ETIMEDOUT') {
-      return res.status(408).json({ error: 'Request timeout' });
+      console.warn(`[IMAGE-PROXY] Timeout for ${url} (${errorCode})`);
+      return res.status(408).json({ error: 'Request timeout - website too slow' });
+    }
+
+    if (errorCode === 'ENOTFOUND' || errorCode === 'ECONNREFUSED') {
+      console.warn(`[IMAGE-PROXY] Connection failed for ${url} (${errorCode})`);
+      return res.status(404).json({ error: 'Website not reachable' });
     }
 
     if (errorStatus === 404) {
@@ -343,6 +408,73 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(403).json({ error: 'Access forbidden' });
     }
 
+    if (errorStatus === 429) {
+      return res.status(429).json({ error: 'Rate limited by source website' });
+    }
+
     return res.status(500).json({ error: 'Failed to fetch image' });
   }
+}
+
+// Extract best image URL from HTML using lightweight regex heuristics
+function extractBestImageFromHtml(html: string, baseUrl: string): string | null {
+  const candidates: string[] = [];
+
+  // Helper to absolutize URLs
+  const toAbsolute = (u: string): string | null => {
+    try {
+      return new URL(u, baseUrl).toString();
+    } catch {
+      return null;
+    }
+  };
+
+  // og:image
+  const ogMatch = /<meta[^>]+property=["']og:image["'][^>]*content=["']([^"'>]+)["']/i.exec(html) ||
+                  /<meta[^>]+content=["']([^"'>]+)["'][^>]*property=["']og:image["']/i.exec(html);
+  if (ogMatch?.[1]) {
+    const abs = toAbsolute(ogMatch[1]);
+    if (abs) candidates.push(abs);
+  }
+
+  // twitter:image
+  const twMatch = /<meta[^>]+name=["']twitter:image["'][^>]*content=["']([^"'>]+)["']/i.exec(html) ||
+                  /<meta[^>]+content=["']([^"'>]+)["'][^>]*name=["']twitter:image["']/i.exec(html);
+  if (twMatch?.[1]) {
+    const abs = toAbsolute(twMatch[1]);
+    if (abs) candidates.push(abs);
+  }
+
+  // link rel=image_src
+  const linkMatch = /<link[^>]+rel=["']image_src["'][^>]*href=["']([^"'>]+)["']/i.exec(html) ||
+                    /<link[^>]+href=["']([^"'>]+)["'][^>]*rel=["']image_src["']/i.exec(html);
+  if (linkMatch?.[1]) {
+    const abs = toAbsolute(linkMatch[1]);
+    if (abs) candidates.push(abs);
+  }
+
+  // Fallback: first <img src>
+  const imgRegex = /<img[^>]+src=["']([^"'>]+)["'][^>]*>/ig;
+  let m: RegExpExecArray | null;
+  while ((m = imgRegex.exec(html)) && candidates.length < 5) {
+    const abs = toAbsolute(m[1]);
+    if (abs) candidates.push(abs);
+  }
+
+  // Prefer larger-looking URLs (heuristic: contains width/large/1200 etc.)
+  const scored = candidates.map(u => ({
+    url: u,
+    score: scoreImageUrl(u),
+  })).sort((a, b) => b.score - a.score);
+
+  return scored[0]?.url ?? null;
+}
+
+function scoreImageUrl(u: string): number {
+  let score = 0;
+  const lowered = u.toLowerCase();
+  if (/(1200|1080|1600|2048|large|xl|xlarge|high|hq)/.test(lowered)) score += 5;
+  if (/webp|avif/.test(lowered)) score += 2;
+  if (/(thumb|thumbnail|small|xs)/.test(lowered)) score -= 3;
+  return score;
 }

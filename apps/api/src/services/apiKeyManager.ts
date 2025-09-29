@@ -1,5 +1,5 @@
 import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
-import { validateNewsApiKey, ApiKeyStatus } from '../utils/apiKeyValidator';
+import { validateSerperApiKey, ApiKeyStatus } from '../utils/apiKeyValidator';
 import logger from '../utils/logger';
 
 /**
@@ -62,9 +62,8 @@ export class ApiKeyManager {
     const config = getEnvConfig();
     const keys: string[] = [];
 
-    if (config.newsApiKey) keys.push(config.newsApiKey);
-    if (config.newsApiKeyBackup) keys.push(config.newsApiKeyBackup);
-    if (config.newsApiKeyBackup2) keys.push(config.newsApiKeyBackup2);
+    if (config.serperApiKey) keys.push(config.serperApiKey);
+    if (config.serperApiKeyBackup) keys.push(config.serperApiKeyBackup);
 
     keys.forEach((key, index) => {
       const keyId = this.generateKeyId(key);
@@ -219,7 +218,7 @@ export class ApiKeyManager {
 
     const promises = Array.from(this.keyStatuses.values()).map(async status => {
       try {
-        const result = await validateNewsApiKey(status.keyUsed);
+        const result = await validateSerperApiKey(status.keyUsed);
 
         status.isValid = result.isValid;
         status.isRateLimited = result.isRateLimited;
@@ -281,7 +280,7 @@ export class ApiKeyManager {
         rateLimitEvents: status.rateLimitedCount,
         lastRateLimitTime: status.estimatedResetTime,
         dailyUsage: status.totalRequests, // TODO: Implement daily reset
-        remainingQuota: undefined, // TODO: Estimate based on NewsAPI limits
+        remainingQuota: undefined, // TODO: Estimate based on Serper limits
       };
     });
 

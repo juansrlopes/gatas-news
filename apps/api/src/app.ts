@@ -6,7 +6,6 @@ import { generalLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
 import routes from './routes';
 import healthRoutes from './routes/health';
-import logger from './utils/logger';
 
 // const config = getEnvConfig(); // Uncomment if needed for environment-specific configuration
 
@@ -39,21 +38,6 @@ app.use('/health', healthRoutes);
 // API routes (versioned)
 app.use('/api/v1', routes);
 
-// Legacy support for old POST /news endpoint (redirect to new GET endpoint)
-app.post('/news', (req, res) => {
-  const { page = 1, celebrityName } = req.body;
-  const queryParams = new URLSearchParams({
-    page: page.toString(),
-    ...(celebrityName && { celebrity: celebrityName }),
-  });
-
-  logger.warn('Legacy POST /news endpoint used, redirecting to GET', {
-    originalBody: req.body,
-    redirectUrl: `/api/v1/news?${queryParams}`,
-  });
-
-  res.redirect(301, `/api/v1/news?${queryParams}`);
-});
 
 // Root endpoint
 app.get('/', (req, res) => {

@@ -4,16 +4,24 @@ import { RSSController } from '../controllers/rssController';
 const router = Router();
 
 /**
- * RSS Testing Routes
+ * @route   GET /api/v1/rss/feeds
+ * @desc    Get all RSS feeds and their articles
+ * @access  Public
  */
+router.get('/feeds', RSSController.getFeeds);
 
-// Test RSS feeds
-router.get('/test', RSSController.testRSSFeeds);
+/**
+ * @route   GET /api/v1/rss/celebrity/:celebrityName
+ * @desc    Get RSS articles for a specific celebrity
+ * @access  Public
+ */
+router.get('/celebrity/:celebrityName', RSSController.getCelebrityArticles);
 
-// Test RSS for specific celebrity
-router.get('/celebrity/:name', RSSController.testCelebrityRSS);
-
-// Test multi-source for specific celebrity
-router.get('/multi-source/:name', RSSController.testMultiSource);
+/**
+ * @route   GET /api/v1/rss/multi-source/:celebrityName
+ * @desc    Get multi-source articles for a specific celebrity
+ * @access  Public
+ */
+router.get('/multi-source/:celebrityName', RSSController.getMultiSourceArticles);
 
 export default router;

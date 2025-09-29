@@ -63,7 +63,7 @@ export function calculateQualityScore(article: IArticle): QualityMetrics {
  * Higher scores for articles that are clearly ABOUT the celebrity
  */
 function calculateCelebrityRelevance(article: IArticle): number {
-  const text = `${article.title} ${article.description || ''}`.toLowerCase();
+  const text = `${article.title || ''} ${article.description || ''}`.toLowerCase();
   const celebrityName = article.celebrity?.toLowerCase() || '';
   
   if (!celebrityName || celebrityName === 'unknown') {
@@ -83,7 +83,7 @@ function calculateCelebrityRelevance(article: IArticle): number {
   }
   
   // Celebrity in title (10 points)
-  if (article.title.toLowerCase().includes(celebrityName.split(' ')[0])) {
+  if (article.title && article.title.toLowerCase().includes(celebrityName.split(' ')[0])) {
     score += 10;
   }
   
@@ -95,7 +95,7 @@ function calculateCelebrityRelevance(article: IArticle): number {
  * Based on content type and personal relevance
  */
 function calculateContentQuality(article: IArticle): number {
-  const text = `${article.title} ${article.description || ''}`.toLowerCase();
+  const text = `${article.title || ''} ${article.description || ''}`.toLowerCase();
   let score = 10; // Base score
   
   // Personal life content (high value)
@@ -148,7 +148,7 @@ function calculateContentQuality(article: IArticle): number {
  * Penalize clickbait and generic titles
  */
 function calculateTitleQuality(article: IArticle): number {
-  const title = article.title.toLowerCase();
+  const title = (article.title || '').toLowerCase();
   let score = 15; // Start with good score
   
   // Penalize obvious trash patterns
@@ -222,7 +222,7 @@ function calculateSourceReliability(article: IArticle): number {
  * Categorize article content
  */
 function categorizeArticle(article: IArticle): ArticleCategory {
-  const text = `${article.title} ${article.description || ''}`.toLowerCase();
+  const text = `${article.title || ''} ${article.description || ''}`.toLowerCase();
   
   // Personal life indicators
   if (/casou|namorado|filho|família|relacionamento|gravidez|separou/.test(text)) {
@@ -290,7 +290,7 @@ function calculateTrashProbability(article: IArticle, totalScore: number): numbe
  * Only returns true for articles we're 95%+ certain are trash
  */
 export function isDefinitelyTrash(article: IArticle): boolean {
-  const text = `${article.title} ${article.description || ''}`.toLowerCase();
+  const text = `${article.title || ''} ${article.description || ''}`.toLowerCase();
   const celebrityName = article.celebrity?.toLowerCase() || '';
   
   // If celebrity mentioned 2+ times, probably not trash
@@ -319,7 +319,7 @@ export function isDefinitelyTrash(article: IArticle): boolean {
  * Returns true for articles that should be filtered out aggressively
  */
 export async function isAggressiveTrash(article: IArticle): Promise<boolean> {
-  const text = `${article.title} ${article.description || ''}`.toLowerCase();
+  const text = `${article.title || ''} ${article.description || ''}`.toLowerCase();
   const celebrityName = article.celebrity?.toLowerCase() || '';
   
   // Get our actual celebrity list
@@ -412,12 +412,12 @@ export async function isAggressiveTrash(article: IArticle): Promise<boolean> {
   
   if (businessEventPatterns.some(pattern => pattern.test(text))) {
     // Only filter if celebrity is not prominently featured in title
-    const titleWords = article.title.toLowerCase().split(' ');
+    const titleWords = (article.title || '').toLowerCase().split(' ');
     const celebrityInTitle = celebrityName !== 'unknown' && 
       titleWords.slice(0, 5).some(word => celebrityName.includes(word));
     
     if (!celebrityInTitle) {
-      logger.debug(`Filtering business/event content: ${article.title.substring(0, 50)}...`);
+      logger.debug(`Filtering business/event content: ${(article.title || '').substring(0, 50)}...`);
       return true;
     }
   }

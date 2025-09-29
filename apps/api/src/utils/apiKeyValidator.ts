@@ -13,26 +13,30 @@ export interface ApiKeyStatus {
 }
 
 /**
- * Validates NewsAPI key by making a minimal test request
+ * Validates Serper API key by making a minimal test request
  *
- * @param apiKey - The NewsAPI key to validate
+ * @param apiKey - The Serper API key to validate
  * @returns Promise<ApiKeyStatus> - Status of the API key
  */
-export async function validateNewsApiKey(apiKey: string): Promise<ApiKeyStatus> {
+export async function validateSerperApiKey(apiKey: string): Promise<ApiKeyStatus> {
   try {
     // Test API key quietly
 
-    // Make minimal test request to NewsAPI
-    const response = await axios.get('https://newsapi.org/v2/everything', {
-      params: {
-        q: 'test',
-        apiKey: apiKey,
-        pageSize: 1, // Minimal request
+    // Make minimal test request to Serper API
+    const response = await axios.post('https://google.serper.dev/search', {
+      q: 'test',
+      gl: 'us',
+      hl: 'en',
+      num: 1, // Minimal request
+    }, {
+      headers: {
+        'X-API-KEY': apiKey,
+        'Content-Type': 'application/json',
       },
       timeout: 10000, // 10 second timeout
     });
 
-    if (response.data.status === 'ok') {
+    if (response.status === 200 && response.data) {
       return {
         isValid: true,
         isRateLimited: false,
@@ -42,30 +46,29 @@ export async function validateNewsApiKey(apiKey: string): Promise<ApiKeyStatus> 
       return {
         isValid: false,
         isRateLimited: false,
-        error: response.data.message || 'Unknown error',
+        error: 'Invalid response from Serper API',
         keyUsed: apiKey,
       };
     }
   } catch (error: unknown) {
-    const axiosError = error as { response?: { data?: { code?: string; message?: string } } };
-    const errorData = axiosError.response?.data;
-
-    if (errorData?.code === 'rateLimited') {
+    const axiosError = error as { response?: { status?: number; data?: { error?: { message?: string } } } };
+    
+    if (axiosError.response?.status === 429) {
       return {
         isValid: false,
         isRateLimited: true,
         error: 'RATE_LIMITED',
-        message: errorData.message,
+        message: 'Serper API rate limit exceeded',
         keyUsed: apiKey,
       };
     }
 
-    if (errorData?.code === 'apiKeyInvalid') {
+    if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
       return {
         isValid: false,
         isRateLimited: false,
         error: 'INVALID_KEY',
-        message: errorData.message,
+        message: 'Invalid Serper API key',
         keyUsed: apiKey,
       };
     }
@@ -83,16 +86,16 @@ export async function validateNewsApiKey(apiKey: string): Promise<ApiKeyStatus> 
 }
 
 /**
- * Tests all available API keys and returns the first working one
+ * Tests all available Serper API keys and returns the first working one
  *
- * @param apiKeys - Array of API keys to test
+ * @param apiKeys - Array of Serper API keys to test
  * @returns Promise<ApiKeyStatus> - Status of the first working key or last error
  */
-export async function findWorkingApiKey(apiKeys: string[]): Promise<ApiKeyStatus> {
+export async function findWorkingSerperKey(apiKeys: string[]): Promise<ApiKeyStatus> {
   // Test keys quietly - only log important results
   for (let i = 0; i < apiKeys.length; i++) {
     const key = apiKeys[i];
-    const status = await validateNewsApiKey(key);
+    const status = await validateSerperApiKey(key);
 
     if (status.isValid) {
       // Only log success
@@ -105,72 +108,71 @@ export async function findWorkingApiKey(apiKeys: string[]): Promise<ApiKeyStatus
     isValid: false,
     isRateLimited: true, // Assume rate limited if all keys failed
     error: 'ALL_KEYS_FAILED',
-    message: 'All API keys are either rate limited or invalid',
+    message: 'All Serper API keys are either rate limited or invalid',
     keyUsed: 'none',
   };
 }
 
 /**
- * Validates API keys on server startup - CRASHES SERVER if no working keys
+ * Validates Serper API keys on server startup - CRASHES SERVER if no working keys
  *
  * @param config - Environment configuration object
- * @throws Error if no working API keys are found
+ * @throws Error if no working Serper API keys are found
  */
 export async function validateApiKeysOnStartup(
   config: ReturnType<typeof import('../../../../libs/shared/utils/src/index').getEnvConfig>
 ): Promise<void> {
-  // Collect all available API keys
+  // Collect all available Serper API keys
   const apiKeys: string[] = [];
 
-  if (config.newsApiKey) apiKeys.push(config.newsApiKey);
-  if (config.newsApiKeyBackup) apiKeys.push(config.newsApiKeyBackup);
-  if (config.newsApiKeyBackup2) apiKeys.push(config.newsApiKeyBackup2);
+  if (config.serperApiKey) apiKeys.push(config.serperApiKey);
+  if (config.serperApiKeyBackup) apiKeys.push(config.serperApiKeyBackup);
 
   if (apiKeys.length === 0) {
-    logger.error('🚨 FATAL ERROR: NO API KEYS CONFIGURED!');
-    logger.error('Please configure NewsAPI keys in your environment');
-    logger.error('Get API keys from: https://newsapi.org/register');
-    throw new Error('NO_API_KEYS_CONFIGURED');
+    logger.error('🚨 FATAL ERROR: NO SERPER API KEYS CONFIGURED!');
+    logger.error('Please configure Serper API keys in your environment');
+    logger.error('Get API keys from: https://serper.dev/');
+    throw new Error('NO_SERPER_KEYS_CONFIGURED');
   }
 
   // Test all keys and find a working one (quietly)
-  const result = await findWorkingApiKey(apiKeys);
+  const result = await findWorkingSerperKey(apiKeys);
 
   if (!result.isValid) {
     let errorMsg = '';
 
     if (result.isRateLimited) {
       errorMsg = `
-🚨 FATAL ERROR: ALL API KEYS ARE RATE LIMITED!
+🚨 FATAL ERROR: ALL SERPER API KEYS ARE RATE LIMITED!
 
-NewsAPI Developer Account Limits:
-- 100 requests per 24 hours
-- 50 requests available every 12 hours
+Serper API Limits:
+- Free tier: 2,500 searches per month
+- Rate limits may apply for excessive usage
 
 Current Status: ${result.message}
 
 Solutions:
-1. ⏰ WAIT: Keys will reset in ~24 hours from last usage
-2. 🔑 NEW KEYS: Get additional API keys from https://newsapi.org/register  
-3. 💰 UPGRADE: Purchase a paid NewsAPI plan for higher limits
+1. ⏰ WAIT: Rate limits typically reset within an hour
+2. 🔑 NEW KEYS: Get additional API keys from https://serper.dev/
+3. 💰 UPGRADE: Purchase a paid Serper plan for higher limits
 
 The server will not start until working API keys are available.
 `;
     } else {
       errorMsg = `
-🚨 FATAL ERROR: NO VALID API KEYS FOUND!
+🚨 FATAL ERROR: NO VALID SERPER API KEYS FOUND!
 
-All configured API keys failed validation.
+All configured Serper API keys failed validation.
 Error: ${result.error}
 Message: ${result.message}
 
-Please check your API keys and try again.
-Get new keys from: https://newsapi.org/register
+Please check your Serper API keys and try again.
+Get new keys from: https://serper.dev/
 `;
     }
 
     logger.error(errorMsg);
-    throw new Error(result.error || 'API_KEYS_VALIDATION_FAILED');
+    throw new Error(result.error || 'SERPER_KEYS_VALIDATION_FAILED');
   }
 
   // Success - no need to log, handled by server.ts
