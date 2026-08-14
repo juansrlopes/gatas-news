@@ -12,26 +12,21 @@ describe('Test Factories', () => {
 
       expect(result.name).toBe('Test Celebrity');
       expect(result.slug).toBe('test-celebrity');
-      expect(result.category).toBe('actress');
-      expect(result.priority).toBe(5);
       expect(result.isActive).toBe(true);
       expect(result.aliases).toEqual(['test celebrity']);
-      expect(result.searchTerms).toEqual(['test celebrity']);
     });
 
     it('should create celebrity data with overrides', () => {
       const overrides = {
         name: 'Custom Celebrity',
-        category: 'singer' as const,
-        priority: 8,
+        totalArticles: 8,
       };
 
       const result = createCelebrityData(overrides);
 
       expect(result.name).toBe('Custom Celebrity');
       expect(result.slug).toBe('custom-celebrity');
-      expect(result.category).toBe('singer');
-      expect(result.priority).toBe(8);
+      expect(result.totalArticles).toBe(8);
       expect(result.isActive).toBe(true);
     });
   });
@@ -65,11 +60,10 @@ describe('Test Factories', () => {
   });
 
   describe('createHighPriorityCelebrity', () => {
-    it('should create high priority celebrity', () => {
+    it('should create a celebrity with high article volume', () => {
       const result = createHighPriorityCelebrity();
 
       expect(result.name).toBe('High Priority Celebrity');
-      expect(result.priority).toBe(9);
       expect(result.totalArticles).toBe(100);
       expect(result.avgArticlesPerDay).toBe(5.5);
     });

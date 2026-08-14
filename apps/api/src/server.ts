@@ -29,6 +29,14 @@ if (fs.existsSync(envPath)) {
 
 const config = getEnvConfig();
 
+// Log Serper key prefix (same env as validateKeys) so user can verify key is loaded
+const serperKey = config.serperApiKey?.trim();
+if (serperKey) {
+  console.log(`🔑 Serper key loaded: ${serperKey.substring(0, 8)}...`);
+} else {
+  console.log('🔑 Serper key: not set (configure SERPER_API_KEY in apps/api/.env)');
+}
+
 // Create logs directory if it doesn't exist
 const logsDir = path.join(__dirname, '../logs');
 if (!fs.existsSync(logsDir)) {
@@ -120,7 +128,7 @@ const initializeServices = async (): Promise<void> => {
     if (config.isDevelopment) {
       console.log('\n🛠️  Development Tools:');
       console.log(
-        `   🔄 Manual fetch: POST http://localhost:${config.port}/api/v1/admin/fetch-now`
+        `   🔄 Manual fetch: POST http://localhost:${config.port}/api/v1/admin/fetch/trigger`
       );
       console.log(
         `   📊 Fetch status: GET http://localhost:${config.port}/api/v1/admin/fetch/status`

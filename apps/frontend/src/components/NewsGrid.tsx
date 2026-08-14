@@ -1,60 +1,120 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Article } from '../../../../libs/shared/types/src/index';
 import { ArticleSkeleton } from './LoadingSkeleton';
 import { createApiUrl, API_ENDPOINTS } from '../config/api';
 
+/** Delay (ms) before upgrading to high-res so we don't upgrade cards that scroll by quickly */
+const HIGH_RES_VISIBLE_DELAY_MS = 400;
+/** Max concurrent extract requests so we don't overload the image-proxy */
+const MAX_CONCURRENT_HIGH_RES = 3;
+
 /**
- * ArticleCard Component - Individual article display
+ * ArticleCard Component - Individual article display.
+ * Shows thumbnail first, then lazy-upgrades to high-res image when visible (extract from article page).
  */
 interface ArticleCardProps {
   article: Article;
   onImageError: (_imageUrl: string | null | undefined) => void;
   getImageSrc: (_imageUrl: string | null | undefined, _article: Article) => string;
+  requestHighResSlot: () => boolean;
+  onHighResLoaded: () => void;
 }
 
-const ArticleCard: React.FC<ArticleCardProps> = ({ article, onImageError, getImageSrc }) => (
-  <article className="group h-80"> {/* Fixed height for consistent card sizes */}
-    <a
-      href={article.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex flex-col h-full bg-purple-950 bg-opacity-50 rounded-lg shadow hover:shadow-lg transition-all duration-200 group-hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-      aria-label={`Ler notícia: ${article.title}`}
-    >
-      <div className="relative flex-shrink-0">
-        <Image
-          src={getImageSrc(article.imageUrl, article)}
-          alt={article.title || 'Notícia'}
-          width={500}
-          height={300}
-          className="w-full h-48 object-cover rounded-t-lg"
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-          onError={() => onImageError(article.imageUrl)}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-t-lg"></div>
-      </div>
-      <div className="flex-1 flex flex-col p-3">
-        <h3 className="font-bold text-sm text-white line-clamp-2 mb-2 flex-shrink-0">{article.title}</h3>
-        <p 
-          className="text-gray-300 text-xs leading-relaxed overflow-hidden"
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: 'vertical',
-            lineHeight: '1.4',
-            maxHeight: '4.2em' // 3 lines * 1.4 line-height
-          }}
-        >
-          {article.description}
-        </p>
-      </div>
-    </a>
-  </article>
-);
+const ArticleCard: React.FC<ArticleCardProps> = ({
+  article,
+  onImageError,
+  getImageSrc,
+  requestHighResSlot,
+  onHighResLoaded,
+}) => {
+  const [highResSrc, setHighResSrc] = useState<string | null>(null);
+  const cardRef = useRef<HTMLElement | null>(null); // <article> element for IntersectionObserver
+  const visibleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasRequestedUpgrade = useRef(false);
 
-// Add display name for React DevTools
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el || !article.url) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry?.isIntersecting || hasRequestedUpgrade.current) return;
+
+        visibleTimeoutRef.current = setTimeout(() => {
+          visibleTimeoutRef.current = null;
+          if (hasRequestedUpgrade.current) return;
+          if (!requestHighResSlot()) return;
+          hasRequestedUpgrade.current = true;
+          setHighResSrc(`/api/image-proxy?url=${encodeURIComponent(article.url)}&extract=true`);
+        }, HIGH_RES_VISIBLE_DELAY_MS);
+      },
+      { rootMargin: '100px', threshold: 0.1 }
+    );
+
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (visibleTimeoutRef.current) clearTimeout(visibleTimeoutRef.current);
+    };
+  }, [article.url, requestHighResSlot]);
+
+  const displaySrc = highResSrc ?? getImageSrc(article.imageUrl, article);
+  const isShowingHighRes = highResSrc !== null;
+
+  return (
+    <article
+      ref={cardRef}
+      className="group h-80"
+    >
+      <a
+        href={article.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex flex-col h-full bg-purple-950 bg-opacity-50 rounded-lg shadow hover:shadow-lg transition-all duration-200 group-hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+        aria-label={`Ler notícia: ${article.title}`}
+      >
+        <div className="relative flex-shrink-0">
+          <img
+            src={displaySrc}
+            alt={article.title || 'Notícia'}
+            className="w-full h-48 object-cover rounded-t-lg"
+            onLoad={() => {
+              if (isShowingHighRes) onHighResLoaded();
+            }}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              const currentSrc = target.src;
+              if (currentSrc !== '/placeholder-news.svg' && !currentSrc.startsWith('data:')) {
+                target.src = '/placeholder-news.svg';
+                if (isShowingHighRes) onHighResLoaded();
+              }
+              onImageError(article.imageUrl);
+            }}
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-t-lg"></div>
+        </div>
+        <div className="flex-1 flex flex-col p-3">
+          <h3 className="font-bold text-sm text-white line-clamp-2 mb-2 flex-shrink-0">{article.title}</h3>
+          <p
+            className="text-gray-300 text-xs leading-relaxed overflow-hidden"
+            style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              lineHeight: '1.4',
+              maxHeight: '4.2em',
+            }}
+          >
+            {article.description}
+          </p>
+        </div>
+      </a>
+    </article>
+  );
+};
+
 ArticleCard.displayName = 'ArticleCard';
 
 /**
@@ -101,7 +161,13 @@ const NewsGrid = () => {
   const [dailySearchCount, setDailySearchCount] = useState(0);
   const [maxDailySearches] = useState(5);
   const [searchSource, setSearchSource] = useState<'database' | 'live'>('database');
-  
+
+  // Refs so we always read latest search value on click (avoids stale closure / ref timing)
+  const dbSearchInputRef = useRef<HTMLInputElement>(null);
+  const dbQueryLatestRef = useRef<string>('');
+  const hasInitialFetchDone = useRef(false);
+  const highResInFlightRef = useRef(0);
+
   // Grid configuration - show 4 rows initially, then 4 more rows on Load More
   const ARTICLES_PER_PAGE = 20; // 4 rows × 5 columns = 20 articles per load
 
@@ -178,19 +244,20 @@ const NewsGrid = () => {
 
         clearTimeout(timeoutId);
 
+        const data = await response.json().catch(() => ({}));
+
         if (!response.ok) {
+          const apiMessage = data?.error && typeof data.error === 'string' ? data.error : undefined;
           if (response.status === 404) {
-            throw new Error('API não encontrada. Verifique se o servidor está rodando.');
+            throw new Error(apiMessage || 'API não encontrada. Verifique se o servidor está rodando.');
           } else if (response.status === 500) {
-            throw new Error('Erro interno do servidor. Tente novamente em alguns minutos.');
+            throw new Error(apiMessage || 'Erro interno do servidor. Tente novamente em alguns minutos.');
           } else if (response.status >= 400 && response.status < 500) {
-            throw new Error('Erro na requisição. Verifique os parâmetros.');
+            throw new Error(apiMessage || 'Erro na requisição. Verifique os parâmetros.');
           } else {
-            throw new Error(`Erro do servidor: ${response.status}`);
+            throw new Error(apiMessage || `Erro do servidor: ${response.status}`);
           }
         }
-
-        const data = await response.json();
 
         // Handle the API response structure: { success: true, data: { articles: [...], hasMore: boolean } }
         const articles = data.data?.articles || data.articles || [];
@@ -285,27 +352,31 @@ const NewsGrid = () => {
   );
 
 
+  const requestHighResSlot = useCallback((): boolean => {
+    if (highResInFlightRef.current >= MAX_CONCURRENT_HIGH_RES) return false;
+    highResInFlightRef.current += 1;
+    return true;
+  }, []);
+
+  const onHighResLoaded = useCallback(() => {
+    highResInFlightRef.current = Math.max(0, highResInFlightRef.current - 1);
+  }, []);
+
   /**
-   * Simple image source selection with fallback placeholder
+   * Image source: prefer API imageUrl (fast proxy). High-res is loaded lazily when card is visible (extract).
    */
   const getImageSrc = useCallback(
-    (imageUrl: string | null | undefined, article?: Article): string => {
-      // No image URL provided or failed to load - use simple placeholder
-      if (!imageUrl || failedImages.has(imageUrl)) {
-        return '/placeholder-news.svg';
-      }
-
-      // For Serper base64 thumbnails, try to extract a high-quality image from the article URL
-      if (imageUrl.startsWith('data:')) {
-        if (article?.url) {
-          return `/api/image-proxy?url=${encodeURIComponent(article.url)}&extract=true`;
+    (imageUrl: string | null | undefined, _article?: Article): string => {
+      // Prefer API imageUrl (proxy without extract = one fast image fetch). Avoid extract on load.
+      if (imageUrl && !failedImages.has(imageUrl)) {
+        if (imageUrl.startsWith('data:')) {
+          return imageUrl;
         }
-        // Fallback to provided base64 if no article URL available
-        return imageUrl;
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+          return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+        }
       }
-
-      // Use image proxy for external images
-      return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+      return '/placeholder-news.svg';
     },
     [failedImages]
   );
@@ -395,16 +466,15 @@ const NewsGrid = () => {
   }, [fetchArticles]);
 
   useEffect(() => {
-    // Safely fetch articles on initial load with error boundary protection
+    if (hasInitialFetchDone.current) return;
+    hasInitialFetchDone.current = true;
     const initializeArticles = async () => {
       try {
-        await fetchArticles(); // Fetch all articles on initial load
+        await fetchArticles();
       } catch (error) {
         console.error('Failed to initialize articles:', error);
-        // Error is already handled in fetchArticles, this is just a safety net
       }
     };
-
     initializeArticles();
   }, [fetchArticles]);
 
@@ -457,9 +527,13 @@ const NewsGrid = () => {
    * Resets pagination to page 1 and fetches articles from database.
    */
   const handleDatabaseSearch = useCallback(() => {
+    // Use latest-value ref first so we always have what the user typed (avoids ref/state timing)
+    const currentQuery = (dbQueryLatestRef.current ?? dbSearchInputRef.current?.value ?? dbQuery)
+      .trim()
+      .replace(/[<>]/g, '');
     setPage(1);
     setSearchSource('database');
-    fetchArticles(1, dbQuery, false, false);
+    fetchArticles(1, currentQuery, false, false);
   }, [dbQuery, fetchArticles]);
 
   /**
@@ -495,6 +569,7 @@ const NewsGrid = () => {
    */
   const handleClearDatabaseInput = useCallback(() => {
     setDbQuery('');
+    dbQueryLatestRef.current = '';
     setPage(1);
     setSearchSource('database');
     fetchArticles(1, '', false, false);
@@ -515,9 +590,11 @@ const NewsGrid = () => {
     setLiveQuery('');
   }, []);
 
-  // Input change handlers
+  // Input change handlers (keep latest ref in sync so search always has current value)
   const handleDbInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setDbQuery(e.target.value);
+    const value = e.target.value;
+    setDbQuery(value);
+    dbQueryLatestRef.current = value;
   }, []);
 
   const handleLiveInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -549,6 +626,7 @@ const NewsGrid = () => {
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-2">
           <input
+            ref={dbSearchInputRef}
             type="text"
             className="p-2 border border-gray-300 rounded w-full sm:w-96 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="Busque por Anitta, Bruna Marquezine, Paolla Oliveira..."
@@ -559,6 +637,7 @@ const NewsGrid = () => {
           />
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={handleDatabaseSearch}
               className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
               disabled={loading}
@@ -567,6 +646,7 @@ const NewsGrid = () => {
               {loading && searchSource === 'database' ? 'Buscando...' : 'Buscar'}
             </button>
             <button
+              type="button"
               onClick={handleClearDatabaseInput}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               aria-label="Limpar filtro"
@@ -582,6 +662,7 @@ const NewsGrid = () => {
         {!showLiveSearch && (
           <div className="mt-2">
             <button
+              type="button"
               onClick={handleShowLiveSearch}
               className="text-sm text-white hover:text-purple-300 underline transition-colors cursor-pointer"
               aria-label="Mostrar busca ao vivo"
@@ -607,6 +688,7 @@ const NewsGrid = () => {
             />
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={handleLiveSearch}
                 className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50"
                 disabled={loading || dailySearchCount >= maxDailySearches}
@@ -615,6 +697,7 @@ const NewsGrid = () => {
                 {loading && searchSource === 'live' ? 'Buscando...' : 'Buscar ao Vivo'}
               </button>
               <button
+                type="button"
                 onClick={handleCancelLiveSearch}
                 className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                 aria-label="Cancelar"
@@ -702,6 +785,8 @@ const NewsGrid = () => {
             article={article}
             onImageError={handleImageError}
             getImageSrc={getImageSrc}
+            requestHighResSlot={requestHighResSlot}
+            onHighResLoaded={onHighResLoaded}
           />
         ))}
       </div>
@@ -746,3 +831,4 @@ const NewsGrid = () => {
 NewsGrid.displayName = 'NewsGrid';
 
 export default NewsGrid;
+

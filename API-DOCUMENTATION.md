@@ -260,7 +260,7 @@ curl -X POST "http://localhost:8000/api/v1/admin/fetch/trigger"
 
 #### POST /api/v1/admin/fetch-now
 
-Simple fetch trigger (development only).
+Alias of `/api/v1/admin/fetch/trigger`.
 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/admin/fetch-now"

@@ -1,7 +1,16 @@
 import request from 'supertest';
 import app from '../app';
 import { celebrityRepository } from '../database/repositories/CelebrityRepository';
+import { ICelebrity } from '../database/models/Celebrity';
 import { createCelebrityData } from '../test/factories';
+
+function asCelebrity(data: Partial<ICelebrity>): ICelebrity {
+  return data as ICelebrity;
+}
+
+function asCelebrities(data: Partial<ICelebrity>[]): ICelebrity[] {
+  return data as ICelebrity[];
+}
 
 // Mock the repository
 jest.mock('../database/repositories/CelebrityRepository');
@@ -20,7 +29,7 @@ describe('Celebrity Controller', () => {
       ];
 
       mockCelebrityRepository.findWithFilters.mockResolvedValue({
-        celebrities: mockCelebrities,
+        celebrities: asCelebrities(mockCelebrities),
         totalCount: 2,
         totalPages: 1,
         currentPage: 1,
@@ -58,7 +67,7 @@ describe('Celebrity Controller', () => {
       );
     });
 
-    it('should handle category filter', async () => {
+    it('should handle isActive filter', async () => {
       mockCelebrityRepository.findWithFilters.mockResolvedValue({
         celebrities: [],
         totalCount: 0,
@@ -67,29 +76,11 @@ describe('Celebrity Controller', () => {
         hasMore: false,
       });
 
-      const response = await request(app).get('/api/v1/celebrities').query({ category: 'actress' });
+      const response = await request(app).get('/api/v1/celebrities').query({ isActive: 'true' });
 
       expect(response.status).toBe(200);
       expect(mockCelebrityRepository.findWithFilters).toHaveBeenCalledWith(
-        expect.objectContaining({ category: 'actress' }),
-        expect.any(Object)
-      );
-    });
-
-    it('should handle priority filter', async () => {
-      mockCelebrityRepository.findWithFilters.mockResolvedValue({
-        celebrities: [],
-        totalCount: 0,
-        totalPages: 0,
-        currentPage: 1,
-        hasMore: false,
-      });
-
-      const response = await request(app).get('/api/v1/celebrities').query({ minPriority: 8 });
-
-      expect(response.status).toBe(200);
-      expect(mockCelebrityRepository.findWithFilters).toHaveBeenCalledWith(
-        expect.objectContaining({ minPriority: 8 }),
+        expect.objectContaining({ isActive: true }),
         expect.any(Object)
       );
     });
@@ -109,7 +100,7 @@ describe('Celebrity Controller', () => {
       const mockResults = [createCelebrityData({ name: 'Taylor Swift' })];
 
       mockCelebrityRepository.search.mockResolvedValue({
-        celebrities: mockResults,
+        celebrities: asCelebrities(mockResults),
         totalCount: 1,
         totalPages: 1,
         currentPage: 1,
@@ -153,7 +144,7 @@ describe('Celebrity Controller', () => {
   describe('GET /api/v1/celebrities/:id', () => {
     it('should return celebrity by ID', async () => {
       const mockCelebrity = createCelebrityData({ name: 'Test Celebrity' });
-      mockCelebrityRepository.findById.mockResolvedValue(mockCelebrity);
+      mockCelebrityRepository.findById.mockResolvedValue(asCelebrity(mockCelebrity));
 
       const response = await request(app).get('/api/v1/celebrities/507f1f77bcf86cd799439011');
 
@@ -184,11 +175,9 @@ describe('Celebrity Controller', () => {
     it('should create new celebrity', async () => {
       const newCelebrityData = {
         name: 'New Celebrity',
-        category: 'actress' as const,
-        priority: 5,
       };
 
-      const mockCreated = createCelebrityData(newCelebrityData);
+      const mockCreated = asCelebrity(createCelebrityData(newCelebrityData));
       mockCelebrityRepository.create.mockResolvedValue(mockCreated);
 
       const response = await request(app).post('/api/v1/celebrities').send(newCelebrityData);
@@ -214,8 +203,6 @@ describe('Celebrity Controller', () => {
         .post('/api/v1/celebrities')
         .send({
           name: 'Existing Celebrity',
-          category: 'actress' as const,
-          priority: 5,
         });
 
       expect(response.status).toBe(500);
@@ -225,8 +212,8 @@ describe('Celebrity Controller', () => {
 
   describe('PUT /api/v1/celebrities/:id', () => {
     it('should update celebrity', async () => {
-      const updateData = { priority: 9, description: 'Updated description' };
-      const mockUpdated = createCelebrityData({ ...updateData, name: 'Test Celebrity' });
+      const updateData = { aliases: ['Updated'], isActive: true };
+      const mockUpdated = asCelebrity(createCelebrityData({ ...updateData, name: 'Test Celebrity' }));
 
       mockCelebrityRepository.update.mockResolvedValue(mockUpdated);
 
@@ -236,7 +223,7 @@ describe('Celebrity Controller', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.priority).toBe(9);
+      expect(response.body.data.name).toBe('Test Celebrity');
     });
 
     it('should return 404 for non-existent celebrity', async () => {
@@ -244,7 +231,7 @@ describe('Celebrity Controller', () => {
 
       const response = await request(app)
         .put('/api/v1/celebrities/507f1f77bcf86cd799439011')
-        .send({ priority: 9 });
+        .send({ isActive: false });
 
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
@@ -255,7 +242,7 @@ describe('Celebrity Controller', () => {
   describe('DELETE /api/v1/celebrities/:id', () => {
     it('should soft delete celebrity', async () => {
       const mockDeleted = createCelebrityData({ name: 'Test Celebrity', isActive: false });
-      mockCelebrityRepository.softDelete.mockResolvedValue(mockDeleted);
+      mockCelebrityRepository.softDelete.mockResolvedValue(asCelebrity(mockDeleted));
 
       const response = await request(app).delete('/api/v1/celebrities/507f1f77bcf86cd799439011');
 
@@ -281,8 +268,6 @@ describe('Celebrity Controller', () => {
         totalCelebrities: 100,
         activeCelebrities: 85,
         inactiveCelebrities: 15,
-        categoriesBreakdown: [{ category: 'actress', count: 40 }],
-        priorityBreakdown: [{ priority: 8, count: 20 }],
         topPerformers: [],
         recentlyAdded: [],
       };
@@ -308,38 +293,12 @@ describe('Celebrity Controller', () => {
   });
 
   describe('POST /api/v1/celebrities/migrate', () => {
-    it('should migrate celebrities from JSON', async () => {
-      const jsonData = ['Celebrity 1', 'Celebrity 2', 'Celebrity 3'];
-      const mockResult = { created: 3, skipped: 0, errors: [] };
-
-      mockCelebrityRepository.migrateFromJson.mockResolvedValue(mockResult);
-
+    it('returns 404 because JSON migration was removed', async () => {
       const response = await request(app)
         .post('/api/v1/celebrities/migrate-from-json')
-        .send({ celebrities: jsonData });
+        .send({ celebrities: ['Celebrity 1'] });
 
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.data.created).toBe(3);
-      expect(response.body.data.skipped).toBe(0);
-    });
-
-    it('should validate migration data', async () => {
-      const response = await request(app).post('/api/v1/celebrities/migrate-from-json').send({});
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toContain('Migration no longer available');
-    });
-
-    it('should handle migration errors', async () => {
-      mockCelebrityRepository.migrateFromJson.mockRejectedValue(new Error('Migration failed'));
-
-      const response = await request(app)
-        .post('/api/v1/celebrities/migrate-from-json')
-        .send({ celebrities: ['Test Celebrity'] });
-
-      expect(response.status).toBe(500);
-      // Error handling works, response structure may vary in test environment
+      expect(response.status).toBe(404);
     });
   });
 });

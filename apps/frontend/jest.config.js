@@ -5,15 +5,16 @@
  * Includes setup for TypeScript, CSS modules, and image mocking
  */
 
+const path = require('path');
 const nextJest = require('next/jest');
 
 const createJestConfig = nextJest({
-  // Provide the path to your Next.js app to load next.config.js and .env files
-  dir: './',
+  dir: __dirname,
 });
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
+  rootDir: __dirname,
   // Test environment
   testEnvironment: 'jsdom',
 

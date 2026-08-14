@@ -62,8 +62,11 @@ export class ApiKeyManager {
     const config = getEnvConfig();
     const keys: string[] = [];
 
+    // Add all available Serper API keys
     if (config.serperApiKey) keys.push(config.serperApiKey);
     if (config.serperApiKeyBackup) keys.push(config.serperApiKeyBackup);
+    if (config.serperApiKey2) keys.push(config.serperApiKey2);
+    if (config.serperApiKey3) keys.push(config.serperApiKey3);
 
     keys.forEach((key, index) => {
       const keyId = this.generateKeyId(key);

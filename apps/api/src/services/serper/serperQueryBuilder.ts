@@ -17,10 +17,12 @@ export class SerperQueryBuilder {
     searchType?: 'comprehensive' | 'entertainment' | 'news' | 'lifestyle' | 'career';
     dateRestrict?: string;
     language?: string;
+    num?: number; // Allow num to be passed in
   } = {}): SerperSearchOptions {
     const {
       searchType = 'comprehensive',
-      dateRestrict = 'm1' // Last month by default
+      dateRestrict = undefined, // NO date restriction - get ALL articles
+      num = 100 // Default to 100 articles (Serper max per request)
     } = options;
 
     // Use EXACT format from Serper playground - just the celebrity name
@@ -35,9 +37,10 @@ export class SerperQueryBuilder {
       query,
       location: 'Brazil',       // Full country name as shown in playground
       language: 'pt-br',        // Full language code as shown in playground  
-      num: 20,                  // Start with reasonable number
-      dateRestrict,            // Recent articles
+      num,                      // Use provided num or default to 100 (max)
       sortBy: 'relevance',     // Most relevant first
+      // Only include dateRestrict if explicitly provided (for trending/live search)
+      ...(dateRestrict && { dateRestrict }),
     };
 
     logger.debug(`Built Serper query for ${celebrityName}:`, {
@@ -50,14 +53,39 @@ export class SerperQueryBuilder {
   }
 
   /**
-   * Build batch query for multiple celebrities
+   * Build individual queries for each celebrity (best coverage)
+   * This ensures ALL celebrities get searched and avoids clustering
+   */
+  public static buildIndividualQueries(celebrities: string[], options: {
+    searchType?: 'comprehensive' | 'entertainment' | 'news';
+    articlesPerCelebrity?: number;
+  } = {}): SerperSearchOptions[] {
+    const { articlesPerCelebrity = 50 } = options;
+    
+    const queries: SerperSearchOptions[] = [];
+    
+    // Create one query per celebrity for guaranteed coverage
+    // IMPORTANT: Only include 'query' and 'num' - other params are added by executeSearch
+    for (const celebrity of celebrities) {
+      queries.push({
+        query: `"${celebrity}"`, // Just the celebrity name in quotes
+        num: articlesPerCelebrity, // Get 50 articles per celebrity
+      });
+    }
+    
+    logger.info(`✅ Built ${queries.length} individual queries for ${celebrities.length} celebrities (${articlesPerCelebrity} articles each)`);
+    return queries;
+  }
+
+  /**
+   * Build batch query for multiple celebrities (legacy - may cause clustering)
    */
   public static buildBatchQuery(celebrities: string[], options: {
     maxCelebritiesPerQuery?: number;
     searchType?: 'comprehensive' | 'entertainment' | 'news';
   } = {}): SerperSearchOptions[] {
     const {
-      maxCelebritiesPerQuery = 10 // Maximum efficient batch size: 3.7 articles per call, 12 total calls
+      maxCelebritiesPerQuery = 4 // 4 names per request: ~30 calls for 112 celebs
     } = options;
 
     const queries: SerperSearchOptions[] = [];
@@ -75,7 +103,7 @@ export class SerperQueryBuilder {
         query,
         location: 'Brazil',      // Full country name
         language: 'pt-br',       // Full language code
-        num: 20,                 // Reasonable number for batch
+        num: 100,                // Request max (Serper news may cap at ~10 per request)
         dateRestrict: 'm1',
         sortBy: 'relevance',
         // Removed tbm parameter - using /news endpoint instead
@@ -160,10 +188,11 @@ export class SerperQueryBuilder {
       .replace(/\s+/g, ' ') // Normalize whitespace
       .trim();
 
-    // Ensure query is not too long (Serper has limits)
-    if (sanitized.length > 500) {
-      logger.warn(`Query too long (${sanitized.length} chars), truncating`);
-      return sanitized.substring(0, 500);
+    // Ensure query is not too long (Serper has limits; 1000 allows ~25-30 names)
+    const maxQueryLength = 1000;
+    if (sanitized.length > maxQueryLength) {
+      logger.warn(`Query too long (${sanitized.length} chars), truncating to ${maxQueryLength}`);
+      return sanitized.substring(0, maxQueryLength);
     }
 
     return sanitized;

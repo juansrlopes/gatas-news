@@ -3,16 +3,23 @@ import app from '../app';
 import { articleRepository } from '../database/repositories/ArticleRepository';
 import { celebrityRepository } from '../database/repositories/CelebrityRepository';
 import { jobScheduler } from '../jobs/scheduler';
+import { newsService } from '../services/newsService';
 
 // Mock dependencies
 jest.mock('../database/repositories/ArticleRepository');
 jest.mock('../database/repositories/CelebrityRepository');
 jest.mock('../jobs/scheduler');
 jest.mock('../services/cacheService');
+jest.mock('../services/newsService', () => ({
+  newsService: {
+    triggerNewsFetch: jest.fn(),
+  },
+}));
 
 const mockArticleRepository = articleRepository as jest.Mocked<typeof articleRepository>;
 const mockCelebrityRepository = celebrityRepository as jest.Mocked<typeof celebrityRepository>;
 const mockJobScheduler = jobScheduler as jest.Mocked<typeof jobScheduler>;
+const mockNewsService = newsService as jest.Mocked<typeof newsService>;
 
 describe('Admin Controller', () => {
   beforeEach(() => {
@@ -82,8 +89,6 @@ describe('Admin Controller', () => {
         totalCelebrities: 100,
         activeCelebrities: 85,
         inactiveCelebrities: 15,
-        categoriesBreakdown: [{ category: 'actress', count: 40 }],
-        priorityBreakdown: [{ priority: 8, count: 20 }],
         topPerformers: [],
         recentlyAdded: [],
       };
@@ -110,8 +115,6 @@ describe('Admin Controller', () => {
         totalCelebrities: 0,
         activeCelebrities: 0,
         inactiveCelebrities: 0,
-        categoriesBreakdown: [],
-        priorityBreakdown: [],
         topPerformers: [],
         recentlyAdded: [],
       });
@@ -183,15 +186,20 @@ describe('Admin Controller', () => {
   });
 
   describe('POST /api/v1/admin/fetch/trigger', () => {
+    const fetchResult = {
+      success: true,
+      articlesProcessed: 50,
+      newArticlesAdded: 25,
+      duplicatesFound: 20,
+      errors: [] as string[],
+      duration: 5000,
+    };
+
+    beforeEach(() => {
+      mockNewsService.triggerNewsFetch.mockResolvedValue(fetchResult);
+    });
+
     it('should trigger specific job', async () => {
-      mockJobScheduler.triggerNewsFetch.mockResolvedValue({
-        success: true,
-        articlesProcessed: 50,
-        newArticlesAdded: 25,
-        duplicatesFound: 20,
-        errors: [],
-        duration: 5000,
-      });
 
       const response = await request(app)
         .post('/api/v1/admin/fetch/trigger')
@@ -221,7 +229,7 @@ describe('Admin Controller', () => {
     });
 
     it('should handle job execution errors', async () => {
-      mockJobScheduler.triggerNewsFetch.mockRejectedValue(new Error('Job failed'));
+      mockNewsService.triggerNewsFetch.mockRejectedValue(new Error('Job failed'));
 
       const response = await request(app)
         .post('/api/v1/admin/fetch/trigger')

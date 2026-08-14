@@ -33,7 +33,7 @@ describe('CelebrityRepository', () => {
       expect(result.slug).toBe('test-celebrity-name');
     });
 
-    it('should auto-generate search terms from name and aliases', async () => {
+    it('should persist aliases on create', async () => {
       const celebrityData = createCelebrityData({
         name: 'Celebrity Name',
         aliases: ['Celeb', 'Famous Person'],
@@ -41,9 +41,7 @@ describe('CelebrityRepository', () => {
 
       const result = await celebrityRepository.create(celebrityData);
 
-      expect(result.searchTerms).toContain('celebrity name');
-      expect(result.searchTerms).toContain('celeb');
-      expect(result.searchTerms).toContain('famous person');
+      expect(result.aliases).toEqual(expect.arrayContaining(['Celeb', 'Famous Person']));
     });
 
     it('should create celebrities with different names', async () => {
@@ -134,9 +132,9 @@ describe('CelebrityRepository', () => {
   describe('findWithFilters', () => {
     beforeEach(async () => {
       const celebrities = [
-        createCelebrityData({ name: 'Actress 1', category: 'actress', priority: 8 }),
-        createCelebrityData({ name: 'Singer 1', category: 'singer', priority: 6 }),
-        createCelebrityData({ name: 'Actress 2', category: 'actress', priority: 9 }),
+        createCelebrityData({ name: 'Actress 1', totalArticles: 8 }),
+        createCelebrityData({ name: 'Singer 1', totalArticles: 6 }),
+        createCelebrityData({ name: 'Actress 2', totalArticles: 9 }),
         createInactiveCelebrity(),
       ];
 
@@ -152,18 +150,11 @@ describe('CelebrityRepository', () => {
       expect(result.hasMore).toBe(false);
     });
 
-    it('should filter by category', async () => {
-      const result = await celebrityRepository.findWithFilters({ category: 'actress' });
+    it('should filter by active status', async () => {
+      const result = await celebrityRepository.findWithFilters({ isActive: true });
 
-      expect(result.celebrities).toHaveLength(2);
-      expect(result.celebrities.every(c => c.category === 'actress')).toBe(true);
-    });
-
-    it('should filter by minimum priority', async () => {
-      const result = await celebrityRepository.findWithFilters({ minPriority: 8 });
-
-      expect(result.celebrities).toHaveLength(2);
-      expect(result.celebrities.every(c => c.priority >= 8)).toBe(true);
+      expect(result.celebrities).toHaveLength(3);
+      expect(result.celebrities.every(c => c.isActive)).toBe(true);
     });
 
     it('should handle pagination correctly', async () => {
@@ -175,11 +166,11 @@ describe('CelebrityRepository', () => {
       expect(result.hasMore).toBe(true);
     });
 
-    it('should sort by priority descending by default', async () => {
+    it('should sort by name by default', async () => {
       const result = await celebrityRepository.findWithFilters();
 
-      const priorities = result.celebrities.map(c => c.priority);
-      expect(priorities).toEqual([9, 8, 6]);
+      const names = result.celebrities.map(c => c.name);
+      expect(names).toEqual([...names].sort());
     });
   });
 
@@ -189,12 +180,10 @@ describe('CelebrityRepository', () => {
         createCelebrityData({
           name: 'Famous Actress',
           aliases: ['Famous', 'Star'],
-          searchTerms: ['famous actress', 'famous', 'star'],
         }),
         createCelebrityData({
           name: 'Popular Singer',
           aliases: ['Pop Star'],
-          searchTerms: ['popular singer', 'pop star'],
         }),
       ];
 
@@ -236,18 +225,18 @@ describe('CelebrityRepository', () => {
       const created = await createTestCelebrity(celebrityData);
 
       const result = await celebrityRepository.update((created._id as string).toString(), {
-        priority: 10,
-        description: 'Updated description',
+        aliases: ['Updated'],
+        totalArticles: 10,
       });
 
       expect(result).not.toBeNull();
-      expect(result!.priority).toBe(10);
-      expect(result!.description).toBe('Updated description');
+      expect(result!.aliases).toEqual(['Updated']);
+      expect(result!.totalArticles).toBe(10);
     });
 
     it('should return null for non-existent celebrity', async () => {
       const result = await celebrityRepository.update('507f1f77bcf86cd799439011', {
-        priority: 10,
+        aliases: ['Updated'],
       });
 
       expect(result).toBeNull();
@@ -319,8 +308,8 @@ describe('CelebrityRepository', () => {
       const result = await celebrityRepository.getTopPerformers(2);
 
       expect(result).toHaveLength(2);
-      expect(result[0].name).toBe('Top Performer 2'); // Higher avg articles per day
-      expect(result[1].name).toBe('Top Performer 1');
+      expect(result[0].name).toBe('Top Performer 1');
+      expect(result[1].name).toBe('Top Performer 2');
     });
 
     it('should respect the limit parameter', async () => {
@@ -333,8 +322,8 @@ describe('CelebrityRepository', () => {
   describe('getActiveForFetching', () => {
     beforeEach(async () => {
       const celebrities = [
-        createCelebrityData({ name: 'Active High Priority', priority: 9, isActive: true }),
-        createCelebrityData({ name: 'Active Low Priority', priority: 3, isActive: true }),
+        createCelebrityData({ name: 'Active High Volume', totalArticles: 9, isActive: true }),
+        createCelebrityData({ name: 'Active Low Volume', totalArticles: 3, isActive: true }),
         createInactiveCelebrity(),
       ];
 
@@ -348,11 +337,12 @@ describe('CelebrityRepository', () => {
       expect(result.every(c => c.isActive)).toBe(true);
     });
 
-    it('should sort by priority descending', async () => {
+    it('should return active celebrities', async () => {
       const result = await celebrityRepository.getActiveForFetching();
 
-      expect(result[0].name).toBe('Active High Priority');
-      expect(result[1].name).toBe('Active Low Priority');
+      expect(result).toHaveLength(2);
+      expect(result.every(c => c.isActive)).toBe(true);
+      expect(result.map(c => c.name).sort()).toEqual(['Active High Volume', 'Active Low Volume']);
     });
   });
 

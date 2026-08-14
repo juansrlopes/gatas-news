@@ -81,7 +81,7 @@ export const performSearch = async (
   submitMethod: 'button' | 'enter' = 'button'
 ) => {
   const user = setupUser();
-  const searchInput = screen.getByPlaceholderText(/filtre pelo nome/i);
+  const searchInput = screen.getByPlaceholderText(/busque por anitta/i);
 
   await user.clear(searchInput);
   await user.type(searchInput, searchTerm);

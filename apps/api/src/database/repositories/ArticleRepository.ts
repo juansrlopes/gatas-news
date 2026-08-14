@@ -102,9 +102,12 @@ export class ArticleRepository {
       const { page, limit, sortBy = 'publishedAt', sortOrder = 'desc' } = options;
       const skip = (page - 1) * limit;
 
-      // Build sort object
+      // Build sort object (secondary sort by celebrity breaks ties so same-date articles don't cluster)
       const sort: Record<string, 1 | -1> = {};
       sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+      if (sortBy === 'publishedAt') {
+        sort['celebrity'] = 1;
+      }
 
       // Execute queries in parallel
       const [articles, totalCount] = await Promise.all([
@@ -153,12 +156,15 @@ export class ArticleRepository {
       const { page, limit, sortBy = 'publishedAt', sortOrder = 'desc' } = options;
       const skip = (page - 1) * limit;
 
-      // Build sort object
-      const sort: Record<string, 1 | -1> = {};
+      // Build sort object (secondary sort by celebrity breaks ties when sorting by date)
+      const sort: Record<string, 1 | -1 | { $meta: string }> = {};
       if (searchTerm) {
         (sort as Record<string, unknown>).score = { $meta: 'textScore' };
       }
       sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+      if (sortBy === 'publishedAt') {
+        sort['celebrity'] = 1;
+      }
 
       // Execute queries in parallel
       const [articles, totalCount] = await Promise.all([
@@ -312,7 +318,7 @@ export class ArticleRepository {
           { $match: { isActive: true } },
           { $group: { _id: '$celebrity', count: { $sum: 1 } } },
           { $sort: { count: -1 } },
-          { $limit: 10 },
+          // REMOVED $limit: 10 - Show ALL celebrities with articles, not just top 10
           { $project: { celebrity: '$_id', count: 1, _id: 0 } },
         ]).exec(),
         Article.aggregate([

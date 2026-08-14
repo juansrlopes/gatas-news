@@ -12,75 +12,95 @@ export interface ApiKeyStatus {
   keyUsed: string;
 }
 
+const SERPER_SEARCH_URL = 'https://google.serper.dev/search';
+/** Exact same request as npm run validateKeys (test-api-keys.js) */
+const SERPER_TEST_BODY = { q: 'test', gl: 'br', hl: 'pt', num: 1 };
+const SERPER_USER_AGENT = 'Gatas-News-KeyTester/1.0';
+
+function doSerperTest(apiKey: string, useBearer: boolean) {
+  const trimmedKey = (apiKey || '').trim();
+  return axios.post(SERPER_SEARCH_URL, SERPER_TEST_BODY, {
+    headers: {
+      ...(useBearer ? { Authorization: `Bearer ${trimmedKey}` } : { 'X-API-KEY': trimmedKey }),
+      'Content-Type': 'application/json',
+      'User-Agent': SERPER_USER_AGENT,
+    },
+    timeout: 10000,
+  });
+}
+
 /**
- * Validates Serper API key by making a minimal test request
- *
- * @param apiKey - The Serper API key to validate
- * @returns Promise<ApiKeyStatus> - Status of the API key
+ * Validates Serper API key by making the exact same request as validateKeys script
+ * Uses gl: 'br', hl: 'pt', User-Agent. On 403 with X-API-KEY, retries with Authorization: Bearer.
  */
 export async function validateSerperApiKey(apiKey: string): Promise<ApiKeyStatus> {
+  const trimmedKey = (apiKey || '').trim();
+  if (!trimmedKey) {
+    return { isValid: false, isRateLimited: false, error: 'EMPTY_KEY', message: 'No key provided', keyUsed: '' };
+  }
   try {
-    // Test API key quietly
-
-    // Make minimal test request to Serper API
-    const response = await axios.post('https://google.serper.dev/search', {
-      q: 'test',
-      gl: 'us',
-      hl: 'en',
-      num: 1, // Minimal request
-    }, {
-      headers: {
-        'X-API-KEY': apiKey,
-        'Content-Type': 'application/json',
-      },
-      timeout: 10000, // 10 second timeout
-    });
+    let response;
+    try {
+      response = await doSerperTest(trimmedKey, false);
+    } catch (firstErr: unknown) {
+      const status = (firstErr as { response?: { status?: number } })?.response?.status;
+      if (status === 403) {
+        try {
+          response = await doSerperTest(trimmedKey, true);
+        } catch {
+          return {
+            isValid: false,
+            isRateLimited: false,
+            error: 'INVALID_KEY',
+            message: 'Invalid Serper API key (403 with both X-API-KEY and Bearer)',
+            keyUsed: trimmedKey.substring(0, 8) + '...',
+          };
+        }
+      } else {
+        throw firstErr;
+      }
+    }
 
     if (response.status === 200 && response.data) {
       return {
         isValid: true,
         isRateLimited: false,
-        keyUsed: apiKey,
-      };
-    } else {
-      return {
-        isValid: false,
-        isRateLimited: false,
-        error: 'Invalid response from Serper API',
-        keyUsed: apiKey,
+        keyUsed: trimmedKey.substring(0, 8) + '...',
       };
     }
+    return {
+      isValid: false,
+      isRateLimited: false,
+      error: 'Invalid response from Serper API',
+      keyUsed: trimmedKey.substring(0, 8) + '...',
+    };
   } catch (error: unknown) {
-    const axiosError = error as { response?: { status?: number; data?: { error?: { message?: string } } } };
-    
+    const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
     if (axiosError.response?.status === 429) {
       return {
         isValid: false,
         isRateLimited: true,
         error: 'RATE_LIMITED',
         message: 'Serper API rate limit exceeded',
-        keyUsed: apiKey,
+        keyUsed: trimmedKey.substring(0, 8) + '...',
       };
     }
-
     if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
       return {
         isValid: false,
         isRateLimited: false,
         error: 'INVALID_KEY',
-        message: 'Invalid Serper API key',
-        keyUsed: apiKey,
+        message: axiosError.response?.data?.message || 'Invalid Serper API key',
+        keyUsed: trimmedKey.substring(0, 8) + '...',
       };
     }
-
-    // Network or other errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown network error';
     return {
       isValid: false,
       isRateLimited: false,
       error: 'NETWORK_ERROR',
       message: errorMessage,
-      keyUsed: apiKey,
+      keyUsed: trimmedKey.substring(0, 8) + '...',
     };
   }
 }
@@ -122,11 +142,18 @@ export async function findWorkingSerperKey(apiKeys: string[]): Promise<ApiKeySta
 export async function validateApiKeysOnStartup(
   config: ReturnType<typeof import('../../../../libs/shared/utils/src/index').getEnvConfig>
 ): Promise<void> {
-  // Collect all available Serper API keys
+  // Collect all available Serper API keys (trimmed, same order as validateKeys script)
   const apiKeys: string[] = [];
-
-  if (config.serperApiKey) apiKeys.push(config.serperApiKey);
-  if (config.serperApiKeyBackup) apiKeys.push(config.serperApiKeyBackup);
+  const raw = [
+    config.serperApiKey,
+    config.serperApiKeyBackup,
+    config.serperApiKey2,
+    config.serperApiKey3,
+  ].filter(Boolean) as string[];
+  raw.forEach((k) => {
+    const t = k.trim();
+    if (t) apiKeys.push(t);
+  });
 
   if (apiKeys.length === 0) {
     logger.error('🚨 FATAL ERROR: NO SERPER API KEYS CONFIGURED!');

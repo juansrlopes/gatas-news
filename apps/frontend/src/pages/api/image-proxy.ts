@@ -24,6 +24,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
+import { extractBestImageFromHtml } from '../../../../../libs/shared/utils/src/index';
 
 /**
  * Allowed domains for security - only trusted news sources
@@ -107,7 +108,7 @@ const ALLOWED_DOMAINS = [
   'p2.trrsf.com',
   'trrsf.com',
   
-  // PHASE 4: RSS and scraped image domains (2025-09-17)
+  // PHASE 4: Scraped / entertainment image domains
   's2-g1.glbimg.com',
   's1-g1.glbimg.com',
   'i.s3.glbimg.com',
@@ -116,7 +117,6 @@ const ALLOWED_DOMAINS = [
   'img.istoe.com.br',
   'assets.istoe.com.br',
   'farofafa.com.br',
-  'wp-content',
   'assets.b9.com.br',
   'b9.com.br',
   
@@ -147,6 +147,14 @@ const ALLOWED_DOMAINS = [
   'ajn1.com.br',
   'www.folhadecuritiba.com.br',
   'www.ajn1.com.br',
+  
+  // PHASE 7: Additional domains from error logs
+  'virgula.me',
+  'www.virgula.me',
+  'www.fox.com',
+  'fox.com',
+  'www.msn.com',
+  'msn.com',
 ];
 
 /**
@@ -200,6 +208,11 @@ function isDomainSafeForNews(hostname: string): boolean {
     /\.medium\.com$/, // Medium articles
     /\.wordpress\.com$/, // WordPress blogs
     /\.wp\.com$/, // WordPress.com hosted images
+    /\.me$/, // .me domains (virgula.me, etc.)
+    /gstatic\.com$/,
+    /cloudfront\.net$/,
+    /akamaized\.net$/,
+    /glbimg\.com$/,
   ];
 
   // Check if domain matches news patterns
@@ -307,13 +320,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const candidate = extractBestImageFromHtml(html, url);
 
         if (!candidate) {
-          console.log(`[IMAGE-PROXY] No high-quality image found for ${url}, falling back to placeholder`);
-          return res.status(404).json({ error: 'High-quality image not found' });
+          console.log(`[IMAGE-PROXY] No high-quality image found for ${url}, returning placeholder`);
+          // Return a placeholder image instead of 404
+          return res.redirect(302, '/placeholder-news.svg');
         }
 
         if (!isValidUrl(candidate)) {
-          console.warn(`[IMAGE-PROXY] Extracted image URL not allowed: ${candidate}`);
-          return res.status(400).json({ error: 'Extracted image URL is not allowed' });
+          console.warn(`[IMAGE-PROXY] Extracted image URL not allowed: ${candidate}, trying to whitelist...`);
+          // Try to extract domain and auto-whitelist if it's a news domain
+          try {
+            const candidateUrl = new URL(candidate);
+            const hostname = candidateUrl.hostname.toLowerCase();
+            // If it matches news patterns, allow it
+            if (isDomainSafeForNews(hostname)) {
+              console.log(`[IMAGE-PROXY] Auto-whitelisted extracted image domain: ${hostname}`);
+              // Continue with the request
+            } else {
+              // Not a news domain, return placeholder
+              console.warn(`[IMAGE-PROXY] Extracted image from non-news domain: ${hostname}, returning placeholder`);
+              return res.redirect(302, '/placeholder-news.svg');
+            }
+          } catch {
+            // Invalid URL, return placeholder
+            return res.redirect(302, '/placeholder-news.svg');
+          }
         }
 
         const imageResp = await axios.get(candidate, {
@@ -337,7 +367,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.send(imageResp.data);
       } catch (extractError) {
         console.error(`[IMAGE-PROXY] Extract mode failed for ${url}:`, extractError);
-        return res.status(404).json({ error: 'High-quality image extraction failed' });
+        // Return placeholder instead of 404 to prevent broken images
+        return res.redirect(302, '/placeholder-news.svg');
       }
     }
 
@@ -414,67 +445,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(500).json({ error: 'Failed to fetch image' });
   }
-}
-
-// Extract best image URL from HTML using lightweight regex heuristics
-function extractBestImageFromHtml(html: string, baseUrl: string): string | null {
-  const candidates: string[] = [];
-
-  // Helper to absolutize URLs
-  const toAbsolute = (u: string): string | null => {
-    try {
-      return new URL(u, baseUrl).toString();
-    } catch {
-      return null;
-    }
-  };
-
-  // og:image
-  const ogMatch = /<meta[^>]+property=["']og:image["'][^>]*content=["']([^"'>]+)["']/i.exec(html) ||
-                  /<meta[^>]+content=["']([^"'>]+)["'][^>]*property=["']og:image["']/i.exec(html);
-  if (ogMatch?.[1]) {
-    const abs = toAbsolute(ogMatch[1]);
-    if (abs) candidates.push(abs);
-  }
-
-  // twitter:image
-  const twMatch = /<meta[^>]+name=["']twitter:image["'][^>]*content=["']([^"'>]+)["']/i.exec(html) ||
-                  /<meta[^>]+content=["']([^"'>]+)["'][^>]*name=["']twitter:image["']/i.exec(html);
-  if (twMatch?.[1]) {
-    const abs = toAbsolute(twMatch[1]);
-    if (abs) candidates.push(abs);
-  }
-
-  // link rel=image_src
-  const linkMatch = /<link[^>]+rel=["']image_src["'][^>]*href=["']([^"'>]+)["']/i.exec(html) ||
-                    /<link[^>]+href=["']([^"'>]+)["'][^>]*rel=["']image_src["']/i.exec(html);
-  if (linkMatch?.[1]) {
-    const abs = toAbsolute(linkMatch[1]);
-    if (abs) candidates.push(abs);
-  }
-
-  // Fallback: first <img src>
-  const imgRegex = /<img[^>]+src=["']([^"'>]+)["'][^>]*>/ig;
-  let m: RegExpExecArray | null;
-  while ((m = imgRegex.exec(html)) && candidates.length < 5) {
-    const abs = toAbsolute(m[1]);
-    if (abs) candidates.push(abs);
-  }
-
-  // Prefer larger-looking URLs (heuristic: contains width/large/1200 etc.)
-  const scored = candidates.map(u => ({
-    url: u,
-    score: scoreImageUrl(u),
-  })).sort((a, b) => b.score - a.score);
-
-  return scored[0]?.url ?? null;
-}
-
-function scoreImageUrl(u: string): number {
-  let score = 0;
-  const lowered = u.toLowerCase();
-  if (/(1200|1080|1600|2048|large|xl|xlarge|high|hq)/.test(lowered)) score += 5;
-  if (/webp|avif/.test(lowered)) score += 2;
-  if (/(thumb|thumbnail|small|xs)/.test(lowered)) score -= 3;
-  return score;
 }

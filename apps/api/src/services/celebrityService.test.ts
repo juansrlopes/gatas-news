@@ -216,17 +216,17 @@ describe('CelebrityService', () => {
     it('should fetch from database and cache high priority celebrities', async () => {
       const mockCelebrities = [
         createHighPriorityCelebrity() as ICelebrity,
-        createCelebrityData({ name: 'High Priority 2', priority: 9 }) as ICelebrity,
+        createCelebrityData({ name: 'High Priority 2' }) as ICelebrity,
       ];
 
       mockEnhancedCacheService.get.mockResolvedValue(null);
-      mockCelebrityRepository.getHighPriority.mockResolvedValue(mockCelebrities);
+      mockCelebrityRepository.getActiveForFetching.mockResolvedValue(mockCelebrities);
       mockEnhancedCacheService.set.mockResolvedValue(true);
 
       const result = await celebrityService.getHighPriorityCelebrities();
 
       expect(result).toEqual(['High Priority Celebrity', 'High Priority 2']);
-      expect(mockCelebrityRepository.getHighPriority).toHaveBeenCalledWith(7);
+      expect(mockCelebrityRepository.getActiveForFetching).toHaveBeenCalled();
       expect(mockEnhancedCacheService.set).toHaveBeenCalledWith(
         'celebrities:high-priority:names',
         ['High Priority Celebrity', 'High Priority 2'],
@@ -312,8 +312,6 @@ describe('CelebrityService', () => {
         totalCelebrities: 10,
         activeCelebrities: 8,
         inactiveCelebrities: 2,
-        categoriesBreakdown: [{ category: 'actress', count: 5 }],
-        priorityBreakdown: [{ priority: 8, count: 3 }],
         topPerformers: [],
         recentlyAdded: [],
       };
@@ -331,8 +329,6 @@ describe('CelebrityService', () => {
         totalCelebrities: 10,
         activeCelebrities: 8,
         inactiveCelebrities: 2,
-        categoriesBreakdown: [{ category: 'actress', count: 5 }],
-        priorityBreakdown: [{ priority: 8, count: 3 }],
         topPerformers: [],
         recentlyAdded: [],
       };

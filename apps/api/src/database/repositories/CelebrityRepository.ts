@@ -111,11 +111,7 @@ export class CelebrityRepository {
       const searchRegex = new RegExp(query, 'i');
       const searchQuery: FilterQuery<ICelebrity> = {
         isActive: true,
-        $or: [
-          { name: searchRegex },
-          { aliases: { $in: [searchRegex] } },
-          { searchTerms: { $in: [searchRegex] } },
-        ],
+        $or: [{ name: searchRegex }, { aliases: { $in: [searchRegex] } }],
       };
 
       // Build sort object

@@ -101,8 +101,12 @@ CelebritySchema.pre('save', function (next) {
 });
 
 // Static methods
-CelebritySchema.statics.findActive = function (limit: number = 100): Promise<ICelebrity[]> {
-  return this.find({ isActive: true }).sort({ totalArticles: -1, name: 1 }).limit(limit).exec();
+CelebritySchema.statics.findActive = function (limit?: number): Promise<ICelebrity[]> {
+  const query = this.find({ isActive: true }).sort({ totalArticles: -1, name: 1 });
+  if (limit) {
+    query.limit(limit);
+  }
+  return query.exec();
 };
 
 CelebritySchema.statics.searchByName = function (query: string): Promise<ICelebrity[]> {
@@ -125,10 +129,6 @@ CelebritySchema.statics.updateArticleStats = function (
     {
       $inc: { totalArticles: articleCount },
       lastFetchedAt: now,
-      // Calculate average (simplified - in production you'd want more sophisticated calculation)
-      $set: {
-        avgArticlesPerDay: articleCount, // This would be calculated based on historical data
-      },
     },
     { new: true }
   ).exec();

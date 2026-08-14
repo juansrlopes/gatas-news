@@ -110,7 +110,7 @@ export class JobScheduler {
       logger.info(`🛠️ Development mode: Reduced fetch frequency (${cronExpression})`, {
         timezone: 'America/Sao_Paulo',
         nextRun: this.getNextRunTime(cronExpression),
-        note: 'Use POST /api/v1/admin/fetch-now for manual testing',
+        note: 'Use POST /api/v1/admin/fetch/trigger for manual testing',
       });
     } else {
       logger.info(`📅 News fetch scheduled: ${cronExpression}`, {

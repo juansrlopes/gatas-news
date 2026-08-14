@@ -118,10 +118,11 @@ async function main() {
   log(colors.bold + colors.cyan, '\n🔑 GATAS NEWS - SERPER API KEY TESTER');
   log(colors.cyan, '='.repeat(50));
 
-  // Collect all Serper API keys
+  // Collect all Serper API keys from environment variables
   const apiKeys = [
     process.env.SERPER_API_KEY,
     process.env.SERPER_API_KEY_BACKUP,
+    process.env.SERPER_API_KEY_2,
   ].filter(Boolean);
 
   if (apiKeys.length === 0) {
@@ -129,10 +130,28 @@ async function main() {
     log(colors.yellow, '💡 Make sure these are set in your .env file:');
     log(colors.yellow, '   - SERPER_API_KEY');
     log(colors.yellow, '   - SERPER_API_KEY_BACKUP');
+    log(colors.yellow, '   - SERPER_API_KEY_2 (optional)');
     process.exit(1);
   }
 
   log(colors.blue, `\n📋 Found ${apiKeys.length} API key(s) to test`);
+  
+  // Debug: Show which keys are found and which are missing
+  const envVars = [
+    'SERPER_API_KEY',
+    'SERPER_API_KEY_BACKUP', 
+    'SERPER_API_KEY_2'
+  ];
+  
+  log(colors.cyan, '\n🔍 Environment variable status:');
+  envVars.forEach(envVar => {
+    const value = process.env[envVar];
+    if (value) {
+      log(colors.green, `   ✅ ${envVar}: ${value.substring(0, 8)}...`);
+    } else {
+      log(colors.yellow, `   ⚠️  ${envVar}: Not set`);
+    }
+  });
 
   const results = [];
 

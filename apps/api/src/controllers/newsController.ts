@@ -2,8 +2,6 @@ import { Request, Response } from 'express';
 import { newsService } from '../services/newsService';
 import { asyncHandler } from '../middleware/errorHandler';
 import logger from '../utils/logger';
-import { jobScheduler } from '../jobs/scheduler';
-import { getEnvConfig } from '../../../../libs/shared/utils/src/index';
 
 export class NewsController {
   /**
@@ -17,6 +15,7 @@ export class NewsController {
       limit = 50, // Increased default to show more articles
       sortBy = 'publishedAt',
       searchTerm,
+      q,
       sentiment,
       dateFrom,
       dateTo,
@@ -24,12 +23,15 @@ export class NewsController {
       noMixing = 'false', // 'true' to disable mixing for complete rows
     } = req.query;
 
+    const resolvedSearchTerm =
+      typeof searchTerm === 'string' ? searchTerm : typeof q === 'string' ? q : undefined;
+
     logger.info('News request received', {
       page: Number(page),
       celebrity: celebrity as string,
       limit: Number(limit),
       sortBy: sortBy as string,
-      searchTerm: searchTerm as string,
+      searchTerm: resolvedSearchTerm,
       sentiment: sentiment as string,
       source: source as string,
       ip: req.ip,
@@ -40,7 +42,7 @@ export class NewsController {
       celebrity: celebrity as string,
       limit: Number(limit),
       sortBy: sortBy as 'publishedAt' | 'relevancy' | 'popularity',
-      searchTerm: searchTerm as string,
+      searchTerm: resolvedSearchTerm,
       sentiment: sentiment as 'positive' | 'negative' | 'neutral',
       dateFrom: dateFrom ? new Date(dateFrom as string) : undefined,
       dateTo: dateTo ? new Date(dateTo as string) : undefined,
@@ -81,50 +83,12 @@ export class NewsController {
   public static clearCache = asyncHandler(async (req: Request, res: Response) => {
     logger.info('Cache clear request received', { ip: req.ip });
 
-    newsService.clearCache();
+    await newsService.clearCache();
 
     res.json({
       success: true,
       message: 'News cache cleared successfully',
       timestamp: new Date().toISOString(),
     });
-  });
-
-  /**
-   * POST /api/v1/admin/fetch-now
-   * Manually trigger news fetch (development only)
-   */
-  public static triggerFetch = asyncHandler(async (req: Request, res: Response) => {
-    const config = getEnvConfig();
-
-    if (!config.isDevelopment) {
-      res.status(403).json({
-        success: false,
-        error: 'Manual fetch is only available in development mode',
-        timestamp: new Date().toISOString(),
-      });
-      return;
-    }
-
-    logger.info('Manual fetch triggered', { ip: req.ip });
-
-    try {
-      const result = await jobScheduler.triggerNewsFetch();
-
-      res.json({
-        success: true,
-        message: 'News fetch triggered successfully',
-        data: result,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      logger.error('Manual fetch failed:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to trigger news fetch',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      });
-    }
   });
 }

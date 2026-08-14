@@ -144,8 +144,12 @@ class ErrorBoundary extends Component<Props, State> {
     this.resetErrorBoundary();
   };
 
-  handleReload = () => {
+  reloadWindow(): void {
     window.location.reload();
+  }
+
+  handleReload = () => {
+    this.reloadWindow();
   };
 
   render() {

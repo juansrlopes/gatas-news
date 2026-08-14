@@ -49,10 +49,7 @@ async function migrateCelebrities(): Promise<void> {
         logger.info(`✅ Found ${stats.totalCelebrities} celebrities already in database`);
         logger.info('📊 Database statistics:');
         logger.info(`   - Active celebrities: ${stats.activeCelebrities}`);
-        logger.info(`   - Categories: ${stats.categoriesBreakdown.length}`);
-        stats.categoriesBreakdown.forEach((cat: { category: string; count: number }) => {
-          logger.info(`   - ${cat.category}: ${cat.count} celebrities`);
-        });
+        logger.info(`   - Inactive celebrities: ${stats.inactiveCelebrities}`);
         logger.info('🎉 Migration appears to have been completed previously!');
         return;
       } else {
@@ -90,13 +87,7 @@ async function migrateCelebrities(): Promise<void> {
     logger.info('📈 Database statistics after migration:');
     logger.info(`   - Total celebrities: ${stats.totalCelebrities}`);
     logger.info(`   - Active celebrities: ${stats.activeCelebrities}`);
-    logger.info(`   - Categories: ${stats.categoriesBreakdown.length}`);
-
-    // Show category breakdown
-    logger.info('📊 Category breakdown:');
-    stats.categoriesBreakdown.forEach((cat: { category: string; count: number }) => {
-      logger.info(`   - ${cat.category}: ${cat.count} celebrities`);
-    });
+    logger.info(`   - Inactive celebrities: ${stats.inactiveCelebrities}`);
 
     logger.info('🎯 Migration successful! You can now:');
     logger.info('   1. Test the new database-driven celebrity system');

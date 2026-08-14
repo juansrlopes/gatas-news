@@ -13,10 +13,14 @@ export interface SerperNewsResult {
   source: string;
   imageUrl?: string;
   position: number;
+  // Additional fields for organic results
+  favicon?: string;
+  sitelinks?: unknown[];
 }
 
 export interface SerperResponse {
-  news: SerperNewsResult[];
+  news?: SerperNewsResult[];
+  organic?: SerperNewsResult[]; // Added for /search endpoint support
   searchParameters: {
     q: string;
     gl: string;
@@ -50,7 +54,7 @@ export interface SerperArticle {
     id: string | null;
     name: string;
   };
-  urlToImage?: string;
+  imageUrl?: string;
   author?: string;
   content?: string;
   celebrity?: string;

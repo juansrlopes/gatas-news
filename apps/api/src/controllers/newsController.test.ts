@@ -19,7 +19,7 @@ describe('News Controller', () => {
             url: 'https://example.com',
             title: 'Test Article',
             description: 'Test description',
-            urlToImage: 'https://example.com/image.jpg',
+            imageUrl: 'https://example.com/image.jpg',
             publishedAt: '2024-01-01T00:00:00.000Z',
             source: { id: 'test', name: 'Test Source' },
           },
@@ -100,9 +100,13 @@ describe('News Controller', () => {
         hasMore: false,
       });
 
+      const from = new Date();
+      from.setMonth(from.getMonth() - 1);
+      const to = new Date();
+
       const response = await request(app).get('/api/v1/news').query({
-        dateFrom: '2024-01-01',
-        dateTo: '2024-01-31',
+        dateFrom: from.toISOString().slice(0, 10),
+        dateTo: to.toISOString().slice(0, 10),
       });
 
       expect(response.status).toBe(200);

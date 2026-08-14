@@ -63,7 +63,10 @@ interface ArticleSkeletonProps {
  */
 export const ArticleSkeleton: React.FC<ArticleSkeletonProps> = ({ count = 6 }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    <div
+      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+      data-testid="article-skeleton"
+    >
       {Array.from({ length: count }).map((_, index) => (
         <div key={index} className="bg-purple-950 bg-opacity-50 rounded-lg shadow">
           <LoadingSkeleton className="w-full h-48 rounded-t-lg" />

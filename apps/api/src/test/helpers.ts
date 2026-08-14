@@ -39,16 +39,10 @@ export const findCelebrityByName = async (name: string): Promise<ICelebrity | nu
  */
 export const expectCelebrityToMatch = (actual: ICelebrity, expected: Partial<ICelebrity>): void => {
   expect(actual.name).toBe(expected.name);
-  expect(actual.category).toBe(expected.category);
-  expect(actual.priority).toBe(expected.priority);
   expect(actual.isActive).toBe(expected.isActive);
 
   if (expected.aliases) {
     expect(actual.aliases).toEqual(expect.arrayContaining(expected.aliases));
-  }
-
-  if (expected.socialMedia) {
-    expect(actual.socialMedia).toMatchObject(expected.socialMedia);
   }
 };
 
@@ -56,17 +50,12 @@ export const expectValidCelebrityStructure = (celebrity: ICelebrity): void => {
   expect(celebrity).toHaveProperty('_id');
   expect(celebrity).toHaveProperty('name');
   expect(celebrity).toHaveProperty('slug');
-  expect(celebrity).toHaveProperty('category');
-  expect(celebrity).toHaveProperty('priority');
   expect(celebrity).toHaveProperty('isActive');
   expect(celebrity).toHaveProperty('createdAt');
   expect(celebrity).toHaveProperty('updatedAt');
 
-  // Validate data types
   expect(typeof celebrity.name).toBe('string');
   expect(typeof celebrity.slug).toBe('string');
-  expect(typeof celebrity.priority).toBe('number');
   expect(typeof celebrity.isActive).toBe('boolean');
   expect(Array.isArray(celebrity.aliases)).toBe(true);
-  expect(Array.isArray(celebrity.searchTerms)).toBe(true);
 };

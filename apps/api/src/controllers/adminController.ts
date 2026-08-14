@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { newsService } from '../services/newsService';
 import { enhancedCacheService } from '../services/cacheService';
 import { jobScheduler } from '../jobs/scheduler';
-// Removed newsFetcher import - now using multiSourceNewsFetcher
+// Removed unused newsFetcher (NewsAPI) — fetch goes through newsService / multiSourceNewsFetcher
 import { articleRepository } from '../database/repositories/ArticleRepository';
 import { Article } from '../database/models/Article';
 import { FetchLog } from '../database/models/FetchLog';
@@ -12,6 +12,7 @@ import { apiKeyManager } from '../services/apiKeyManager';
 import { asyncHandler } from '../middleware/errorHandler';
 import { calculateQualityScore, isDefinitelyTrash, isAggressiveTrash, ArticleCategory } from '../utils/qualityScoring';
 import { serperUsageTracker } from '../services/serper/serperUsageTracker';
+import { ValidationError } from '../types/errors';
 import logger from '../utils/logger';
 
 export class AdminController {
@@ -496,11 +497,14 @@ export class AdminController {
    * Get detailed fetch logs with pagination
    */
   public static getFetchLogs = asyncHandler(async (req: Request, res: Response) => {
-    const { page = 1, limit = 20, status } = req.query;
+    const { page = 1, limit = 20, status, celebrity } = req.query;
 
     const query: Record<string, unknown> = {};
     if (status && ['success', 'failed', 'partial'].includes(status as string)) {
       query.status = status;
+    }
+    if (typeof celebrity === 'string' && celebrity.trim()) {
+      query.celebrities = celebrity.trim();
     }
 
     const logs = await FetchLog.find(query)
@@ -523,6 +527,30 @@ export class AdminController {
           hasMore: Number(page) * Number(limit) < totalCount,
         },
       },
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  /**
+   * DELETE /api/v1/admin/fetch/logs
+   * Delete fetch logs older than the given number of days
+   */
+  public static clearOldFetchLogs = asyncHandler(async (req: Request, res: Response) => {
+    const days = Number(req.query.days ?? 30);
+
+    if (!Number.isFinite(days) || days < 0) {
+      throw new ValidationError('days must be a non-negative number');
+    }
+
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const result = await FetchLog.deleteMany({ fetchDate: { $lt: cutoff } });
+
+    logger.info(`Cleared ${result.deletedCount} fetch logs older than ${days} days`, { ip: req.ip });
+
+    res.json({
+      success: true,
+      message: `Cleared ${result.deletedCount} fetch logs older than ${days} days`,
+      data: { deletedCount: result.deletedCount, days },
       timestamp: new Date().toISOString(),
     });
   });
@@ -934,42 +962,6 @@ export class AdminController {
           : null,
         totalHealthyKeys: keyStatuses.filter(s => s.isValid && !s.isRateLimited).length,
       },
-      timestamp: new Date().toISOString(),
-    });
-  });
-
-  /**
-   * POST /api/v1/admin/fetch/multi-source
-   * Manually trigger multi-source news fetch (Serper + RSS)
-   */
-  public static triggerMultiSourceFetch = asyncHandler(async (req: Request, res: Response) => {
-    logger.info('Multi-source news fetch triggered by admin (Serper + RSS)', { ip: req.ip });
-
-    const { multiSourceNewsFetcher } = await import('../jobs/multiSourceNewsFetcher');
-    const result = await multiSourceNewsFetcher.fetchAndStoreNews();
-
-    res.json({
-      success: true,
-      message: 'Multi-source news fetch completed',
-      data: result,
-      timestamp: new Date().toISOString(),
-    });
-  });
-
-  /**
-   * POST /api/v1/admin/articles/update-rss-images
-   * Update existing RSS articles with scraped images
-   */
-  public static updateRSSImages = asyncHandler(async (req: Request, res: Response) => {
-    logger.info('RSS image update triggered by admin', { ip: req.ip });
-
-    const { updateRSSArticlesWithImages } = await import('../scripts/updateRSSImages');
-    const result = await updateRSSArticlesWithImages();
-
-    res.json({
-      success: true,
-      message: 'RSS images update completed',
-      data: result,
       timestamp: new Date().toISOString(),
     });
   });

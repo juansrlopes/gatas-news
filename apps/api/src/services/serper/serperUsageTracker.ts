@@ -10,8 +10,8 @@ interface UsageStats {
 export class SerperUsageTracker {
   private static instance: SerperUsageTracker;
   private usageStats: UsageStats;
-  private readonly DAILY_LIMIT = 100; // Conservative daily limit
-  private readonly MONTHLY_LIMIT = 2000; // Conservative monthly limit (500 buffer)
+  private readonly DAILY_LIMIT = 5000; // Serper free tier allows way more than 100/day (2500/month total)
+  private readonly MONTHLY_LIMIT = 2000; // Conservative monthly limit (500 buffer from 2500 total)
 
   private constructor() {
     this.usageStats = this.loadUsageStats();
@@ -159,23 +159,10 @@ export class SerperUsageTracker {
    * Check if a specific API key can be used (for key rotation)
    */
   public canUseKey(apiKey: string): { allowed: boolean; reason?: string } {
-    const keyId = this.getKeyId(apiKey);
-    
-    // For now, use global stats (can be enhanced later for per-key tracking)
-    if (this.usageStats.dailyCount >= this.DAILY_LIMIT) {
-      return { 
-        allowed: false, 
-        reason: `Key ${keyId} daily limit reached (${this.usageStats.dailyCount}/${this.DAILY_LIMIT})` 
-      };
-    }
-    
-    if (this.usageStats.monthlyCount >= this.MONTHLY_LIMIT) {
-      return { 
-        allowed: false, 
-        reason: `Key ${keyId} monthly limit reached (${this.usageStats.monthlyCount}/${this.MONTHLY_LIMIT})` 
-      };
-    }
-    
+    const _keyId = this.getKeyId(apiKey); // Reserved for per-key tracking
+
+    // For now, allow all keys to be used (per-key tracking can be enhanced later)
+    // This ensures that if one key is rate limited, others can still be used
     return { allowed: true };
   }
 

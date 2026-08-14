@@ -88,13 +88,10 @@ export const validateDateRange = (req: Request, _res: Response, next: NextFuncti
  */
 export const validateSearch = (req: Request, _res: Response, next: NextFunction): void => {
   const { q, searchTerm } = req.query;
-  const query = q || searchTerm;
+  const query = (typeof searchTerm === 'string' ? searchTerm : undefined) ||
+    (typeof q === 'string' ? q : undefined);
 
   if (query !== undefined) {
-    if (typeof query !== 'string') {
-      throw new ValidationError('Search query must be a string');
-    }
-
     if (query.length < 2) {
       throw new ValidationError('Search query must be at least 2 characters long');
     }
@@ -108,6 +105,8 @@ export const validateSearch = (req: Request, _res: Response, next: NextFunction)
     if (dangerousChars.test(query)) {
       throw new ValidationError('Search query contains invalid characters');
     }
+
+    req.query.searchTerm = query;
   }
 
   next();

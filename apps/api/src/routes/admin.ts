@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { AdminController } from '../controllers/adminController';
 import { SerperController } from '../controllers/serperController';
 import { SerperTestController } from '../controllers/serperTestController';
-import { RSSAdminController } from '../controllers/rssAdminController';
 import { CelebrityCoverageController } from '../controllers/celebrityCoverageController';
 import { adminLimiter } from '../middleware/rateLimiter';
 import { validatePagination } from '../middleware/validation';
@@ -42,6 +41,41 @@ router.get('/articles/stats', validatePagination, adminLimiter, AdminController.
 router.delete('/articles/clear', adminLimiter, AdminController.clearAllArticles);
 
 /**
+ * @route   DELETE /api/v1/admin/articles/cleanup-unknown
+ * @desc    Permanently remove unknown-celebrity articles
+ * @access  Admin
+ */
+router.delete('/articles/cleanup-unknown', adminLimiter, AdminController.cleanupUnknownArticles);
+
+/**
+ * @route   POST /api/v1/admin/articles/restore-quality
+ * @desc    Reactivate backed-up quality articles
+ * @access  Admin
+ */
+router.post('/articles/restore-quality', adminLimiter, AdminController.restoreQualityArticles);
+
+/**
+ * @route   POST /api/v1/admin/articles/backup
+ * @desc    Mark all current articles inactive (backup)
+ * @access  Admin
+ */
+router.post('/articles/backup', adminLimiter, AdminController.backupArticles);
+
+/**
+ * @route   POST /api/v1/admin/articles/:id/toggle
+ * @desc    Toggle article active status
+ * @access  Admin
+ */
+router.post('/articles/:id/toggle', adminLimiter, AdminController.toggleArticleStatus);
+
+/**
+ * @route   DELETE /api/v1/admin/articles/:id
+ * @desc    Hard-delete an article
+ * @access  Admin
+ */
+router.delete('/articles/:id', adminLimiter, AdminController.deleteArticle);
+
+/**
  * @route   POST /api/v1/admin/articles/quality-analysis
  * @desc    Analyze article quality and get recommendations
  * @access  Admin
@@ -56,18 +90,18 @@ router.post('/articles/quality-analysis', adminLimiter, AdminController.analyzeA
 router.post('/fetch/trigger', adminLimiter, AdminController.triggerNewsFetch);
 
 /**
- * @route   POST /api/v1/admin/fetch/multi-source
- * @desc    Manually trigger multi-source news fetch (Serper + RSS)
+ * @route   POST /api/v1/admin/fetch-now
+ * @desc    Alias of fetch/trigger
  * @access  Admin
  */
-router.post("/fetch/multi-source", adminLimiter, AdminController.triggerMultiSourceFetch);
+router.post('/fetch-now', adminLimiter, AdminController.triggerNewsFetch);
 
 /**
- * @route   POST /api/v1/admin/articles/update-rss-images
- * @desc    Update existing RSS articles with scraped images
+ * @route   POST /api/v1/admin/fetch/multi-source
+ * @desc    Alias of fetch/trigger (Serper only)
  * @access  Admin
  */
-router.post("/articles/update-rss-images", adminLimiter, AdminController.updateRSSImages);
+router.post('/fetch/multi-source', adminLimiter, AdminController.triggerNewsFetch);
 
 /**
  * @route   GET /api/v1/admin/fetch/status
@@ -75,6 +109,27 @@ router.post("/articles/update-rss-images", adminLimiter, AdminController.updateR
  * @access  Admin
  */
 router.get('/fetch/status', adminLimiter, AdminController.getFetchStatus);
+
+/**
+ * @route   GET /api/v1/admin/fetch/logs
+ * @desc    Get detailed fetch logs with pagination
+ * @access  Admin
+ */
+router.get('/fetch/logs', adminLimiter, AdminController.getFetchLogs);
+
+/**
+ * @route   DELETE /api/v1/admin/fetch/logs
+ * @desc    Clear old fetch logs
+ * @access  Admin
+ */
+router.delete('/fetch/logs', adminLimiter, AdminController.clearOldFetchLogs);
+
+/**
+ * @route   GET /api/v1/admin/fetch/statistics
+ * @desc    Get fetch statistics
+ * @access  Admin
+ */
+router.get('/fetch/statistics', adminLimiter, AdminController.getFetchStatistics);
 
 /**
  * @route   GET /api/v1/admin/cache/stats
@@ -125,6 +180,13 @@ router.post('/keys/reset-stats', adminLimiter, AdminController.resetKeyStats);
  */
 router.get('/keys/best', adminLimiter, AdminController.getBestKey);
 
+/**
+ * @route   POST /api/v1/admin/scheduler/jobs/:jobName/stop
+ * @desc    Stop a scheduled job
+ * @access  Admin
+ */
+router.post('/scheduler/jobs/:jobName/stop', adminLimiter, AdminController.stopScheduledJob);
+
 // Celebrity management routes
 router.use('/celebrities', celebrityRoutes);
 
@@ -154,38 +216,6 @@ router.get('/coverage/zero-articles', adminLimiter, CelebrityCoverageController.
 router.post('/coverage/prioritize-celebrities', adminLimiter, CelebrityCoverageController.prioritizeCelebritiesForFetch);
 
 /**
- * RSS Feed Management Routes
- */
-
-/**
- * @route   GET /api/v1/admin/rss/stats
- * @desc    Get RSS feed statistics and status
- * @access  Admin
- */
-router.get('/rss/stats', adminLimiter, RSSAdminController.getRSSStats);
-
-/**
- * @route   GET /api/v1/admin/rss/feeds
- * @desc    Get list of all RSS feeds with their status
- * @access  Admin
- */
-router.get('/rss/feeds', adminLimiter, RSSAdminController.getRSSFeeds);
-
-/**
- * @route   POST /api/v1/admin/rss/test-feed
- * @desc    Test a specific RSS feed URL
- * @access  Admin
- */
-router.post('/rss/test-feed', adminLimiter, RSSAdminController.testRSSFeed);
-
-/**
- * @route   POST /api/v1/admin/rss/test-all
- * @desc    Test all enabled RSS feeds
- * @access  Admin
- */
-router.post('/rss/test-all', adminLimiter, RSSAdminController.testAllRSSFeeds);
-
-/**
  * Serper API Testing Routes
  */
 
@@ -209,6 +239,27 @@ router.get('/serper/simple-test', SerperTestController.simpleTest);
  * @access  Admin
  */
 router.get('/serper/batch-test', adminLimiter, SerperController.testBatchSearch);
+
+/**
+ * @route   GET /api/v1/admin/serper/batch-query-test?size=10
+ * @desc    TRUE BATCH: One Serper request with N names. Use to find max names per request (saves credits).
+ * @access  Admin
+ */
+router.get('/serper/batch-query-test', adminLimiter, SerperController.batchQueryTest);
+
+/**
+ * @route   GET /api/v1/admin/serper/debug-last-raw
+ * @desc    Return last Serper request/response when 0 articles (call batch-query-test first)
+ * @access  Admin
+ */
+router.get('/serper/debug-last-raw', adminLimiter, SerperController.getDebugLastRaw);
+
+/**
+ * @route   GET /api/v1/admin/serper/raw-batch-test?size=5
+ * @desc    One raw POST to Serper with batch query; returns exact request + response. Use to see if batch works.
+ * @access  Admin
+ */
+router.get('/serper/raw-batch-test', adminLimiter, SerperController.rawBatchTest);
 
 /**
  * @route   GET /api/v1/admin/serper/batch-size-test
@@ -237,6 +288,13 @@ router.get('/serper/live-search', adminLimiter, SerperController.testLiveSearch)
  * @access  Admin
  */
 router.get('/serper/trending', adminLimiter, SerperController.testTrendingNews);
+
+/**
+ * @route   GET /api/v1/admin/serper/ping
+ * @desc    Same request as validateKeys (q: 'test') to verify key from API process
+ * @access  Admin
+ */
+router.get('/serper/ping', adminLimiter, SerperController.serperPing);
 
 /**
  * @route   GET /api/v1/admin/serper/validate-key

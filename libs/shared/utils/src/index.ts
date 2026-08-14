@@ -1,12 +1,16 @@
 // Environment configuration utilities
+import { extractBestImageFromHtml, scoreImageUrl } from './imageExtract';
+
+export { extractBestImageFromHtml, scoreImageUrl };
+
 export const getEnvConfig = () => {
   return {
     // API Configuration
     apiUrl: process.env['NEXT_PUBLIC_API_URL'] || process.env['API_URL'] || 'http://localhost:8000',
     newsApiEndpoint: process.env['NEXT_PUBLIC_NEWS_API_ENDPOINT'] || '/news',
 
-    // Mock API flag - set to false when real API is ready
-    useMockApi: process.env['NEXT_PUBLIC_USE_MOCK_API'] !== 'false',
+    // Mock API flag - opt in only
+    useMockApi: process.env['NEXT_PUBLIC_USE_MOCK_API'] === 'true',
 
     // External APIs
     newsApiKey: process.env['NEWS_API_KEY'],
@@ -153,7 +157,6 @@ export const handleAsyncError = async <T>(
   }
 };
 
-// Celebrity utilities
 export const isArticleAboutCelebrity = (
   article: { title?: string; content?: string; description?: string },
   celebrityName: string
@@ -186,4 +189,6 @@ export default {
   createApiError,
   handleAsyncError,
   isArticleAboutCelebrity,
+  extractBestImageFromHtml,
+  scoreImageUrl,
 };

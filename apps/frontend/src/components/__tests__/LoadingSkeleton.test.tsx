@@ -9,29 +9,29 @@
  */
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { LoadingSkeleton, ArticleSkeleton, InstagramSkeleton } from '../LoadingSkeleton';
 
 describe('LoadingSkeleton Components', () => {
   describe('LoadingSkeleton', () => {
     it('renders with default styling', () => {
-      render(<LoadingSkeleton />);
+      const { container } = render(<LoadingSkeleton />);
 
-      const skeleton = screen.getByRole('generic');
+      const skeleton = container.querySelector('.animate-pulse');
       expect(skeleton).toHaveClass('animate-pulse', 'bg-gray-300', 'rounded');
     });
 
     it('applies custom className', () => {
-      render(<LoadingSkeleton className="h-4 w-full custom-class" />);
+      const { container } = render(<LoadingSkeleton className="h-4 w-full custom-class" />);
 
-      const skeleton = screen.getByRole('generic');
+      const skeleton = container.querySelector('.animate-pulse');
       expect(skeleton).toHaveClass('h-4', 'w-full', 'custom-class');
     });
 
     it('maintains base classes with custom className', () => {
-      render(<LoadingSkeleton className="custom-class" />);
+      const { container } = render(<LoadingSkeleton className="custom-class" />);
 
-      const skeleton = screen.getByRole('generic');
+      const skeleton = container.querySelector('.animate-pulse');
       expect(skeleton).toHaveClass('animate-pulse', 'bg-gray-300', 'rounded', 'custom-class');
     });
   });
@@ -40,10 +40,6 @@ describe('LoadingSkeleton Components', () => {
     it('renders default number of skeleton articles', () => {
       render(<ArticleSkeleton />);
 
-      // Default is 6 articles
-      const skeletons = screen.getAllByRole('generic');
-      // Each article has multiple skeleton elements (image, title, description lines)
-      // So we check for the container divs with the specific class
       const articleContainers = document.querySelectorAll('.bg-purple-950');
       expect(articleContainers).toHaveLength(6);
     });
@@ -182,18 +178,16 @@ describe('LoadingSkeleton Components', () => {
 
   describe('Accessibility', () => {
     it('provides appropriate semantic structure', () => {
-      render(<ArticleSkeleton count={2} />);
+      const { container } = render(<ArticleSkeleton count={2} />);
 
-      // Should use generic divs for loading states (not interactive elements)
-      const skeletons = screen.getAllByRole('generic');
+      const skeletons = container.querySelectorAll('.animate-pulse');
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
     it('does not interfere with screen readers', () => {
-      render(<LoadingSkeleton />);
+      const { container } = render(<LoadingSkeleton />);
 
-      // Loading skeletons should not have aria-labels or roles that confuse screen readers
-      const skeleton = screen.getByRole('generic');
+      const skeleton = container.querySelector('.animate-pulse');
       expect(skeleton).not.toHaveAttribute('aria-label');
       expect(skeleton).not.toHaveAttribute('aria-describedby');
     });

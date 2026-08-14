@@ -11,6 +11,7 @@ export interface Article {
   };
   author?: string;
   content?: string;
+  celebrity?: string; // Added celebrity field
 }
 
 // API Response types

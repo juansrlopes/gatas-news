@@ -360,7 +360,7 @@ curl -X POST http://localhost:8000/api/v1/admin/fetch/trigger
 | GET    | `/api/v1/news/search`             | Search articles with text      |
 | GET    | `/api/v1/news/trending`           | Get trending topics            |
 | POST   | `/api/v1/admin/fetch/trigger`     | Trigger news fetch             |
-| POST   | `/api/v1/admin/fetch-now`         | Simple fetch trigger (dev)     |
+| POST   | `/api/v1/admin/fetch/trigger`     | Manually trigger news fetch    |
 | GET    | `/api/v1/admin/fetch/logs`        | Get fetch logs with pagination |
 | GET    | `/api/v1/admin/celebrities`       | Manage celebrities             |
 | GET    | `/api/v1/admin/keys/status`       | API key health status          |

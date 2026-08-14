@@ -1,7 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "target": "es2020",
     "lib": ["es2020"],
     "declaration": false,
@@ -17,7 +18,6 @@
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "baseUrl": "../..",
     "rootDir": "../..",
     "outDir": "../../dist/apps/api",
     "paths": {
@@ -25,6 +25,13 @@
       "@gatas-news/shared-utils": ["../../libs/shared/utils/src/index.ts"]
     }
   },
-  "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"],
-  "include": ["*.ts", "../../libs/shared/**/*.ts"]
+  "exclude": [
+    "jest.config.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/test/**",
+    "../../libs/shared/**/*.test.ts",
+    "../../libs/shared/**/*.spec.ts"
+  ],
+  "include": ["*.ts", "src/**/*.ts", "../../libs/shared/**/*.ts"]
 }

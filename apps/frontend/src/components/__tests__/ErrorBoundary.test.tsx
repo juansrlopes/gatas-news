@@ -112,33 +112,25 @@ describe('ErrorBoundary Component', () => {
       // Error should be displayed
       expect(screen.getByText(/oops! algo deu errado/i)).toBeInTheDocument();
 
-      // Fix the error condition
+      // Fix the child, then retry so ErrorBoundary re-renders a non-throwing tree
       shouldThrow = false;
-
-      // Click retry button
-      const retryButton = screen.getByRole('button', { name: /tentar novamente/i });
-      await user.click(retryButton);
-
-      // Rerender with fixed component
       rerender(
         <ErrorBoundary>
           <ThrowError shouldThrow={shouldThrow} />
         </ErrorBoundary>
       );
 
-      // Should show the working component
+      const retryButton = screen.getByRole('button', { name: /tentar novamente/i });
+      await user.click(retryButton);
+
       expect(screen.getByText('No error')).toBeInTheDocument();
     });
 
     it('reloads page when reload button is clicked', async () => {
       const user = userEvent.setup();
-      const mockReload = jest.fn();
-
-      // Mock window.location.reload
-      Object.defineProperty(window, 'location', {
-        value: { reload: mockReload },
-        writable: true,
-      });
+      const reloadSpy = jest
+        .spyOn(ErrorBoundary.prototype, 'reloadWindow')
+        .mockImplementation(() => undefined);
 
       render(
         <ErrorBoundary>
@@ -149,7 +141,8 @@ describe('ErrorBoundary Component', () => {
       const reloadButton = screen.getByRole('button', { name: /recarregar página/i });
       await user.click(reloadButton);
 
-      expect(mockReload).toHaveBeenCalled();
+      expect(reloadSpy).toHaveBeenCalled();
+      reloadSpy.mockRestore();
     });
 
     it('goes back when back button is clicked', async () => {

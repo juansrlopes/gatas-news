@@ -1,13 +1,13 @@
 import { serperService } from '../services/serper/serperService';
-import { rssService } from '../services/rss/rssService';
 import { celebrityService } from '../services/celebrityService';
-import { articleRepository } from '../database/repositories/ArticleRepository';
 import { Article } from "../database/models/Article";
 import { IArticle } from '../database/models/Article';
-import { isArticleAboutCelebrity } from '../../../../libs/shared/utils/src/index';
 import { enhancedCacheService } from '../services/cacheService';
 import { SerperArticle } from '../services/serper/serperTypes';
+import { extractBestImageUrls } from '../services/imageExtractService';
 import logger from '../utils/logger';
+
+const HIGH_RES_EXTRACT_CONCURRENCY = 3;
 
 export interface MultiSourceFetchResult {
   success: boolean;
@@ -16,10 +16,6 @@ export interface MultiSourceFetchResult {
   duplicatesFound: number;
   sources: {
     serper: {
-      articles: number;
-      newArticles: number;
-    };
-    rss: {
       articles: number;
       newArticles: number;
     };
@@ -41,7 +37,7 @@ export class MultiSourceNewsFetcher {
   }
 
   /**
-   * Fetch and store news from both Serper and RSS feeds
+   * Fetch and store news from Serper (1 request per celebrity)
    */
   public async fetchAndStoreNews(): Promise<MultiSourceFetchResult> {
     const startTime = Date.now();
@@ -57,14 +53,13 @@ export class MultiSourceNewsFetcher {
       duplicatesFound: 0,
       sources: {
         serper: { articles: 0, newArticles: 0 },
-        rss: { articles: 0, newArticles: 0 },
       },
       errors: [],
       duration: 0,
     };
 
     try {
-      logger.info('🚀 Starting multi-source news fetch (Serper + RSS)...');
+      logger.info('🚀 Starting news fetch (Serper only)...');
 
       // Get celebrities list
       const celebrities = await celebrityService.getCelebrities();
@@ -72,7 +67,7 @@ export class MultiSourceNewsFetcher {
         throw new Error('No celebrities found to fetch news for');
       }
 
-      // 1. Fetch from Serper (Google News API)
+      // Fetch from Serper (Google News API) - 1 request per celebrity
       logger.info('🔍 Fetching from Serper (Google News)...');
       try {
         const serperResult = await this.fetchAndStoreSerperArticles(celebrities);
@@ -92,26 +87,6 @@ export class MultiSourceNewsFetcher {
         errors.push(`Serper: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
-      // 2. Fetch from RSS feeds
-      logger.info('📡 Fetching from RSS feeds...');
-      try {
-        const rssResult = await this.fetchAndStoreRSSArticles(celebrities);
-        result.sources.rss.articles = rssResult.articlesProcessed;
-        result.sources.rss.newArticles = rssResult.newArticlesAdded;
-        totalArticlesProcessed += rssResult.articlesProcessed;
-        totalNewArticlesAdded += rssResult.newArticlesAdded;
-        totalDuplicatesFound += rssResult.duplicatesFound;
-
-        if (!rssResult.success) {
-          errors.push(...rssResult.errors);
-        }
-
-        logger.info(`✅ RSS: ${rssResult.articlesProcessed} processed, ${rssResult.newArticlesAdded} new`);
-      } catch (error) {
-        logger.error('❌ RSS fetch failed:', error);
-        errors.push(`RSS: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-
       result.articlesProcessed = totalArticlesProcessed;
       result.newArticlesAdded = totalNewArticlesAdded;
       result.duplicatesFound = totalDuplicatesFound;
@@ -123,12 +98,11 @@ export class MultiSourceNewsFetcher {
       await enhancedCacheService.invalidateNewsCache();
       logger.info('News cache invalidated');
 
-      logger.info('🎉 Multi-source fetch completed:', {
+      logger.info('🎉 News fetch completed:', {
         totalProcessed: totalArticlesProcessed,
         totalNew: totalNewArticlesAdded,
         totalDuplicates: totalDuplicatesFound,
         serperNew: result.sources.serper.newArticles,
-        rssNew: result.sources.rss.newArticles,
         duration: `${result.duration}ms`,
         success: result.success,
       });
@@ -136,7 +110,7 @@ export class MultiSourceNewsFetcher {
       return result;
 
     } catch (error) {
-      logger.error('💥 Multi-source fetch failed:', error);
+      logger.error('💥 News fetch failed:', error);
       result.errors = [error instanceof Error ? error.message : 'Unknown error'];
       result.duration = Date.now() - startTime;
       result.success = false;
@@ -160,17 +134,27 @@ export class MultiSourceNewsFetcher {
     let duplicatesFound = 0;
 
     try {
-      // 🚨 SEARCH ALL CELEBRITIES - NO LIMITS! This is what our users expect!
-      const allCelebrities = celebrities; // Search ALL 112+ celebrities - NO LIMITS!
-      logger.info(`🔍 Searching for ${allCelebrities.length} celebrities from total ${celebrities.length}`);
+      // 🚨 SEARCH ALL CELEBRITIES - INDIVIDUAL SEARCHES FOR 100% COVERAGE!
+      const allCelebrities = celebrities; // Search ALL 112+ celebrities
+      logger.info(`🔍 VERIFICATION: About to search ${allCelebrities.length} celebrities individually`);
+      logger.info(`🔍 VERIFICATION: First 10 celebrities: ${allCelebrities.slice(0, 10).join(', ')}`);
+      logger.info(`🔍 VERIFICATION: Last 10 celebrities: ${allCelebrities.slice(-10).join(', ')}`);
       
       let serperArticles: SerperArticle[] = [];
       try {
+        logger.info(`🚀 CALLING searchMultipleCelebrities with ${allCelebrities.length} celebrities (1 request per name, up to 100 articles each)`);
         serperArticles = await serperService.searchMultipleCelebrities(allCelebrities, {
           searchType: 'comprehensive',
-          articlesPerCelebrity: 20, // Get 20 articles per celebrity for better volume
+          articlesPerCelebrity: 100,
+          useIndividualSearches: true, // 1 request per celebrity (112 requests), all articles per name (up to 100)
         });
+        // Normalize result (service returns array; batch mode can attach rawWhenEmpty)
+        serperArticles = Array.isArray(serperArticles) ? serperArticles : (serperArticles as unknown as SerperArticle[]);
         logger.info(`✅ Serper returned ${serperArticles.length} articles`);
+        
+        // Coverage stats
+        const celebritiesWithArticles = new Set(serperArticles.map(a => a.celebrity).filter(c => c && c !== 'unknown'));
+        logger.info(`📊 Celebrity coverage: ${celebritiesWithArticles.size}/${allCelebrities.length} celebrities`);
       } catch (serperError) {
         logger.error(`❌ Serper search failed:`, serperError);
         errors.push(`Serper: ${serperError instanceof Error ? serperError.message : 'Unknown error'}`);
@@ -188,41 +172,67 @@ export class MultiSourceNewsFetcher {
 
         for (const serperArticle of batch) {
           try {
-            // Check if article already exists
-            const exists = await articleRepository.existsByUrl(serperArticle.url);
-            if (exists) {
-              duplicatesFound++;
-              continue;
-            }
-
-            // Convert Serper article to our format
             const article: Partial<IArticle> = {
               url: serperArticle.url,
               title: serperArticle.title,
               description: serperArticle.description,
               publishedAt: new Date(serperArticle.publishedAt),
               source: serperArticle.source,
-              urlToImage: serperArticle.urlToImage,
+              urlToImage: serperArticle.imageUrl || '',
               author: serperArticle.author,
-              content: serperArticle.content || undefined, // Convert null to undefined
+              content: serperArticle.content || undefined,
               celebrity: serperArticle.celebrity,
               sentiment: 'neutral',
               isActive: true,
             };
-
             articlesToInsert.push(article);
-
           } catch (error) {
             logger.error(`Error processing Serper article: ${error instanceof Error ? error.message : 'Unknown error'}`);
             errors.push(error instanceof Error ? error.message : 'Unknown error');
           }
         }
 
-        // Insert batch
+        // Extract high-res image URLs for this batch (once per article for good first-paint quality)
+        try {
+          const urls = articlesToInsert.map(a => a.url).filter((u): u is string => !!u);
+          const highResMap = await extractBestImageUrls(urls, HIGH_RES_EXTRACT_CONCURRENCY);
+          let extracted = 0;
+          for (const article of articlesToInsert) {
+            if (article.url) {
+              const highRes = highResMap.get(article.url);
+              if (highRes) {
+                article.highResImageUrl = highRes;
+                extracted++;
+              }
+            }
+          }
+          if (extracted > 0) {
+            logger.info(`🖼️ Extracted high-res image for ${extracted}/${articlesToInsert.length} articles in batch`);
+          }
+        } catch (extractErr) {
+          logger.warn('High-res extract batch failed (continuing with thumbnails):', extractErr instanceof Error ? extractErr.message : extractErr);
+        }
+
+        // Insert batch with duplicate handling
         if (articlesToInsert.length > 0) {
-          await Article.insertMany(articlesToInsert);
-          newArticlesAdded += articlesToInsert.length;
-          logger.info(`✅ Inserted ${articlesToInsert.length} Serper articles (batch ${Math.floor(i / BATCH_SIZE) + 1})`);
+          try {
+            // Use ordered: false to continue inserting even if some duplicates fail
+            await Article.insertMany(articlesToInsert, { ordered: false });
+            newArticlesAdded += articlesToInsert.length;
+            logger.info(`✅ Inserted ${articlesToInsert.length} Serper articles (batch ${Math.floor(i / BATCH_SIZE) + 1})`);
+          } catch (error: unknown) {
+            // Handle duplicate key errors (MongoDB duplicate key)
+            const err = error as { code?: number; writeErrors?: unknown[] };
+            if (err?.code === 11000 && err?.writeErrors) {
+              const inserted = articlesToInsert.length - err.writeErrors.length;
+              newArticlesAdded += inserted;
+              duplicatesFound += err.writeErrors.length;
+              logger.info(`✅ Inserted ${inserted} Serper articles, ${err.writeErrors.length} duplicates skipped (batch ${Math.floor(i / BATCH_SIZE) + 1})`);
+            } else {
+              logger.error(`Error inserting Serper batch:`, error);
+              errors.push(error instanceof Error ? error.message : 'Unknown error');
+            }
+          }
         }
       }
 
@@ -247,105 +257,6 @@ export class MultiSourceNewsFetcher {
     }
   }
 
-  /**
-   * Fetch and store articles from RSS feeds
-   */
-  private async fetchAndStoreRSSArticles(celebrities: string[]): Promise<{
-    articlesProcessed: number;
-    newArticlesAdded: number;
-    duplicatesFound: number;
-    errors: string[];
-    success: boolean;
-  }> {
-    const errors: string[] = [];
-    let articlesProcessed = 0;
-    let newArticlesAdded = 0;
-    let duplicatesFound = 0;
-
-    try {
-      // Fetch all RSS articles
-      const rssArticles = await rssService.fetchAllArticles();
-      articlesProcessed = rssArticles.length;
-
-      logger.info(`📡 Processing ${rssArticles.length} RSS articles...`);
-
-      // Process articles in batches to avoid overwhelming the database
-      const BATCH_SIZE = 50;
-      for (let i = 0; i < rssArticles.length; i += BATCH_SIZE) {
-        const batch = rssArticles.slice(i, i + BATCH_SIZE);
-
-        const articlesToInsert: Partial<IArticle>[] = [];
-
-        for (const rssArticle of batch) {
-          try {
-            // Check if article already exists
-            const exists = await articleRepository.existsByUrl(rssArticle.url);
-            if (exists) {
-              duplicatesFound++;
-              continue;
-            }
-
-            // Find which celebrity this article is about
-            const celebrity = celebrities.find(c => 
-              isArticleAboutCelebrity({
-                ...rssArticle,
-                content: rssArticle.content || undefined // Convert null to undefined for compatibility
-              }, c)
-            ) || 'unknown';
-
-            // Temporarily disable aggressive trash filtering to isolate Serper issue
-            // const articleIsTrash = await isAggressiveTrash(tempArticle);
-            // if (articleIsTrash) {
-            //   logger.debug(`🗑️ Filtering trash RSS article: ${rssArticle.title.substring(0, 50)}...`);
-            //   continue;
-            // }
-
-            articlesToInsert.push({
-              url: rssArticle.url,
-              title: rssArticle.title,
-              description: rssArticle.description,
-              publishedAt: rssArticle.publishedAt,
-              source: rssArticle.source,
-              urlToImage: rssArticle.urlToImage,
-              author: rssArticle.author,
-              content: rssArticle.content || undefined,
-              celebrity: celebrity,
-              sentiment: 'neutral',
-              isActive: true,
-            });
-          } catch (error) {
-            logger.error(`Error processing RSS article: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            errors.push(error instanceof Error ? error.message : 'Unknown error');
-          }
-        }
-
-        // Insert batch
-        if (articlesToInsert.length > 0) {
-          await Article.insertMany(articlesToInsert);
-          newArticlesAdded += articlesToInsert.length;
-          logger.info(`✅ Inserted ${articlesToInsert.length} RSS articles (batch ${Math.floor(i / BATCH_SIZE) + 1})`);
-        }
-      }
-
-      return {
-        articlesProcessed,
-        newArticlesAdded,
-        duplicatesFound,
-        errors,
-        success: true,
-      };
-    } catch (error) {
-      logger.error(`❌ RSS fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      errors.push(error instanceof Error ? error.message : 'Unknown error');
-      return {
-        articlesProcessed,
-        newArticlesAdded,
-        duplicatesFound,
-        errors,
-        success: false,
-      };
-    }
-  }
 }
 
 export const multiSourceNewsFetcher = MultiSourceNewsFetcher.getInstance();

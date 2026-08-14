@@ -14,17 +14,9 @@ export const createCelebrityData = (overrides: Partial<ICelebrity> = {}): Partia
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-*|-*$/g, ''),
     aliases: [baseName.toLowerCase()],
-    category: 'actress',
-    priority: 5,
     isActive: true,
-    searchTerms: [baseName.toLowerCase()],
-    description: 'A test celebrity for unit testing',
     totalArticles: 0,
     avgArticlesPerDay: 0,
-    socialMedia: {
-      instagram: '@testcelebrity',
-      twitter: '@testcelebrity',
-    },
     ...overrides,
   };
 };
@@ -33,8 +25,6 @@ export const createMultipleCelebrities = (count: number = 3): Partial<ICelebrity
   return Array.from({ length: count }, (_, index) =>
     createCelebrityData({
       name: `Test Celebrity ${index + 1}`,
-      priority: Math.floor(Math.random() * 10) + 1,
-      category: ['actress', 'singer', 'influencer'][index % 3] as ICelebrity['category'],
     })
   );
 };
@@ -49,7 +39,6 @@ export const createInactiveCelebrity = (): Partial<ICelebrity> => {
 export const createHighPriorityCelebrity = (): Partial<ICelebrity> => {
   return createCelebrityData({
     name: 'High Priority Celebrity',
-    priority: 9,
     totalArticles: 100,
     avgArticlesPerDay: 5.5,
   });

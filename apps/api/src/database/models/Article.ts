@@ -7,6 +7,7 @@ export interface IArticle extends Document {
   description: string;
   content?: string;
   urlToImage?: string;
+  highResImageUrl?: string; // Extracted at ingest for better first-paint quality
   publishedAt: Date;
   source: {
     id: string | null;
@@ -55,6 +56,10 @@ const ArticleSchema = new Schema<IArticle>(
       default: null,
     },
     urlToImage: {
+      type: String,
+      default: null,
+    },
+    highResImageUrl: {
       type: String,
       default: null,
     },

@@ -7,11 +7,15 @@ const getApiBaseUrl = (): string => {
   // In production, this would come from environment variables
   // For development, we use the local API server
   if (typeof window !== 'undefined') {
-    // Client-side
-    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+    // Client-side (NEXT_PUBLIC_* required for browser)
+    return (
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_URL ||
+      'http://localhost:8000'
+    );
   } else {
     // Server-side (SSR)
-    return process.env.API_BASE_URL || 'http://localhost:8000';
+    return process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
   }
 };
 

@@ -1,51 +1,35 @@
-import { NewsService } from './newsService';
-import { enhancedCacheService } from './cacheService';
+import { buildNewsCacheKey } from './newsService';
 
-describe('NewsService', () => {
-  let newsService: NewsService;
+describe('buildNewsCacheKey', () => {
+  it('should generate cache key for basic filters', () => {
+    const result = buildNewsCacheKey({
+      page: 1,
+      limit: 20,
+      sortBy: 'publishedAt',
+    });
 
-  beforeEach(async () => {
-    newsService = NewsService.getInstance();
-    await enhancedCacheService.flush();
+    expect(result).toBe('news:page:1:limit:20:sort:publishedAt');
   });
 
-  describe('generateCacheKey', () => {
-    it('should generate cache key for basic filters', () => {
-      const filters = {
-        page: 1,
-        limit: 20,
-        sortBy: 'publishedAt' as const,
-      };
-
-      const result = newsService.generateCacheKey(filters);
-
-      expect(result).toBe('news:page:1:limit:20:sort:publishedAt');
+  it('should generate cache key with search term', () => {
+    const result = buildNewsCacheKey({
+      page: 1,
+      limit: 20,
+      sortBy: 'publishedAt',
+      searchTerm: 'music',
     });
 
-    it('should generate cache key with search term', () => {
-      const filters = {
-        page: 1,
-        limit: 20,
-        sortBy: 'publishedAt' as const,
-        searchTerm: 'music',
-      };
+    expect(result).toBe('news:search:music:page:1:limit:20:sort:publishedAt');
+  });
 
-      const result = newsService.generateCacheKey(filters);
-
-      expect(result).toBe('news:search:music:page:1:limit:20:sort:publishedAt');
+  it('should generate cache key with celebrity filter', () => {
+    const result = buildNewsCacheKey({
+      page: 1,
+      limit: 20,
+      sortBy: 'publishedAt',
+      celebrity: 'Taylor Swift',
     });
 
-    it('should generate cache key with celebrity filter', () => {
-      const filters = {
-        page: 1,
-        limit: 20,
-        sortBy: 'publishedAt' as const,
-        celebrity: 'Taylor Swift',
-      };
-
-      const result = newsService.generateCacheKey(filters);
-
-      expect(result).toBe('news:celebrity:Taylor Swift:page:1:limit:20:sort:publishedAt');
-    });
+    expect(result).toBe('news:celebrity:Taylor Swift:page:1:limit:20:sort:publishedAt');
   });
 });

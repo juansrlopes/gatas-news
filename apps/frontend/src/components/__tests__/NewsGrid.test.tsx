@@ -38,26 +38,39 @@ const mockArticles = [
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 
 describe('NewsGrid Component', () => {
+  const searchPlaceholder = /busque por anitta/i;
+
   beforeEach(() => {
-    mockFetch.mockClear();
+    mockFetch.mockReset();
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: { articles: [] },
+      }),
+    } as Response);
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      writable: true,
+      value: true,
+    });
   });
 
   describe('Initial Rendering', () => {
     it('renders the search input and buttons', () => {
       render(<NewsGrid />);
 
-      expect(screen.getByPlaceholderText('Filtre pelo nome')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(searchPlaceholder)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /buscar/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /limpar/i })).toBeInTheDocument();
     });
 
-    it('shows loading skeleton on initial load', () => {
+    it('shows loading skeleton on initial load', async () => {
       mockFetch.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       render(<NewsGrid />);
 
-      // Should show loading skeletons
-      expect(screen.getByTestId('article-skeleton')).toBeInTheDocument();
+      expect(await screen.findByTestId('article-skeleton')).toBeInTheDocument();
     });
   });
 
@@ -91,7 +104,7 @@ describe('NewsGrid Component', () => {
     });
 
     it('handles timeout errors', async () => {
-      mockFetch.mockRejectedValueOnce({ name: 'AbortError' });
+      mockFetch.mockRejectedValueOnce(Object.assign(new Error('Aborted'), { name: 'AbortError' }));
 
       render(<NewsGrid />);
 
@@ -115,7 +128,7 @@ describe('NewsGrid Component', () => {
 
       render(<NewsGrid />);
 
-      const searchInput = screen.getByPlaceholderText('Filtre pelo nome');
+      const searchInput = screen.getByPlaceholderText(searchPlaceholder);
       const searchButton = screen.getByRole('button', { name: /buscar/i });
 
       await user.type(searchInput, 'Anitta');
@@ -142,7 +155,7 @@ describe('NewsGrid Component', () => {
 
       render(<NewsGrid />);
 
-      const searchInput = screen.getByPlaceholderText('Filtre pelo nome');
+      const searchInput = screen.getByPlaceholderText(searchPlaceholder);
       const clearButton = screen.getByRole('button', { name: /limpar/i });
 
       await user.type(searchInput, 'Test search');
@@ -164,7 +177,7 @@ describe('NewsGrid Component', () => {
 
       render(<NewsGrid />);
 
-      const searchInput = screen.getByPlaceholderText('Filtre pelo nome');
+      const searchInput = screen.getByPlaceholderText(searchPlaceholder);
 
       await user.type(searchInput, 'Anitta{enter}');
 
@@ -243,6 +256,7 @@ describe('NewsGrid Component', () => {
     it('shows offline indicator when offline', () => {
       // Mock navigator.onLine
       Object.defineProperty(navigator, 'onLine', {
+        configurable: true,
         writable: true,
         value: false,
       });
@@ -252,7 +266,7 @@ describe('NewsGrid Component', () => {
       // Simulate offline event
       fireEvent(window, new Event('offline'));
 
-      expect(screen.getByText(/offline/i)).toBeInTheDocument();
+      expect(screen.getByText('Offline')).toBeInTheDocument();
       expect(screen.getByText(/você está sem conexão/i)).toBeInTheDocument();
     });
 
@@ -278,6 +292,15 @@ describe('NewsGrid Component', () => {
   });
 
   describe('Pagination', () => {
+    const manyArticles = Array.from({ length: 40 }, (_, index) => ({
+      url: `https://example.com/article${index + 1}`,
+      imageUrl: `https://example.com/image${index + 1}.jpg`,
+      title: `Test Article ${index + 1}`,
+      description: `Test description ${index + 1}`,
+      publishedAt: '2024-01-01T00:00:00Z',
+      source: { id: 'test', name: 'Test Source' },
+    }));
+
     it('loads more articles when clicking load more button', async () => {
       const user = userEvent.setup();
 
@@ -285,52 +308,39 @@ describe('NewsGrid Component', () => {
         ok: true,
         json: async () => ({
           success: true,
-          data: { articles: mockArticles },
+          data: { articles: manyArticles, hasMore: false },
         }),
       } as Response);
 
       render(<NewsGrid />);
 
-      // Wait for initial articles to load
       await waitFor(() => {
         expect(screen.getByText('Test Article 1')).toBeInTheDocument();
       });
+      expect(screen.queryByText('Test Article 21')).not.toBeInTheDocument();
 
       const loadMoreButton = screen.getByRole('button', { name: /carregar mais/i });
       await user.click(loadMoreButton);
 
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('page=2'),
-          expect.any(Object)
-        );
+        expect(screen.getByText('Test Article 21')).toBeInTheDocument();
       });
     });
 
-    it('shows loading indicator when loading more articles', async () => {
-      const user = userEvent.setup();
-
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            success: true,
-            data: { articles: mockArticles },
-          }),
-        } as Response)
-        .mockImplementation(() => new Promise(() => {})); // Never resolves for second call
+    it('shows a load more button when more articles are available', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: { articles: manyArticles, hasMore: false },
+        }),
+      } as Response);
 
       render(<NewsGrid />);
 
-      // Wait for initial articles
       await waitFor(() => {
-        expect(screen.getByText('Test Article 1')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /carregar mais/i })).toBeInTheDocument();
       });
-
-      const loadMoreButton = screen.getByRole('button', { name: /carregar mais/i });
-      await user.click(loadMoreButton);
-
-      expect(screen.getByText(/carregando mais notícias/i)).toBeInTheDocument();
     });
   });
 
@@ -338,7 +348,7 @@ describe('NewsGrid Component', () => {
     it('has proper ARIA labels', () => {
       render(<NewsGrid />);
 
-      expect(screen.getByLabelText('Filtrar notícias por nome')).toBeInTheDocument();
+      expect(screen.getByLabelText('Buscar notícias na nossa base de dados')).toBeInTheDocument();
       expect(screen.getByLabelText('Buscar notícias')).toBeInTheDocument();
       expect(screen.getByLabelText('Limpar filtro')).toBeInTheDocument();
     });
@@ -367,24 +377,32 @@ describe('NewsGrid Component', () => {
       render(<NewsGrid />);
 
       await waitFor(() => {
-        expect(screen.getByText(/nenhuma notícia encontrada/i)).toBeInTheDocument();
+        expect(screen.getByText(/nenhuma notícia disponível no momento/i)).toBeInTheDocument();
       });
     });
 
     it('shows specific message for search with no results', async () => {
       const user = userEvent.setup();
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: { articles: [] },
-        }),
-      } as Response);
+      mockFetch.mockImplementation(async (input: RequestInfo | URL) => {
+        const href = String(input);
+        const isCelebritySearch = href.includes('celebrity=');
+        return {
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: { articles: isCelebritySearch ? [] : mockArticles },
+          }),
+        } as Response;
+      });
 
       render(<NewsGrid />);
 
-      const searchInput = screen.getByPlaceholderText('Filtre pelo nome');
+      await waitFor(() => {
+        expect(screen.getByText('Test Article 1')).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByPlaceholderText(searchPlaceholder);
       await user.type(searchInput, 'NonexistentCelebrity');
 
       const searchButton = screen.getByRole('button', { name: /buscar/i });

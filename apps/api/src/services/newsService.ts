@@ -10,12 +10,55 @@ import { serperService } from './serper/serperService';
 import { multiSourceNewsFetcher } from '../jobs/multiSourceNewsFetcher';
 import { NewsResponse, Article } from '../../../../libs/shared/types/src/index';
 import { ValidationError } from '../types/errors';
-import { analyzePortugueseContent, shouldKeepArticle } from '../utils/contentScoring';
-import { 
-  sortByQuality, 
-  isAggressiveTrash
-} from '../utils/qualityScoring';
+// Removed content scoring imports - NO FILTERING
+// Removed quality scoring imports - NO FILTERING
 import logger from '../utils/logger';
+
+/**
+ * Build a news list cache key from query params.
+ * Exported for unit tests.
+ */
+export function buildNewsCacheKey(params: Record<string, unknown>): string {
+  const {
+    page = 1,
+    celebrity,
+    limit = 20,
+    sortBy = 'publishedAt',
+    searchTerm,
+    sentiment,
+    dateFrom,
+    dateTo,
+    mixing = false,
+  } = params;
+
+  let key = `news:`;
+
+  if (searchTerm && typeof searchTerm === 'string') {
+    key += `search:${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')}:`;
+  }
+
+  if (celebrity) {
+    key += `celebrity:${celebrity}:`;
+  }
+
+  if (sentiment) {
+    key += `sentiment:${sentiment}:`;
+  }
+
+  if (dateFrom || dateTo) {
+    const fromStr = dateFrom instanceof Date ? dateFrom.toISOString().split('T')[0] : 'any';
+    const toStr = dateTo instanceof Date ? dateTo.toISOString().split('T')[0] : 'any';
+    key += `date:${fromStr}-${toStr}:`;
+  }
+
+  key += `page:${page}:limit:${limit}:sort:${sortBy}`;
+
+  if (mixing) {
+    key += ':mixed';
+  }
+
+  return key;
+}
 
 export class NewsService {
   private static instance: NewsService;
@@ -76,14 +119,16 @@ export class NewsService {
       noMixing: _noMixing = false,
     } = params;
 
-    // Handle live search - bypass database and cache, go directly to NewsAPI
+    // Live search disabled: always serve from database to save Serper credits.
+    // Only the scheduled job should call Serper. Ignore source=live and use DB.
     if (source === 'live') {
-      return await this.handleLiveSearch({ celebrity, limit, page });
+      logger.info('Live search requested but disabled; serving from database');
     }
+    const effectiveSource = 'database';
 
-    // DISABLED MIXING BY DEFAULT - users want ALL content
-    const willApplyMixing = false; // Never apply mixing by default
-    const cacheKey = this.generateCacheKey({ ...params, mixing: willApplyMixing });
+    // Apply mixing when showing all celebrities to avoid long runs of same celebrity (skip when filtering by one celeb)
+    const willApplyMixing = !celebrity;
+    const cacheKey = this.generateCacheKey({ ...params, source: effectiveSource, mixing: willApplyMixing });
 
     try {
       // Try to get from cache first
@@ -109,11 +154,11 @@ export class NewsService {
         filters.celebrity = foundCelebrity;
       }
 
-      // Pagination options - fetch extra articles to account for filtering
-      // Since we filter out 'unknown' articles, we need to fetch more to ensure we return the requested amount
-      // Increased buffer to 100% more to ensure we always have enough articles after filtering
-      const adjustedLimit = limit * 2; // Fetch double to account for filtering
-      
+      // When mixing: fetch a large pool so we have many celebrities to interleave; then mix and slice to limit
+      const adjustedLimit = willApplyMixing
+        ? Math.min(limit * 10, 300)
+        : limit * 2;
+
       const paginationOptions: PaginationOptions = {
         page,
         limit: adjustedLimit,
@@ -124,64 +169,18 @@ export class NewsService {
       // Fetch articles from database
       let result;
       if (searchTerm) {
-        // Use text search if search term provided
         result = await articleRepository.search(searchTerm, filters, paginationOptions);
       } else {
-        // Use regular filtered query
         result = await articleRepository.findWithFilters(filters, paginationOptions);
       }
 
-      // AGGRESSIVE QUALITY SCORING: Apply celebrity list validation and aggressive filtering
-      let processedArticles = await this.applyQualityScoring(result.articles);
-      logger.info(
-        `Quality processing: ${result.articles.length} → ${processedArticles.length} articles (${result.articles.length - processedArticles.length} trash filtered)`
-      );
-
-      // FALLBACK: If we don't have enough articles after filtering, fetch more
-      // Always try to get at least 25% more than requested to ensure full grids
-      const targetCount = Math.ceil(limit * 1.25);
-      if (processedArticles.length < targetCount && result.hasMore) {
-        logger.info(`Need more articles (${processedArticles.length}/${limit}), fetching additional batch...`);
-        
-        // Fetch next page to get more articles
-        const fallbackPagination: PaginationOptions = {
-          ...paginationOptions,
-          page: page + 1,
-          limit: limit * 2, // Fetch even more for fallback
-        };
-        
-        let fallbackResult;
-        if (searchTerm) {
-          fallbackResult = await articleRepository.search(searchTerm, filters, fallbackPagination);
-        } else {
-          fallbackResult = await articleRepository.findWithFilters(filters, fallbackPagination);
-        }
-        
-        const fallbackProcessed = await this.applyQualityScoring(fallbackResult.articles);
-        processedArticles = [...processedArticles, ...fallbackProcessed];
-        logger.info(`Fallback fetch added ${fallbackProcessed.length} more articles, total: ${processedArticles.length}`);
-      }
-
-      // SIMPLIFIED: Show ALL articles without aggressive mixing
-      // Users want maximum content, not filtered/mixed content
-      // Articles are now sorted by quality score (best first)
-      let articlesToReturn = processedArticles.slice(0, limit);
-      
-      // Only apply mixing if explicitly requested (never by default)
-      if (willApplyMixing && !params.noMixing) {
-        articlesToReturn = this.applyConservativeMixing(processedArticles);
-        logger.info(`Applied conservative mixing to ${processedArticles.length} articles`);
-        
-        // Trim to requested limit after mixing (since we fetched extra articles)
-        if (articlesToReturn.length > limit) {
-          articlesToReturn = articlesToReturn.slice(0, limit);
-          logger.info(`Trimmed mixed articles to requested limit: ${limit}`);
-        }
+      let articlesToReturn: IArticle[];
+      if (willApplyMixing && result.articles.length > 0) {
+        articlesToReturn = this.applyConservativeMixing(result.articles).slice(0, limit);
       } else {
-        // Default behavior: show quality-sorted articles up to the limit
-        articlesToReturn = processedArticles.slice(0, limit);
-        logger.info(`Quality-sorted articles: showing ${articlesToReturn.length} articles (limit: ${limit})`);
+        articlesToReturn = result.articles.slice(0, limit);
       }
+      logger.info(`Showing ${articlesToReturn.length} articles (limit: ${limit}) - NO FILTERING`);
 
       // Convert to API response format
       const response: NewsResponse = {
@@ -498,46 +497,7 @@ export class NewsService {
    * @param articles - Articles sorted by publishedAt DESC (newest first)
    * @returns Mixed articles maintaining recency while adding diversity
    */
-  /**
-   * AGGRESSIVE QUALITY SCORING: Apply celebrity list validation and aggressive filtering
-   * New approach: Filter out non-list celebrities and obvious trash aggressively
-   */
-  private async applyQualityScoring(articles: IArticle[]): Promise<IArticle[]> {
-    // Step 1: Filter out completely broken articles (basic validation)
-    const validArticles = articles.filter(article => {
-      if (!article.title || !article.url) {
-        return false;
-      }
-      return true;
-    });
-
-    // Step 2: AGGRESSIVE filtering - celebrity list validation + trash patterns
-    const filteredArticles = [];
-    for (const article of validArticles) {
-      const isTrash = await isAggressiveTrash(article);
-      if (isTrash) {
-        logger.debug(`Aggressively filtered: "${article.title.substring(0, 50)}..."`);
-      } else {
-        filteredArticles.push(article);
-      }
-    }
-
-    // Step 3: Sort by quality score (best articles first)
-    const qualitySorted = sortByQuality(filteredArticles);
-    
-    // Log quality metrics for monitoring
-    const trashFiltered = validArticles.length - filteredArticles.length;
-    const filterRate = validArticles.length > 0 ? (trashFiltered / validArticles.length) * 100 : 0;
-    
-    logger.info(`Aggressive filtering: ${trashFiltered} articles removed (${filterRate.toFixed(1)}% filter rate)`);
-    
-    // Warning if we filter too much (but allow more aggressive filtering now)
-    if (filterRate > 50) {
-      logger.warn(`⚠️ Very aggressive filtering: ${filterRate.toFixed(1)}% removed - monitor celebrity distribution`);
-    }
-
-    return qualitySorted;
-  }
+  // REMOVED: applyQualityScoring method - NO FILTERING
 
   private applyConservativeMixing(articles: IArticle[]): IArticle[] {
     if (articles.length <= 2) {
@@ -673,11 +633,12 @@ export class NewsService {
       url: article.url,
       title: article.title,
       description: article.description,
-      imageUrl: article.urlToImage || '',
+      imageUrl: article.highResImageUrl || article.urlToImage || '',
       publishedAt: article.publishedAt?.toISOString(),
       source: article.source,
       author: article.author,
       content: article.content,
+      celebrity: article.celebrity, // Added missing celebrity field
     };
   }
 
@@ -685,46 +646,7 @@ export class NewsService {
    * Generate cache key based on parameters
    */
   private generateCacheKey(params: Record<string, unknown>): string {
-    const {
-      page = 1,
-      celebrity,
-      limit = 20,
-      sortBy = 'publishedAt',
-      searchTerm,
-      sentiment,
-      dateFrom,
-      dateTo,
-      mixing = false,
-    } = params;
-
-    let key = `news:`;
-
-    if (searchTerm && typeof searchTerm === 'string') {
-      key += `search:${searchTerm.replace(/[^a-zA-Z0-9]/g, '_')}:`;
-    }
-
-    if (celebrity) {
-      key += `celebrity:${celebrity}:`;
-    }
-
-    if (sentiment) {
-      key += `sentiment:${sentiment}:`;
-    }
-
-    if (dateFrom || dateTo) {
-      const fromStr = dateFrom instanceof Date ? dateFrom.toISOString().split('T')[0] : 'any';
-      const toStr = dateTo instanceof Date ? dateTo.toISOString().split('T')[0] : 'any';
-      key += `date:${fromStr}-${toStr}:`;
-    }
-
-    key += `page:${page}:limit:${limit}:sort:${sortBy}`;
-
-    // Add mixing flag to cache key
-    if (mixing) {
-      key += ':mixed';
-    }
-
-    return key;
+    return buildNewsCacheKey(params);
   }
 
   /**
@@ -778,23 +700,10 @@ export class NewsService {
 
       logger.info(`📰 Serper returned ${serperArticles.length} articles for ${celebrity}`);
 
-      // Apply content filtering to improve quality
-      const filteredArticles = serperArticles.filter(article => {
-        const contentScore = analyzePortugueseContent(
-          article.title,
-          article.description || '',
-          article.url,
-          celebrity
-        );
-        return shouldKeepArticle(contentScore, 30); // Use lower threshold for live search
-      });
+      // NO FILTERING: Return ALL articles
+      const limitedArticles = serperArticles.slice(0, limit);
 
-      // Limit to requested number
-      const limitedArticles = filteredArticles.slice(0, limit);
-
-      logger.info(
-        `🎯 Live search results: ${serperArticles.length} → ${filteredArticles.length} → ${limitedArticles.length} articles after filtering and limiting`
-      );
+      logger.info(`🎯 Live search results: ${serperArticles.length} → ${limitedArticles.length} articles (NO FILTERING)`);
 
       // Convert to API response format
       const response: NewsResponse = {
